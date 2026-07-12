@@ -13,6 +13,32 @@ function renderVerseImage(canvas, v, W, H) {
 }
 function verseForSourceDate(source, date) { const list = VERSE_DB.filter((v)=>v.faith===source); return list[dayOfYear(date)%list.length]; }
 
+// Top languages shown on the main page for every post.
+const TOP4 = [["es","Español"],["pt","Português"],["hi","हिन्दी"]];
+function hashStr(s){ return Math.abs(s.split("").reduce((a,c)=>(a*31+c.charCodeAt(0))|0,7)); }
+async function translateCached(text, code) {
+  if (code === "en") return text;
+  const key = "ev_tr_" + code + "_" + hashStr(text);
+  try { const c = localStorage.getItem(key); if (c) return c; } catch (e) {}
+  const out = await translateText(text, code);
+  try { localStorage.setItem(key, out); } catch (e) {}
+  return out;
+}
+function buildLangBlock(v, container) {
+  container.innerHTML = '<div class="lb-title">In other languages</div>';
+  const list = document.createElement("div"); list.className = "lb-list"; container.appendChild(list);
+  TOP4.forEach(([code, label]) => {
+    const row = document.createElement("div"); row.className = "lb-row";
+    const l = document.createElement("span"); l.className = "lb-lang"; l.textContent = label;
+    const t = document.createElement("span"); t.className = "lb-text"; t.textContent = "…";
+    if (code === "hi" || code === "ar") t.dir = "auto";
+    row.append(l, t); list.appendChild(row);
+    translateCached(v.text, code)
+      .then((tr) => { t.textContent = tr; })
+      .catch(() => { t.textContent = "(translation unavailable — tap Read)"; });
+  });
+}
+
 /* ---- Translation + speech (self-contained; app.js isn't loaded here) ---- */
 async function translateText(text, to, from) {
   from = from || "en";
@@ -53,14 +79,16 @@ function buildPostCard(v, label) {
   const body = document.createElement("div"); body.className = "body";
   const src = document.createElement("div"); src.className = "src"; src.textContent = label;
   const mean = document.createElement("p"); mean.className = "mean"; mean.innerHTML = `<b>In simple words:</b> ${escapeHtml(meaningFor(v))}`;
+  const langs = document.createElement("div"); langs.className = "langblock";
   const acts = document.createElement("div"); acts.className = "acts";
   acts.append(
     mkBtn("Read", "btn ghost sm", ()=>openVerseDetail(v)),
     mkBtn("🎙 Listen", "btn ghost sm", ()=>speakText(narrationFor(v),"en")),
     mkBtn("📤 Share", "btn primary sm", ()=>sharePost(v))
   );
-  body.append(src, mean, acts);
+  body.append(src, mean, langs, acts);
   el.append(iw, body);
+  buildLangBlock(v, langs);
   return el;
 }
 function buildFeedCell(v, date) {
@@ -89,23 +117,21 @@ function initToday() {
   }
 }
 
-/* ---- Posts archive ------------------------------------------------ */
-let postsDay = 0;
-function loadMorePosts() {
+/* ---- Posts archive (last 5 days only) ----------------------------- */
+const POSTS_DAYS = 5;
+function renderPosts() {
   const src = $("posts-source").value;
-  const feed = $("posts-feed");
+  const feed = $("posts-feed"); feed.innerHTML = "";
   const today = new Date();
-  const targetDays = postsDay + 10;
-  for (; postsDay < targetDays && postsDay < 150; postsDay++) {
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()-postsDay);
+  for (let d = 0; d < POSTS_DAYS; d++) {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()-d);
     (src==="Both" ? ["Bible","Gita"] : [src]).forEach((s)=>feed.appendChild(buildFeedCell(verseForSourceDate(s,date), date)));
   }
-  $("posts-more").style.display = postsDay < 150 ? "inline-flex" : "none";
 }
 function initPosts() {
-  $("posts-source").onchange = ()=>{ postsDay = 0; $("posts-feed").innerHTML = ""; loadMorePosts(); };
-  $("posts-more").onclick = loadMorePosts;
-  loadMorePosts();
+  $("posts-more").style.display = "none"; // fixed 5-day window
+  $("posts-source").onchange = renderPosts;
+  renderPosts();
 }
 
 /* ---- Sermons ------------------------------------------------------ */

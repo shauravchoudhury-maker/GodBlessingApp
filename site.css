@@ -54,6 +54,11 @@ section.band{padding:40px 0;}
 .post .mean{font-size:15px;color:#3a3a52;margin:10px 0 0;line-height:1.55;}
 .post .mean b{color:var(--accent);}
 .post .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.langblock{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
+.lb-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;}
+.lb-row{display:flex;gap:10px;padding:4px 0;font-size:14px;line-height:1.4;}
+.lb-lang{min-width:74px;color:var(--accent);font-weight:600;flex-shrink:0;}
+.lb-text{color:#3a3a52;}
 
 /* Feed grid (Posts archive) */
 .feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;}
