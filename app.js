@@ -153,6 +153,9 @@ function setActiveVerse() {
   const ul = $("music-sources"); ul.innerHTML = "";
   track.sources.forEach((s) => { const li = document.createElement("li"); li.textContent = s; ul.appendChild(li); });
 
+  $("verse-meaning").textContent = meaningFor(v);
+  stopSpeak(); // stop any narration from the previous verse
+
   applyDailyLanguage(); // sets daily.trans then renders
 }
 
@@ -160,6 +163,9 @@ function setActiveVerse() {
 async function applyDailyLanguage() {
   const status = $("daily-trans-status");
   $("verify-meaning").style.display = daily.lang === "en" ? "none" : "inline-block";
+  $("localize-captions").style.display = daily.lang === "en" ? "none" : "inline-block";
+  $("localize-status").textContent = "";
+  daily.localized = null; // caption localization is per-language; reset on change
   $("fidelity-box").innerHTML = "";
   if (daily.lang === "en") {
     daily.trans = { text: daily.verse.text, rtl: false };
@@ -310,6 +316,125 @@ async function generateDailyVideo() {
   }
 }
 
+/* ---- Voice-over podcast (Web Speech API) -------------------------- */
+function stopSpeak() {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  const s = $("stop-listen-btn"), l = $("listen-btn");
+  if (s) s.style.display = "none";
+  if (l) l.textContent = "🎙 Listen (podcast)";
+}
+function speakVerse() {
+  if (!window.speechSynthesis) { $("share-hint").textContent = "Voice isn't supported in this browser."; return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(narrationFor(daily.verse));
+  u.rate = 0.9; u.pitch = 1.0; u.volume = 1.0;
+  const voices = speechSynthesis.getVoices();
+  const en = voices.find((v) => /^en[-_]/i.test(v.lang)) || voices[0];
+  if (en) u.voice = en;
+  u.onend = stopSpeak;
+  u.onerror = stopSpeak;
+  speechSynthesis.speak(u);
+  $("stop-listen-btn").style.display = "inline-block";
+  $("listen-btn").textContent = "🔊 Speaking…";
+}
+function downloadNarrationScript() {
+  downloadBlob(new Blob([narrationFor(daily.verse)], { type: "text/plain" }), top8Filename("narration") + ".txt");
+}
+
+/* ---- Localized captions (keep the message intact per language) ---- */
+function buildLocalizedCaption(p, loc) {
+  const v = `"${loc.verse}"`;
+  const ref = `— ${daily.verse.ref}`;
+  const tags = p.hashtags.join(" ");
+  const track = trackFor(daily.verse);
+  switch (p.key) {
+    case "instagram": return `${v}\n${ref}\n\n${loc.reflection}\n\n💡 ${loc.meaning}\n\n🎵 ${track.idea}\n\n${tags}`;
+    case "tiktok":    return `${loc.reflection} 🙏\n${v} ${ref}\n🎵 ${track.idea}\n${tags}`;
+    case "facebook":  return `${v}\n${ref}\n\n${loc.reflection}\n\n💡 ${loc.meaning}\n\n${tags}`;
+    case "youtube":   return `${daily.verse.ref} | ${loc.reflection}\n\n${v}\n${ref}\n\n💡 ${loc.meaning}\n\n${tags}`;
+    case "x":         return `${v} ${ref}\n\n${loc.reflection}\n${tags}`;
+    default:          return `${v} ${ref}\n\n${tags}`;
+  }
+}
+function activeCaptionText(p) {
+  if (daily.localized && daily.localized.lang === daily.lang && daily.lang !== "en") {
+    return buildLocalizedCaption(p, daily.localized);
+  }
+  return p.caption;
+}
+async function localizeCaptions() {
+  const status = $("localize-status");
+  if (daily.lang === "en") { status.textContent = "Pick a language first (in 'Show verse in language')."; return; }
+  const meta = LANGUAGES.find((l) => l.code === daily.lang);
+  status.textContent = `Translating captions to ${meta.name}…`;
+  try {
+    const reflection = reflectionFor(daily.verse);
+    const tReflection = await translateText(reflection, daily.lang);
+    const tMeaning = await translateText(meaningFor(daily.verse), daily.lang);
+    daily.localized = { lang: daily.lang, rtl: !!meta.rtl, verse: daily.trans.text, reflection: tReflection, meaning: tMeaning };
+    status.textContent = `✓ Captions now in ${meta.name} (verse + reflection + meaning; hashtags kept universal).`;
+    renderPlatformCards();
+  } catch (e) {
+    status.textContent = `⚠ ${e.message}. The free API may be rate-limited — try again shortly.`;
+  }
+}
+
+/* ---- Weekly newsletter ------------------------------------------- */
+function verseForSourceDate(source, date) {
+  const list = VERSE_DB.filter((v) => v.faith === source);
+  return list[dayOfYear(date) % list.length];
+}
+function newsletterRows() {
+  const src = $("news-source").value;
+  const val = $("news-start").value;
+  let start;
+  if (val) { const [y, m, d] = val.split("-").map(Number); start = new Date(y, m - 1, d); }
+  else start = new Date(daily.startDate);
+  const sources = src === "Both" ? ["Bible", "Gita"] : [src];
+  const rows = [];
+  for (let d = 0; d < 7; d++) {
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d);
+    sources.forEach((s) => rows.push({ date, source: s, verse: verseForSourceDate(s, date) }));
+  }
+  return rows;
+}
+function buildNewsletterHtml(rows) {
+  const start = rows[0].date, end = rows[rows.length - 1].date;
+  const fmt = (dt) => dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const items = rows.map((r) => {
+    const dl = r.date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    return `<tr><td style="padding:20px 0;border-bottom:1px solid #eee;">
+      <div style="font-size:12px;color:#7c5cff;font-weight:700;letter-spacing:.5px;text-transform:uppercase;">${dl} &middot; ${r.source === "Gita" ? "Bhagavad Gita" : "Bible"}</div>
+      <blockquote style="font-family:Georgia,serif;font-size:19px;line-height:1.5;margin:10px 0 6px;color:#1a1a2e;">&ldquo;${escapeHtml(r.verse.text)}&rdquo;</blockquote>
+      <div style="font-size:13px;color:#3aa0a8;font-weight:600;">&mdash; ${r.verse.ref}</div>
+      <div style="font-size:14px;line-height:1.55;color:#444;margin-top:10px;"><b style="color:#7c5cff;">💡 In simple words:</b> ${escapeHtml(meaningFor(r.verse))}</div>
+    </td></tr>`;
+  }).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background:#f4f5f9;padding:24px 12px;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.09);">
+<tr><td style="background:linear-gradient(135deg,#7c5cff,#4bc0c8);padding:30px 30px 24px;color:#fff;">
+  <div style="font-size:27px;font-weight:700;">✧ God Blessing</div>
+  <div style="font-size:14px;opacity:.92;margin-top:4px;">Your week of blessings &middot; ${fmt(start)} &ndash; ${fmt(end)}</div>
+</td></tr>
+<tr><td style="padding:14px 30px 0;"><p style="font-size:15px;color:#555;line-height:1.6;">Here are this week's verses, each with its meaning in plain words. Take a moment with the one that speaks to you. 🙏</p></td></tr>
+<tr><td style="padding:0 30px;"><table width="100%" cellpadding="0" cellspacing="0">${items}</table></td></tr>
+<tr><td style="padding:24px 30px 30px;color:#999;font-size:12px;text-align:center;line-height:1.6;">
+  Sent with love from God Blessing. Reply and tell us which verse blessed you this week.
+</td></tr></table></body></html>`;
+}
+let lastNewsletterHtml = "";
+function generateNewsletter() {
+  const rows = newsletterRows();
+  lastNewsletterHtml = buildNewsletterHtml(rows);
+  const iframe = $("news-preview");
+  iframe.style.display = "block";
+  iframe.srcdoc = lastNewsletterHtml;
+  $("download-newsletter").style.display = "inline-block";
+  $("copy-newsletter").style.display = "inline-block";
+  $("news-status").textContent = `Newsletter ready — ${rows.length} entries.`;
+}
+
 function renderDailyPreview() {
   renderVerse($("daily-canvas"), 1080, 1080, {
     text: daily.trans.text, ref: daily.verse.ref, rtl: daily.trans.rtl,
@@ -342,14 +467,15 @@ function renderPlatformCards() {
 
     const cap = document.createElement("div");
     cap.className = "pc-caption";
-    cap.textContent = p.caption;
+    cap.textContent = activeCaptionText(p);
+    if (daily.localized && daily.localized.rtl) cap.setAttribute("dir", "rtl");
 
     const actions = document.createElement("div");
     actions.className = "pc-actions";
     const copyBtn = document.createElement("button");
     copyBtn.className = "btn ghost small";
     copyBtn.textContent = "Copy caption";
-    copyBtn.onclick = () => { navigator.clipboard?.writeText(p.caption); copyBtn.textContent = "Copied ✓"; setTimeout(() => copyBtn.textContent = "Copy caption", 1200); };
+    copyBtn.onclick = () => { navigator.clipboard?.writeText(activeCaptionText(p)); copyBtn.textContent = "Copied ✓"; setTimeout(() => copyBtn.textContent = "Copy caption", 1200); };
     const imgBtn = document.createElement("button");
     imgBtn.className = "btn small";
     imgBtn.textContent = "Save image";
@@ -362,7 +488,7 @@ function renderPlatformCards() {
       shareBtn.onclick = async () => {
         const blob = await canvasToBlob(renderPlatformFull(p));
         const file = new File([blob], kitFilename(p.key, "png"), { type: "image/png" });
-        const ok = await shareFiles([file], p.caption, "God Blessing");
+        const ok = await shareFiles([file], activeCaptionText(p), "God Blessing");
         if (!ok) downloadPlatformImage(p);
       };
       actions.appendChild(shareBtn);
@@ -414,7 +540,7 @@ function buildCaptionsText(kit) {
   out += `\n${"=".repeat(60)}\n\n`;
   kit.platforms.forEach((p) => {
     out += `### ${p.name.toUpperCase()} (${p.w}×${p.h}) — image: ${kitFilename(p.key, "png")}\n\n`;
-    out += `${p.caption}\n\n${"-".repeat(60)}\n\n`;
+    out += `${activeCaptionText(p)}\n\n${"-".repeat(60)}\n\n`;
   });
   return out;
 }
@@ -547,6 +673,10 @@ function initDaily() {
   $("gen-video").onclick = generateDailyVideo;
   $("share-today").onclick = shareToday;
   $("share-video").onclick = shareVideo;
+  $("listen-btn").onclick = speakVerse;
+  $("stop-listen-btn").onclick = stopSpeak;
+  $("script-btn").onclick = downloadNarrationScript;
+  $("localize-captions").onclick = localizeCaptions;
 
   // default: Bible, day 1
   daily.activeSource = "Bible"; daily.dayIndex = 0;
@@ -829,6 +959,14 @@ function initSchedule() {
   $("sched-days").onchange = rebuild;
   $("sched-time").onchange = rebuild;
   $("sched-export").onclick = exportScheduleBundle;
+
+  // Weekly newsletter
+  const t = daily.startDate;
+  $("news-start").value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  $("gen-newsletter").onclick = generateNewsletter;
+  $("download-newsletter").onclick = () => downloadBlob(new Blob([lastNewsletterHtml], { type: "text/html" }), "god_blessing_newsletter.html");
+  $("copy-newsletter").onclick = () => { navigator.clipboard?.writeText(lastNewsletterHtml); $("news-status").textContent = "HTML copied to clipboard."; };
+
   rebuild();
 }
 

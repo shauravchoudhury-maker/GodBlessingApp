@@ -212,6 +212,100 @@ function sceneForest(ctx, W, H, pal, seed) {
   }
 }
 
+function sceneAurora(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[1], -20));
+  g.addColorStop(1, shade(pal.stops[1], 10));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 41);
+  // flowing ribbons of light
+  for (let b = 0; b < 4; b++) {
+    const yBase = H * (0.2 + b * 0.18);
+    const col = b % 2 ? pal.accent : pal.stops[0];
+    const rib = ctx.createLinearGradient(0, yBase - H * 0.12, 0, yBase + H * 0.12);
+    rib.addColorStop(0, rgba(col, 0));
+    rib.addColorStop(0.5, rgba(col, 0.28));
+    rib.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = rib;
+    ctx.beginPath();
+    ctx.moveTo(0, yBase);
+    for (let x = 0; x <= W; x += W / 30) {
+      ctx.lineTo(x, yBase + Math.sin((x / W) * Math.PI * 3 + b + rng()) * H * 0.06);
+    }
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+  }
+}
+
+function sceneWatercolor(ctx, W, H, pal, seed) {
+  baseGradient(ctx, W, H, pal);
+  const rng = makeRng(seed + 53);
+  ctx.globalCompositeOperation = "soft-light";
+  for (let i = 0; i < 40; i++) {
+    const x = rng() * W, y = rng() * H, r = W * (0.05 + rng() * 0.2);
+    const col = rng() > 0.5 ? pal.accent : "#ffffff";
+    const wc = ctx.createRadialGradient(x, y, 0, x, y, r);
+    wc.addColorStop(0, rgba(col, 0.10 + rng() * 0.08));
+    wc.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = wc;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+function sceneGeometric(ctx, W, H, pal, seed) {
+  baseGradient(ctx, W, H, pal);
+  const rng = makeRng(seed + 67);
+  const cols = 6, rows = Math.ceil((H / W) * cols);
+  const cw = W / cols, chh = H / rows;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (rng() > 0.55) continue;
+      const x = c * cw, y = r * chh;
+      ctx.fillStyle = rgba(rng() > 0.5 ? pal.accent : "#ffffff", 0.05 + rng() * 0.08);
+      ctx.beginPath();
+      if (rng() > 0.5) { ctx.moveTo(x, y); ctx.lineTo(x + cw, y); ctx.lineTo(x, y + chh); }
+      else { ctx.moveTo(x + cw, y); ctx.lineTo(x + cw, y + chh); ctx.lineTo(x, y + chh); }
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  const glow = ctx.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, W * 0.7);
+  glow.addColorStop(0, "rgba(255,255,255,0.12)"); glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+}
+
+function sceneParticles(ctx, W, H, pal, seed) {
+  const g = ctx.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.5, H);
+  g.addColorStop(0, shade(pal.stops[0], 8)); g.addColorStop(1, shade(pal.stops[1], -12));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 73);
+  const n = Math.floor((W * H) / 5200);
+  for (let i = 0; i < n; i++) {
+    const x = rng() * W, y = rng() * H, r = W * (0.001 + rng() * 0.006);
+    const col = rng() > 0.7 ? pal.accent : "#ffffff";
+    const p = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    p.addColorStop(0, rgba(col, 0.5 + rng() * 0.4));
+    p.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = p;
+    ctx.beginPath(); ctx.arc(x, y, r * 3, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function sceneMesh(ctx, W, H, pal, seed) {
+  baseGradient(ctx, W, H, pal);
+  const rng = makeRng(seed + 89);
+  const blobs = [pal.stops[0], pal.stops[1], pal.accent, "#ffffff"];
+  ctx.globalCompositeOperation = "lighter";
+  blobs.forEach((col, i) => {
+    const x = W * (0.2 + rng() * 0.6), y = H * (0.2 + rng() * 0.6), r = W * (0.35 + rng() * 0.25);
+    const m = ctx.createRadialGradient(x, y, 0, x, y, r);
+    m.addColorStop(0, rgba(col, 0.22));
+    m.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = m;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.globalCompositeOperation = "source-over";
+}
+
 // Registry — order = display order in the picker.
 const BACKGROUNDS = [
   { key: "gradient", name: "Soft Glow",  draw: sceneGradient },
@@ -223,6 +317,11 @@ const BACKGROUNDS = [
   { key: "clouds",   name: "Clouds",     draw: sceneClouds },
   { key: "forest",   name: "Forest",     draw: sceneForest },
   { key: "bokeh",    name: "Bokeh",      draw: sceneBokeh },
+  { key: "aurora",   name: "Aurora",     draw: sceneAurora },
+  { key: "watercolor", name: "Watercolor", draw: sceneWatercolor },
+  { key: "geometric", name: "Geometric", draw: sceneGeometric },
+  { key: "particles", name: "Particles", draw: sceneParticles },
+  { key: "mesh",     name: "Color Mesh", draw: sceneMesh },
 ];
 
 function drawBackground(key, ctx, W, H, pal, seed) {

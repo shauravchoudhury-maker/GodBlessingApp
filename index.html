@@ -52,6 +52,12 @@
         </div>
         <blockquote class="verse-text" id="verse-text">Loading today's blessing…</blockquote>
         <cite class="verse-ref" id="verse-ref">—</cite>
+        <p class="verse-meaning" id="verse-meaning"></p>
+        <div class="voiceover">
+          <button class="btn small" id="listen-btn">🎙 Listen (podcast)</button>
+          <button class="btn ghost small" id="stop-listen-btn" style="display:none;">⏹ Stop</button>
+          <button class="btn ghost small" id="script-btn">⬇ Script</button>
+        </div>
       </div>
 
       <div class="field">
@@ -97,9 +103,11 @@
       <div class="btn-row kit-actions">
         <button class="btn accent" id="download-kit">⬇ Download Post Kit (.zip)</button>
         <button class="btn" id="gen-top8">🌐 Top-8 language images (.zip)</button>
+        <button class="btn" id="localize-captions" style="display:none;">🌐 Localize captions</button>
         <span class="kit-status" id="kit-status"></span>
       </div>
       <div class="kit-status" id="top8-status"></div>
+      <div class="kit-status" id="localize-status"></div>
       <div class="platform-grid" id="platform-grid"></div>
     </section>
 
@@ -222,6 +230,26 @@
         Your platform logins stay inside your scheduler; this app never sees or stores them. So your only steps are: <b>verify → import → it posts automatically.</b>
       </p>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">3</span><h2>Weekly newsletter</h2></div>
+      <p class="hint">A ready-to-send recap of the week — each day's verse, its plain-language meaning, and a thought — as a styled email you can send to your community or post as a blog.</p>
+      <div class="sched-toolbar">
+        <label>Source
+          <select id="news-source">
+            <option value="Bible">Bible</option>
+            <option value="Gita">Bhagavad Gita</option>
+            <option value="Both">Both</option>
+          </select>
+        </label>
+        <label>Week starting <input type="date" id="news-start" /></label>
+        <button class="btn accent" id="gen-newsletter">📧 Generate newsletter</button>
+        <button class="btn ghost" id="download-newsletter" style="display:none;">⬇ Download .html</button>
+        <button class="btn ghost" id="copy-newsletter" style="display:none;">Copy HTML</button>
+        <span class="kit-status" id="news-status"></span>
+      </div>
+      <iframe id="news-preview" title="Newsletter preview"></iframe>
+    </section>
   </main>
 
   <footer class="app-footer">
@@ -229,6 +257,7 @@
   </footer>
 
   <script src="verses.js"></script>
+  <script src="meanings.js"></script>
   <script src="content.js"></script>
   <script src="backgrounds.js"></script>
   <script src="zip.js"></script>

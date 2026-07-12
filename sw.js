@@ -1,10 +1,11 @@
 // sw.js — offline app-shell service worker for God Blessing PWA.
-const CACHE = "godblessing-v1";
+const CACHE = "godblessing-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./verses.js",
+  "./meanings.js",
   "./content.js",
   "./backgrounds.js",
   "./zip.js",
