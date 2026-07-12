@@ -15,6 +15,32 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="admin-gate" style="position:fixed;inset:0;z-index:9999;background:#0e1220;display:grid;place-items:center;padding:24px;">
+    <div style="max-width:360px;width:100%;text-align:center;color:#e8ecf6;font-family:'Segoe UI',system-ui,sans-serif;">
+      <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#7c5cff,#4bc0c8);display:grid;place-items:center;font-size:30px;margin:0 auto 16px;">✦</div>
+      <h2 style="margin:0 0 6px;">EverVerse Studio</h2>
+      <p style="color:#97a0bd;font-size:14px;margin:0 0 18px;">Private admin. Enter your studio code to continue.</p>
+      <input id="admin-code" type="password" placeholder="studio code" autocomplete="off" style="width:100%;padding:13px;border-radius:12px;border:1px solid #2b3454;background:#0f1424;color:#fff;font-size:16px;text-align:center;margin-bottom:10px;" />
+      <div id="admin-err" style="color:#ff6b6b;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
+      <button id="admin-go" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#7c5cff,#4bc0c8);color:#fff;font-weight:700;font-size:16px;cursor:pointer;">Enter Studio</button>
+      <a href="index.html" style="display:inline-block;margin-top:14px;color:#97a0bd;font-size:13px;text-decoration:none;">← Back to EverVerse</a>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var CODE = "everlight"; // change to your own private studio code
+    var g = document.getElementById("admin-gate");
+    try { if (localStorage.getItem("ev_admin_ok") === "1") { g.style.display = "none"; return; } } catch (e) {}
+    var inp = document.getElementById("admin-code");
+    function tryc(){
+      if ((inp.value || "").trim().toLowerCase() === CODE) { try { localStorage.setItem("ev_admin_ok","1"); } catch(e){} g.style.display = "none"; }
+      else { document.getElementById("admin-err").textContent = "Incorrect code."; }
+    }
+    document.getElementById("admin-go").onclick = tryc;
+    inp.addEventListener("keydown", function(e){ if (e.key === "Enter") tryc(); });
+    setTimeout(function(){ try { inp.focus(); } catch(e){} }, 60);
+  })();
+  </script>
   <header class="app-header">
     <div class="brand">
       <a class="brand-mark" href="index.html" title="EverVerse home" style="text-decoration:none;">✦</a>
@@ -330,6 +356,7 @@
   <script src="sermons.js"></script>
   <script src="content.js"></script>
   <script src="backgrounds.js"></script>
+  <script src="render.js"></script>
   <script src="zip.js"></script>
   <script src="video.js"></script>
   <script src="hub.js"></script>

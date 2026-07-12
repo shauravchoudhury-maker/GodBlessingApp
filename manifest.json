@@ -2,7 +2,7 @@
   "name": "EverVerse — Daily Verse Studio",
   "short_name": "EverVerse",
   "description": "Daily scripture verses turned into shareable images, videos and captions for every platform.",
-  "start_url": "./app.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
