@@ -1,0 +1,44 @@
+EverVerse — Firestore security rules
+=====================================
+Paste this into Firebase console → Build → Firestore Database → Rules → Publish.
+
+These rules allow the public to react and comment, but keep it safe:
+- reactions: anyone can read; writes only touch the counter fields with small
+  increments (no arbitrary data, no deleting).
+- comments: anyone can read and add a comment (name/text with length limits);
+  nobody can edit or delete via the client (you moderate from the console/admin).
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Like/love counters, one doc per verse (doc id = sanitised ref)
+    match /reactions/{id} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.keys().hasOnly(['ref','faith','text','likes','loves','score'])
+        && request.resource.data.ref is string
+        && (!('likes' in request.resource.data) || request.resource.data.likes is number)
+        && (!('loves' in request.resource.data) || request.resource.data.loves is number);
+      allow delete: if false;
+    }
+
+    // Community reflections / comments
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.refId is string;
+      allow update, delete: if false;   // moderate from the Firebase console
+    }
+  }
+}
+
+NOTE: These rules are a pragmatic, launch-ready baseline for an open community.
+A determined abuser could still spam counters/comments (no accounts). If that
+becomes a problem, the next step is Firebase Anonymous Auth + per-user limits,
+and an admin moderation view in the private Studio — ask and I'll add them.

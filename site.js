@@ -54,12 +54,13 @@ function speakText(text, lang) { EVVoice.speak(text, { lang: lang || "en" }); }
 function fillLangSelect(sel) { sel.innerHTML = ""; sel.add(new Option("English","en")); LANGUAGES.forEach((l)=>sel.add(new Option(l.name,l.code))); }
 
 /* ---- Navigation --------------------------------------------------- */
-let inited = { posts:false, sermons:false, verses:false };
+let inited = { posts:false, trending:false, sermons:false, verses:false };
 function go(view) {
-  ["today","posts","sermons","verses"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
+  ["today","posts","trending","sermons","verses"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
   document.querySelectorAll("nav.sections button").forEach((b)=>b.classList.toggle("active", b.dataset.go===view));
   window.scrollTo(0,0);
   if (view==="posts" && !inited.posts) { initPosts(); inited.posts = true; }
+  if (view==="trending" && !inited.trending) { EVReact.renderTrending($("trending-list")); inited.trending = true; }
   if (view==="sermons" && !inited.sermons) { initSermons(); inited.sermons = true; }
   if (view==="verses" && !inited.verses) { initVerses(); inited.verses = true; }
 }
@@ -80,6 +81,8 @@ function buildPostCard(v, label) {
     mkBtn("📤 Share", "btn primary sm", ()=>sharePost(v))
   );
   body.append(src, mean, langs, acts);
+  const bar = EVReact.reactionBar(v);
+  if (bar.children.length) body.appendChild(bar);
   el.append(iw, body);
   buildLangBlock(v, langs);
   return el;
@@ -206,6 +209,11 @@ function openVerseDetail(v) {
   $("dt-lang").onchange = ()=>translateDetailVerse($("dt-lang").value);
   $("dt-listen").onclick = ()=>speakText(detailState.lang==="en" ? narrationFor(v) : (detailState.trans ? detailState.trans.text : v.text), detailState.lang);
   $("dt-share").onclick = ()=>sharePost(v);
+  const content = $("detail-sheet").querySelector(".content");
+  const bar = EVReact.reactionBar(v);
+  if (bar.children.length) content.appendChild(bar);
+  const cmts = EVReact.commentsSection(v);
+  if (cmts.children.length) content.appendChild(cmts);
   openOverlay();
 }
 function translateDetailVerse(code) {
@@ -306,6 +314,7 @@ async function shareSermon() {
 
 /* ---- Boot --------------------------------------------------------- */
 function init() {
+  try { EVReact.init(); } catch (e) {}
   document.querySelectorAll("[data-go]").forEach((el)=>el.addEventListener("click", ()=>go(el.dataset.go)));
   $("detail").addEventListener("click", (e)=>{ if (e.target === $("detail")) closeDetail(); });
   initToday();
