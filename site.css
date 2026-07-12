@@ -112,6 +112,11 @@ input.search{background:#fff;border:1px solid var(--line);border-radius:10px;pad
 
 footer.site{padding:40px 0 90px;color:var(--muted);font-size:14px;text-align:center;border-top:1px solid var(--line);margin-top:20px;}
 footer .adminlink{color:var(--muted);opacity:.5;font-size:12px;}
+.follow{margin-top:20px;}
+.follow > span{display:block;font-size:13px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px;}
+.social{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.social a{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:9px 16px;font-size:14px;font-weight:600;color:var(--ink);transition:transform .06s ease,border-color .15s ease;}
+.social a:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent);}
 
 /* Mobile bottom nav */
 @media (max-width:720px){
