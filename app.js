@@ -154,6 +154,7 @@ function setActiveVerse() {
   track.sources.forEach((s) => { const li = document.createElement("li"); li.textContent = s; ul.appendChild(li); });
 
   $("verse-meaning").textContent = meaningFor(v);
+  updateFavVerse();
   stopSpeak(); // stop any narration from the previous verse
 
   applyDailyLanguage(); // sets daily.trans then renders
@@ -197,6 +198,14 @@ async function applyDailyLanguage() {
 function renderDailyAll() {
   renderDailyPreview();
   renderPlatformCards();
+}
+
+function updateFavVerse() {
+  const btn = $("fav-verse");
+  if (!btn || !daily.verse) return;
+  const on = isFav("verse", daily.verse.ref);
+  btn.textContent = on ? "♥ Saved" : "♡ Save";
+  btn.classList.toggle("faved", on);
 }
 
 /* ---- Grammar / meaning fidelity check (back-translation) ---------- */
@@ -677,6 +686,7 @@ function initDaily() {
   $("stop-listen-btn").onclick = stopSpeak;
   $("script-btn").onclick = downloadNarrationScript;
   $("localize-captions").onclick = localizeCaptions;
+  $("fav-verse").onclick = () => { toggleFav("verse", daily.verse.ref, `${daily.verse.ref} — ${daily.verse.text.slice(0, 40)}…`); updateFavVerse(); };
 
   // default: Bible, day 1
   daily.activeSource = "Bible"; daily.dayIndex = 0;
@@ -974,7 +984,7 @@ function initSchedule() {
 /*  Tabs + boot                                                        */
 /* ================================================================== */
 function initTabs() {
-  const panels = { daily: "tab-daily", studio: "tab-studio", schedule: "tab-schedule" };
+  const panels = { daily: "tab-daily", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule" };
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -998,6 +1008,7 @@ function init() {
   initDaily();
   initStudio();
   initSchedule();
+  initHub();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);

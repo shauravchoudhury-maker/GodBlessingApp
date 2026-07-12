@@ -25,6 +25,7 @@
     </div>
     <nav class="tabs">
       <button class="tab active" data-tab="daily"><span class="tab-ico">🏠</span><span class="tab-lbl">Daily</span></button>
+      <button class="tab" data-tab="read"><span class="tab-ico">📖</span><span class="tab-lbl">Read</span></button>
       <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
       <button class="tab" data-tab="schedule"><span class="tab-ico">🗓</span><span class="tab-lbl">Schedule</span></button>
     </nav>
@@ -57,6 +58,7 @@
           <button class="btn small" id="listen-btn">🎙 Listen (podcast)</button>
           <button class="btn ghost small" id="stop-listen-btn" style="display:none;">⏹ Stop</button>
           <button class="btn ghost small" id="script-btn">⬇ Script</button>
+          <button class="btn ghost small" id="fav-verse">♡ Save</button>
         </div>
       </div>
 
@@ -140,6 +142,73 @@
         <div class="preview-wrap">
           <video id="video-preview" controls playsinline muted></video>
         </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ READ HUB ============================ -->
+  <main class="app hidden" id="tab-read">
+    <div id="read-sections" style="display:contents;">
+      <section class="panel wide">
+        <div class="hub-streak" id="hub-streak"></div>
+      </section>
+
+      <section class="panel wide">
+        <div class="panel-head"><span class="step-num">📖</span><h2>Sermons &amp; Devotionals</h2></div>
+        <p class="hint">Short reflections on Bible &amp; Gita verses — read them, listen to them, translate them, and save the ones that speak to you.</p>
+        <div class="sched-toolbar">
+          <label>Source
+            <select id="sermon-source"><option value="all">All</option><option value="Bible">Bible</option><option value="Gita">Bhagavad Gita</option></select>
+          </label>
+          <label>Theme <select id="sermon-theme"><option value="all">All</option></select></label>
+        </div>
+        <div class="sermon-list" id="sermon-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="step-num">❤</span><h2>Saved</h2></div>
+        <div id="saved-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span class="step-num">🙏</span><h2>Prayer &amp; reflection journal</h2></div>
+        <textarea id="journal-input" rows="3" placeholder="Write a prayer, a thought, or what today's verse stirred in you…"></textarea>
+        <div class="btn-row" style="margin-top:8px;">
+          <button class="btn" id="journal-add">Add entry</button>
+          <button class="btn ghost" id="journal-export">⬇ Export</button>
+        </div>
+        <div id="journal-list" style="margin-top:12px;"></div>
+      </section>
+
+      <section class="panel wide">
+        <div class="panel-head"><span class="step-num">🔔</span><h2>Daily reminder</h2></div>
+        <label class="checkbox"><input type="checkbox" id="reminder-toggle" /> Remind me daily</label>
+        <div class="field inline"><label>Time <input type="time" id="reminder-time" value="08:00" /></label>
+          <button class="btn ghost small" id="reminder-test">Send test</button></div>
+        <p class="hint" id="reminder-status"></p>
+        <p class="hint">Reminders fire when you open EverVerse around your chosen time. Guaranteed background reminders (even when the app is closed) come with the future community update.</p>
+      </section>
+    </div>
+
+    <!-- Sermon reader -->
+    <section class="panel wide hidden" id="sermon-reader">
+      <button class="btn ghost small" id="reader-back">← Back to library</button>
+      <h2 id="reader-title" style="margin:14px 0 4px;"></h2>
+      <div class="reader-meta" id="reader-meta"></div>
+      <blockquote class="reader-verse" id="reader-verse"></blockquote>
+      <div class="field">
+        <label for="reader-lang">🌐 Read in language</label>
+        <select id="reader-lang"></select>
+        <div class="translation-status" id="reader-trans-status"></div>
+      </div>
+      <div class="reader-body" id="reader-body"></div>
+      <div class="reader-takeaway" id="reader-takeaway"></div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn" id="reader-listen">🎙 Listen</button>
+        <button class="btn ghost" id="reader-stop" style="display:none;">⏹ Stop</button>
+        <button class="btn ghost" id="reader-fav">♡ Save</button>
+        <button class="btn ghost" id="reader-share">📤 Share</button>
+        <button class="btn ghost" id="reader-download">⬇ Download</button>
       </div>
     </section>
   </main>
@@ -258,10 +327,12 @@
 
   <script src="verses.js"></script>
   <script src="meanings.js"></script>
+  <script src="sermons.js"></script>
   <script src="content.js"></script>
   <script src="backgrounds.js"></script>
   <script src="zip.js"></script>
   <script src="video.js"></script>
+  <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
