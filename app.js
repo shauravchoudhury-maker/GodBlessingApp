@@ -235,22 +235,14 @@ async function generateDailyVideo() {
 
 /* ---- Voice-over podcast (Web Speech API) -------------------------- */
 function stopSpeak() {
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  EVVoice.stop();
   const s = $("stop-listen-btn"), l = $("listen-btn");
   if (s) s.style.display = "none";
   if (l) l.textContent = "🎙 Listen (podcast)";
 }
 function speakVerse() {
   if (!window.speechSynthesis) { $("share-hint").textContent = "Voice isn't supported in this browser."; return; }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(narrationFor(daily.verse));
-  u.rate = 0.9; u.pitch = 1.0; u.volume = 1.0;
-  const voices = speechSynthesis.getVoices();
-  const en = voices.find((v) => /^en[-_]/i.test(v.lang)) || voices[0];
-  if (en) u.voice = en;
-  u.onend = stopSpeak;
-  u.onerror = stopSpeak;
-  speechSynthesis.speak(u);
+  EVVoice.speak(narrationFor(daily.verse), { lang: "en", onend: stopSpeak, onerror: stopSpeak });
   $("stop-listen-btn").style.display = "inline-block";
   $("listen-btn").textContent = "🔊 Speaking…";
 }
@@ -592,6 +584,8 @@ function initDaily() {
   $("share-video").onclick = shareVideo;
   $("listen-btn").onclick = speakVerse;
   $("stop-listen-btn").onclick = stopSpeak;
+  $("daily-voice").value = EVVoice.pref();
+  $("daily-voice").onchange = () => EVVoice.setPref($("daily-voice").value);
   $("script-btn").onclick = downloadNarrationScript;
   $("localize-captions").onclick = localizeCaptions;
   $("fav-verse").onclick = () => { toggleFav("verse", daily.verse.ref, `${daily.verse.ref} — ${daily.verse.text.slice(0, 40)}…`); updateFavVerse(); };

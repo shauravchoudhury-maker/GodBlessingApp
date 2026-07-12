@@ -48,16 +48,7 @@ async function translateText(text, to, from) {
   const out = data && data.responseData && data.responseData.translatedText;
   if (!out) throw new Error("unavailable"); return out;
 }
-function speakText(text, lang) {
-  if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text); u.rate = 0.92;
-  const voices = speechSynthesis.getVoices();
-  const m = (lang && lang !== "en" ? voices.find((v)=>v.lang && v.lang.toLowerCase().startsWith(lang)) : null)
-    || voices.find((v)=>/^en/i.test(v.lang)) || voices[0];
-  if (m) u.voice = m;
-  speechSynthesis.speak(u);
-}
+function speakText(text, lang) { EVVoice.speak(text, { lang: lang || "en" }); }
 function fillLangSelect(sel) { sel.innerHTML = ""; sel.add(new Option("English","en")); LANGUAGES.forEach((l)=>sel.add(new Option(l.name,l.code))); }
 
 /* ---- Navigation --------------------------------------------------- */
@@ -200,10 +191,12 @@ function openVerseDetail(v) {
        <div class="status" id="dt-status"></div>
        <div class="acts">
          <button class="btn ghost sm" id="dt-listen">🎙 Listen</button>
+         <select class="pill" id="dt-voice" style="padding:7px 9px;font-size:13px;"><option value="female">Female voice</option><option value="male">Male voice</option></select>
          <button class="btn primary sm" id="dt-share">📤 Share</button>
        </div>
      </div>`;
   renderVerseImage($("dt-canvas"), v, 720, 720);
+  $("dt-voice").value = EVVoice.pref(); $("dt-voice").onchange = ()=>EVVoice.setPref($("dt-voice").value);
   $("dt-verse").textContent = `“${v.text}”`;
   $("dt-mean").innerHTML = `<b>In simple words:</b> ${escapeHtml(meaningFor(v))}`;
   fillLangSelect($("dt-lang"));
@@ -261,10 +254,12 @@ function openSermonDetail(s) {
        <div class="mean" id="dt-take"></div>
        <div class="acts">
          <button class="btn ghost sm" id="dt-listen">🎙 Listen</button>
+         <select class="pill" id="dt-voice" style="padding:7px 9px;font-size:13px;"><option value="female">Female voice</option><option value="male">Male voice</option></select>
          <button class="btn primary sm" id="dt-share">📤 Share</button>
        </div>
      </div>`;
   renderSermonBodyInto();
+  $("dt-voice").value = EVVoice.pref(); $("dt-voice").onchange = ()=>EVVoice.setPref($("dt-voice").value);
   fillLangSelect($("dt-lang"));
   $("dt-close").onclick = closeDetail;
   $("dt-lang").onchange = ()=>translateDetailSermon($("dt-lang").value);

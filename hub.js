@@ -157,20 +157,12 @@ function sermonNarration() {
 }
 function speakSermon() {
   if (!window.speechSynthesis) { $$("reader-trans-status").textContent = "Voice isn't supported in this browser."; return; }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(sermonNarration());
-  u.rate = 0.92;
-  const voices = speechSynthesis.getVoices();
-  const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(sermonLang)) ||
-    voices.find((v) => /^en/i.test(v.lang)) || voices[0];
-  if (match) u.voice = match;
-  u.onend = stopSermonSpeak; u.onerror = stopSermonSpeak;
-  speechSynthesis.speak(u);
+  EVVoice.speak(sermonNarration(), { lang: sermonLang, onend: stopSermonSpeak, onerror: stopSermonSpeak });
   $$("reader-stop").style.display = "inline-block";
   $$("reader-listen").textContent = "🔊 Speaking…";
 }
 function stopSermonSpeak() {
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  EVVoice.stop();
   const s = $$("reader-stop"), l = $$("reader-listen");
   if (s) s.style.display = "none";
   if (l) l.textContent = "🎙 Listen";
