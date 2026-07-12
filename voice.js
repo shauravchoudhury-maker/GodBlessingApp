@@ -29,17 +29,33 @@ const EVVoice = (function () {
   function pref() { try { return localStorage.getItem("ev_voice_gender") || "female"; } catch (e) { return "female"; } }
   function setPref(g) { try { localStorage.setItem("ev_voice_gender", g); } catch (e) {} }
 
-  function pick(lang, gender) {
+  // Full locale hint so the engine can choose a language-appropriate voice
+  // even when no exact voice object is installed for that language.
+  const LANG_BCP = { en:"en-US", es:"es-ES", pt:"pt-BR", hi:"hi-IN", fr:"fr-FR",
+    de:"de-DE", it:"it-IT", ar:"ar-SA", zh:"zh-CN", ja:"ja-JP", ko:"ko-KR",
+    ru:"ru-RU", nl:"nl-NL", tr:"tr-TR", pl:"pl-PL", uk:"uk-UA", id:"id-ID",
+    vi:"vi-VN", th:"th-TH", he:"he-IL", fa:"fa-IR", ta:"ta-IN", te:"te-IN", bn:"bn-IN" };
+
+  // Strict language match (no English fallback) so foreign text isn't read by an English voice.
+  function pickForLang(l, gender) {
     if (!voices.length) load();
-    const l = (lang || "en").slice(0, 2).toLowerCase();
-    gender = gender || pref();
-    let cands = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(l));
-    if (!cands.length) cands = voices.filter((v) => /^en/i.test(v.lang));
-    if (!cands.length) cands = voices.slice();
+    const cands = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(l));
+    if (!cands.length) return null;
     const byGender = cands.filter((v) => genderOf(v) === gender);
     const pool = byGender.length ? byGender : cands;
     pool.sort((a, b) => score(b) - score(a));
-    return pool[0] || null;
+    return pool[0];
+  }
+  function pick(lang, gender) { // English-tolerant, kept for callers that want a voice
+    const l = (lang || "en").slice(0, 2).toLowerCase();
+    return pickForLang(l, gender || pref()) || pickForLang("en", gender || pref());
+  }
+
+  // Does the device actually have a voice for this language?
+  function hasVoiceFor(lang) {
+    if (!voices.length) load();
+    const l = (lang || "en").slice(0, 2).toLowerCase();
+    return voices.some((v) => v.lang && v.lang.toLowerCase().startsWith(l));
   }
 
   function speak(text, opts) {
@@ -50,8 +66,10 @@ const EVVoice = (function () {
     u.rate = opts.rate || 0.88;   // a touch slower = calmer, softer
     u.pitch = opts.pitch || 1.0;
     u.volume = 1;
-    const v = pick(opts.lang, opts.gender);
+    const l = (opts.lang || "en").slice(0, 2).toLowerCase();
+    const v = pickForLang(l, opts.gender || pref());
     if (v) { u.voice = v; u.lang = v.lang; }
+    else { u.lang = LANG_BCP[l] || l; } // let the engine choose a lang-appropriate voice
     if (opts.onend) u.onend = opts.onend;
     if (opts.onerror) u.onerror = opts.onerror;
     // Chrome sometimes drops a speak() issued immediately after cancel().
@@ -59,7 +77,7 @@ const EVVoice = (function () {
   }
   function stop() { try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} }
 
-  return { speak, stop, pick, pref, setPref, genderOf, reload: load };
+  return { speak, stop, pick, pref, setPref, genderOf, hasVoiceFor, reload: load };
 })();
 
 // Build a small Female/Male voice <select>, wired to the shared preference.

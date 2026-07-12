@@ -32,9 +32,11 @@ function buildLangBlock(v, container) {
     const l = document.createElement("span"); l.className = "lb-lang"; l.textContent = label;
     const t = document.createElement("span"); t.className = "lb-text"; t.textContent = "…";
     if (code === "hi" || code === "ar") t.dir = "auto";
-    row.append(l, t); list.appendChild(row);
+    const b = document.createElement("button"); b.className = "lb-listen"; b.textContent = "🔊";
+    b.title = "Listen in " + label; b.disabled = true;
+    row.append(l, t, b); list.appendChild(row);
     translateCached(v.text, code)
-      .then((tr) => { t.textContent = tr; })
+      .then((tr) => { t.textContent = tr; b.disabled = false; b.onclick = () => speakText(tr, code); })
       .catch(() => { t.textContent = "(translation unavailable — tap Read)"; });
   });
 }
