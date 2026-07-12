@@ -3,336 +3,275 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>EverVerse — Daily Verse Studio</title>
-  <meta name="description" content="Daily scripture verses turned into shareable images, videos and captions for every platform." />
+  <title>EverVerse — Daily faith, for every soul</title>
+  <meta name="description" content="EverVerse brings daily verses, sermons and blessings from the world's wisdom traditions — in your language, on your phone, one tap away." />
   <meta name="theme-color" content="#0e1220" />
-  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="EverVerse" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-180.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root{
+      --ink:#1c1a2e; --muted:#6b6b84; --accent:#7c5cff; --accent2:#3bb4bf;
+      --line:#eae7f5; --cream:#fbfaff; --card:#ffffff;
+      --grad:linear-gradient(135deg,#7c5cff 0%,#4bc0c8 100%);
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+    body{
+      font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--ink); background:var(--cream); line-height:1.6;
+      -webkit-font-smoothing:antialiased;
+    }
+    .serif{font-family:Georgia,"Times New Roman",serif;}
+    a{color:inherit;}
+    .wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
+
+    /* Header */
+    header.site{position:sticky;top:0;z-index:20;background:rgba(251,250,255,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+    .bar{display:flex;align-items:center;gap:12px;height:64px;}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:.2px;}
+    .logo .mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--grad);color:#fff;font-size:19px;box-shadow:0 6px 16px rgba(124,92,255,.35);}
+    .prelaunch-badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);background:#f0ecff;border:1px solid #e0d8ff;padding:3px 9px;border-radius:20px;}
+    .bar .spacer{flex:1;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-weight:700;font-size:15px;padding:12px 20px;border-radius:12px;text-decoration:none;transition:transform .06s ease,box-shadow .2s ease;}
+    .btn:active{transform:translateY(1px);}
+    .btn.primary{background:var(--grad);color:#fff;box-shadow:0 8px 22px rgba(124,92,255,.32);}
+    .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+    .btn.sm{padding:9px 14px;font-size:14px;border-radius:10px;}
+
+    /* Hero */
+    .hero{position:relative;overflow:hidden;background:var(--grad);color:#fff;}
+    .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(700px 380px at 78% 8%,rgba(255,255,255,.28),transparent 60%);pointer-events:none;}
+    .hero .wrap{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center;padding:72px 22px 84px;}
+    .hero h1{font-size:clamp(34px,5vw,52px);line-height:1.08;margin:0 0 16px;font-weight:800;letter-spacing:-.5px;}
+    .hero p.sub{font-size:clamp(16px,2vw,19px);opacity:.95;margin:0 0 26px;max-width:520px;}
+    .hero .cta{display:flex;gap:12px;flex-wrap:wrap;}
+    .hero .btn.primary{background:#fff;color:#3a2b8f;}
+    .hero .btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4);}
+    .faiths{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:26px;font-size:14px;opacity:.95;}
+    .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.34);padding:6px 12px;border-radius:20px;font-weight:600;}
+
+    /* Verse card */
+    .verse-card{background:rgba(255,255,255,.97);color:var(--ink);border-radius:20px;padding:28px;box-shadow:0 30px 70px rgba(20,10,60,.28);}
+    .verse-card .tag{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);}
+    .verse-card blockquote{font-size:22px;line-height:1.45;margin:12px 0 10px;}
+    .verse-card .ref{color:var(--accent2);font-weight:700;font-size:14px;}
+    .verse-card .mean{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);}
+    .verse-card .mean b{color:var(--accent);}
+
+    /* Sections */
+    section.band{padding:66px 0;}
+    .eyebrow{text-align:center;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:13px;margin-bottom:10px;}
+    h2.title{text-align:center;font-size:clamp(26px,3.4vw,36px);margin:0 auto 14px;max-width:720px;line-height:1.2;font-weight:800;letter-spacing:-.3px;}
+    p.lede{text-align:center;color:var(--muted);max-width:640px;margin:0 auto 40px;font-size:17px;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+    .feature{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;transition:transform .1s ease,box-shadow .2s ease;}
+    .feature:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(20,10,60,.08);}
+    .feature .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:#f2eeff;margin-bottom:14px;}
+    .feature h3{margin:0 0 6px;font-size:18px;}
+    .feature p{margin:0;color:var(--muted);font-size:15px;}
+
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+    .step{text-align:center;padding:10px;}
+    .step .n{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;background:var(--grad);color:#fff;font-weight:800;font-size:19px;}
+    .step h3{margin:0 0 6px;font-size:18px;}
+    .step p{margin:0;color:var(--muted);font-size:15px;}
+
+    .everyone{background:linear-gradient(180deg,#f6f3ff,#fbfaff);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+    .everyone .wrap{text-align:center;padding:64px 22px;}
+    .everyone blockquote{font-size:clamp(22px,3vw,30px);line-height:1.4;max-width:760px;margin:0 auto;font-weight:600;}
+    .everyone .by{margin-top:16px;color:var(--muted);font-size:15px;}
+
+    .finalcta{text-align:center;}
+    .finalcta .box{background:var(--grad);color:#fff;border-radius:24px;padding:56px 26px;box-shadow:0 26px 60px rgba(124,92,255,.28);}
+    .finalcta h2{font-size:clamp(26px,3.4vw,34px);margin:0 0 12px;color:#fff;}
+    .finalcta p{opacity:.95;max-width:520px;margin:0 auto 24px;font-size:17px;}
+    .finalcta .btn.primary{background:#fff;color:#3a2b8f;}
+    .finalcta .btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4);}
+
+    footer.site{padding:40px 0 60px;color:var(--muted);font-size:14px;}
+    footer .row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+    footer .note{font-size:13px;opacity:.9;max-width:560px;}
+
+    /* Gate modal */
+    .gate{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:rgba(20,12,45,.55);backdrop-filter:blur(4px);padding:20px;}
+    .gate.open{display:grid;}
+    .gate .panel{background:#fff;border-radius:18px;padding:28px;max-width:380px;width:100%;box-shadow:0 30px 70px rgba(0,0,0,.35);text-align:center;}
+    .gate .mark{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--grad);color:#fff;font-size:28px;margin:0 auto 14px;}
+    .gate h3{margin:0 0 6px;font-size:20px;}
+    .gate p{color:var(--muted);font-size:14px;margin:0 0 18px;}
+    .gate input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;margin-bottom:12px;text-align:center;letter-spacing:2px;}
+    .gate .err{color:#d13b3b;font-size:13px;min-height:18px;margin-bottom:8px;}
+    .gate .close{margin-top:12px;color:var(--muted);font-size:13px;cursor:pointer;background:none;border:none;}
+
+    @media (max-width:820px){
+      .hero .wrap{grid-template-columns:1fr;gap:30px;padding:52px 22px 60px;}
+      .grid,.steps{grid-template-columns:1fr;}
+      .prelaunch-badge{display:none;}
+    }
+  </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <span class="brand-mark">✦</span>
-      <div>
-        <h1>EverVerse</h1>
-        <p class="tagline">One verse a day → ready-to-post images &amp; captions for every platform</p>
-      </div>
+  <header class="site">
+    <div class="wrap bar">
+      <div class="logo"><span class="mark">✦</span> EverVerse</div>
+      <span class="prelaunch-badge" id="badge">Launching soon</span>
+      <div class="spacer"></div>
+      <a class="btn ghost sm" href="#features">Explore</a>
+      <button class="btn primary sm" data-enter>Enter</button>
     </div>
-    <nav class="tabs">
-      <button class="tab active" data-tab="daily"><span class="tab-ico">🏠</span><span class="tab-lbl">Daily</span></button>
-      <button class="tab" data-tab="read"><span class="tab-ico">📖</span><span class="tab-lbl">Read</span></button>
-      <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
-      <button class="tab" data-tab="schedule"><span class="tab-ico">🗓</span><span class="tab-lbl">Schedule</span></button>
-    </nav>
   </header>
 
-  <!-- ============================ DAILY ============================ -->
-  <main class="app" id="tab-daily">
-    <section class="panel">
-      <div class="panel-head"><span class="step-num">1</span><h2>Today's verse</h2></div>
-
-      <div class="field">
-        <label for="bible-select">📖 Bible — verse for the next 120 days</label>
-        <select id="bible-select"></select>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Faith, every day —<br>for every soul.</h1>
+        <p class="sub">Daily verses, sermons and blessings from the world's great wisdom traditions. In your language, on your phone, one tap away.</p>
+        <div class="cta">
+          <button class="btn primary" data-enter>✦ Enter EverVerse</button>
+          <a class="btn ghost" href="#install">Add to your phone</a>
+        </div>
+        <div class="faiths">
+          <span>One tap to:</span>
+          <span class="chip">✝ Bible</span>
+          <span class="chip">🕉 Bhagavad Gita</span>
+          <span class="chip">☾ &amp; more traditions coming</span>
+        </div>
       </div>
-      <div class="field">
-        <label for="gita-select">🕉 Bhagavad Gita — verse for the next 120 days</label>
-        <select id="gita-select"></select>
-      </div>
-      <button class="btn ghost small" id="today-btn">↺ Reset to today (Bible)</button>
-
       <div class="verse-card" id="verse-card">
-        <div class="verse-badges">
-          <span class="badge" id="verse-faith">—</span>
-          <span class="badge alt" id="verse-topic">—</span>
-        </div>
-        <blockquote class="verse-text" id="verse-text">Loading today's blessing…</blockquote>
-        <cite class="verse-ref" id="verse-ref">—</cite>
-        <p class="verse-meaning" id="verse-meaning"></p>
-        <div class="voiceover">
-          <button class="btn small" id="listen-btn">🎙 Listen (podcast)</button>
-          <button class="btn ghost small" id="stop-listen-btn" style="display:none;">⏹ Stop</button>
-          <button class="btn ghost small" id="script-btn">⬇ Script</button>
-          <button class="btn ghost small" id="fav-verse">♡ Save</button>
-        </div>
+        <div class="tag">Today's blessing</div>
+        <blockquote class="serif" id="hv-text">Loading today's verse…</blockquote>
+        <div class="ref" id="hv-ref"></div>
+        <div class="mean" id="hv-mean"></div>
       </div>
-
-      <div class="field">
-        <label for="daily-lang">🌐 Show verse in language</label>
-        <select id="daily-lang"></select>
-        <div class="translation-status" id="daily-trans-status"></div>
-        <button class="btn ghost small" id="verify-meaning" style="display:none; margin-top:6px;">🔎 Verify meaning (grammar check)</button>
-        <div class="fidelity" id="fidelity-box"></div>
-      </div>
-
-      <div class="field">
-        <label for="daily-bg">Background art</label>
-        <select id="daily-bg"></select>
-      </div>
-      <div class="field">
-        <label for="daily-palette">Color palette</label>
-        <select id="daily-palette"></select>
-      </div>
-
-      <div class="music-card" id="music-card">
-        <div class="music-head">🎵 Suggested music <span id="music-mood" class="badge alt"></span></div>
-        <div class="music-idea" id="music-idea">—</div>
-        <details>
-          <summary>Where to find free-to-use tracks</summary>
-          <ul id="music-sources"></ul>
-        </details>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head"><span class="step-num">2</span><h2>Preview</h2></div>
-      <div class="preview-wrap">
-        <canvas id="daily-canvas" width="1080" height="1080"></canvas>
-      </div>
-      <label class="checkbox"><input type="checkbox" id="daily-watermark" checked /> Add “EverVerse” mark</label>
-      <button class="btn accent block" id="share-today">📤 Share today's post</button>
-      <p class="hint" id="share-hint"></p>
-    </section>
-
-    <section class="panel wide">
-      <div class="panel-head"><span class="step-num">3</span><h2>Your daily post kit</h2></div>
-      <p class="hint">One click builds a sized image + tailored caption &amp; hashtags for every platform, zipped together.</p>
-      <div class="btn-row kit-actions">
-        <button class="btn accent" id="download-kit">⬇ Download Post Kit (.zip)</button>
-        <button class="btn" id="gen-top8">🌐 Top-8 language images (.zip)</button>
-        <button class="btn" id="localize-captions" style="display:none;">🌐 Localize captions</button>
-        <span class="kit-status" id="kit-status"></span>
-      </div>
-      <div class="kit-status" id="top8-status"></div>
-      <div class="kit-status" id="localize-status"></div>
-      <div class="platform-grid" id="platform-grid"></div>
-    </section>
-
-    <section class="panel wide">
-      <div class="panel-head"><span class="step-num">4</span><h2>Video &amp; music</h2></div>
-      <p class="hint">Creates a short animated video (moving background + fading verse) with original, browser-synthesized music — royalty-free by construction. Exports .webm (works on YouTube/Facebook; for TikTok/Reels you can drop the webm into any free converter or the platform's editor).</p>
-      <div class="video-grid">
-        <div class="controls">
-          <div class="field">
-            <label for="vid-format">Format</label>
-            <select id="vid-format">
-              <option value="portrait">Vertical 9:16 (Reels/TikTok/Shorts)</option>
-              <option value="square">Square 1:1</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="vid-duration">Duration</label>
-            <select id="vid-duration">
-              <option value="10">10 seconds</option>
-              <option value="12" selected>12 seconds</option>
-              <option value="15">15 seconds</option>
-            </select>
-          </div>
-          <label class="checkbox"><input type="checkbox" id="vid-music" checked /> Include music</label>
-          <button class="btn accent" id="gen-video">🎬 Generate video</button>
-          <div class="kit-status" id="video-status"></div>
-          <button class="btn" id="share-video" style="display:none;">📤 Share video</button>
-          <a id="video-download" class="btn" style="display:none;">⬇ Download .webm</a>
-        </div>
-        <div class="preview-wrap">
-          <video id="video-preview" controls playsinline muted></video>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- ============================ READ HUB ============================ -->
-  <main class="app hidden" id="tab-read">
-    <div id="read-sections" style="display:contents;">
-      <section class="panel wide">
-        <div class="hub-streak" id="hub-streak"></div>
-      </section>
-
-      <section class="panel wide">
-        <div class="panel-head"><span class="step-num">📖</span><h2>Sermons &amp; Devotionals</h2></div>
-        <p class="hint">Short reflections on Bible &amp; Gita verses — read them, listen to them, translate them, and save the ones that speak to you.</p>
-        <div class="sched-toolbar">
-          <label>Source
-            <select id="sermon-source"><option value="all">All</option><option value="Bible">Bible</option><option value="Gita">Bhagavad Gita</option></select>
-          </label>
-          <label>Theme <select id="sermon-theme"><option value="all">All</option></select></label>
-        </div>
-        <div class="sermon-list" id="sermon-list"></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head"><span class="step-num">❤</span><h2>Saved</h2></div>
-        <div id="saved-list"></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head"><span class="step-num">🙏</span><h2>Prayer &amp; reflection journal</h2></div>
-        <textarea id="journal-input" rows="3" placeholder="Write a prayer, a thought, or what today's verse stirred in you…"></textarea>
-        <div class="btn-row" style="margin-top:8px;">
-          <button class="btn" id="journal-add">Add entry</button>
-          <button class="btn ghost" id="journal-export">⬇ Export</button>
-        </div>
-        <div id="journal-list" style="margin-top:12px;"></div>
-      </section>
-
-      <section class="panel wide">
-        <div class="panel-head"><span class="step-num">🔔</span><h2>Daily reminder</h2></div>
-        <label class="checkbox"><input type="checkbox" id="reminder-toggle" /> Remind me daily</label>
-        <div class="field inline"><label>Time <input type="time" id="reminder-time" value="08:00" /></label>
-          <button class="btn ghost small" id="reminder-test">Send test</button></div>
-        <p class="hint" id="reminder-status"></p>
-        <p class="hint">Reminders fire when you open EverVerse around your chosen time. Guaranteed background reminders (even when the app is closed) come with the future community update.</p>
-      </section>
     </div>
+  </section>
 
-    <!-- Sermon reader -->
-    <section class="panel wide hidden" id="sermon-reader">
-      <button class="btn ghost small" id="reader-back">← Back to library</button>
-      <h2 id="reader-title" style="margin:14px 0 4px;"></h2>
-      <div class="reader-meta" id="reader-meta"></div>
-      <blockquote class="reader-verse" id="reader-verse"></blockquote>
-      <div class="field">
-        <label for="reader-lang">🌐 Read in language</label>
-        <select id="reader-lang"></select>
-        <div class="translation-status" id="reader-trans-status"></div>
+  <!-- FEATURES -->
+  <section class="band" id="features">
+    <div class="wrap">
+      <div class="eyebrow">A daily home for faith</div>
+      <h2 class="title">Everything you need for a daily moment of meaning</h2>
+      <p class="lede">Read it, feel it, hear it, and share it — from any tradition, in any language, in seconds.</p>
+      <div class="grid">
+        <div class="feature"><div class="ic">📖</div><h3>Daily verses &amp; meanings</h3><p>A verse each day from the Bible and Bhagavad Gita — with the meaning explained in plain, human words.</p></div>
+        <div class="feature"><div class="ic">🎙️</div><h3>Sermons you can listen to</h3><p>Short, warm devotionals you can read or hear narrated aloud — like a daily faith podcast.</p></div>
+        <div class="feature"><div class="ic">🎨</div><h3>Beautiful images &amp; videos</h3><p>Turn any verse into a shareable image or a short video with music — ready for every platform.</p></div>
+        <div class="feature"><div class="ic">🌍</div><h3>32 languages, meaning intact</h3><p>Read and share in your language, with a built-in check so the message is never lost in translation.</p></div>
+        <div class="feature"><div class="ic">🙏</div><h3>Save, reflect, keep a journal</h3><p>Favorite the verses that move you, build a daily streak, and keep a private prayer journal.</p></div>
+        <div class="feature"><div class="ic">📲</div><h3>Free, offline &amp; installable</h3><p>Add EverVerse to your home screen. No account, no cost, works without a signal.</p></div>
       </div>
-      <div class="reader-body" id="reader-body"></div>
-      <div class="reader-takeaway" id="reader-takeaway"></div>
-      <div class="btn-row" style="margin-top:16px;">
-        <button class="btn" id="reader-listen">🎙 Listen</button>
-        <button class="btn ghost" id="reader-stop" style="display:none;">⏹ Stop</button>
-        <button class="btn ghost" id="reader-fav">♡ Save</button>
-        <button class="btn ghost" id="reader-share">📤 Share</button>
-        <button class="btn ghost" id="reader-download">⬇ Download</button>
-      </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <!-- ============================ STUDIO ============================ -->
-  <main class="app hidden" id="tab-studio">
-    <section class="panel">
-      <div class="panel-head"><span class="step-num">1</span><h2>Choose a verse</h2></div>
-      <div class="field">
-        <label for="faith-select">Filter by source</label>
-        <select id="faith-select"><option value="all">All sources</option></select>
+  <!-- ONE CLICK -->
+  <section class="band" style="background:#f8f6ff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="eyebrow">One click. Every day.</div>
+      <h2 class="title">Your daily blessing, in three taps</h2>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h3>Open EverVerse</h3><p>Today's verse is already waiting — no searching, no scrolling.</p></div>
+        <div class="step"><div class="n">2</div><h3>Read, hear &amp; feel it</h3><p>The verse, its meaning in simple words, and a voice to speak it over you.</p></div>
+        <div class="step"><div class="n">3</div><h3>Share the light</h3><p>Send a beautiful image or video to anyone who needs it — in their language.</p></div>
       </div>
-      <div class="field">
-        <label for="verse-select">Verse</label>
-        <select id="verse-select"></select>
-      </div>
-      <div class="or-divider"><span>or write your own</span></div>
-      <div class="field"><label for="custom-text">Custom text</label><textarea id="custom-text" rows="3" placeholder="Paste or type any verse, quote or blessing…"></textarea></div>
-      <div class="field"><label for="custom-ref">Reference (optional)</label><input id="custom-ref" type="text" placeholder="e.g. Psalm 23:1" /></div>
-      <button class="btn ghost" id="use-custom-btn">Use custom text</button>
-    </section>
+    </div>
+  </section>
 
-    <section class="panel">
-      <div class="panel-head"><span class="step-num">2</span><h2>Translate</h2></div>
-      <div class="source-box">
-        <div class="source-ref" id="source-ref">—</div>
-        <div class="source-text" id="source-text">Select a verse to begin.</div>
-      </div>
-      <div class="field"><label for="lang-select">Language</label><select id="lang-select"></select></div>
-      <div class="btn-row">
-        <button class="btn" id="translate-btn" disabled>Translate</button>
-        <button class="btn ghost" id="translate-all-btn" disabled>Translate top 8</button>
-      </div>
-      <div class="translation-status" id="translation-status"></div>
-      <div class="translation-list" id="translation-list"></div>
-    </section>
+  <!-- EVERYONE -->
+  <section class="everyone">
+    <div class="wrap">
+      <div class="eyebrow" style="color:var(--accent);">For all of us</div>
+      <blockquote class="serif">A single, welcoming home for the world's faith — where anyone, from any tradition, can find a moment of peace, meaning and belonging, every single day.</blockquote>
+      <div class="by">EverVerse · a multi-faith platform for all humans</div>
+    </div>
+  </section>
 
-    <section class="panel wide">
-      <div class="panel-head"><span class="step-num">3</span><h2>Design &amp; download</h2></div>
-      <div class="design-grid">
-        <div class="controls">
-          <div class="field"><label for="format-select">Format</label><select id="format-select"></select></div>
-          <div class="field"><label for="studio-bg">Background art</label><select id="studio-bg"></select></div>
-          <div class="field"><label for="palette-select">Color palette</label><select id="palette-select"></select></div>
-          <div class="field"><label for="render-lang">Text to show</label><select id="render-lang"></select></div>
-          <div class="field"><label for="font-scale">Text size <span id="font-scale-val">100%</span></label><input id="font-scale" type="range" min="60" max="160" value="100" /></div>
-          <label class="checkbox"><input type="checkbox" id="show-ref" checked /> Show reference</label>
-          <label class="checkbox"><input type="checkbox" id="show-watermark" /> Add “EverVerse” mark</label>
-          <button class="btn accent" id="download-btn">⬇ Download PNG</button>
+  <!-- INSTALL / FINAL CTA -->
+  <section class="band finalcta" id="install">
+    <div class="wrap">
+      <div class="box">
+        <h2>Begin your daily practice</h2>
+        <p>Open EverVerse, then add it to your home screen for a daily blessing that's always one tap away.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn primary" data-enter>✦ Enter EverVerse</button>
+          <a class="btn ghost" href="#top" onclick="alert('On your phone: open this page in your browser, then use the browser menu → “Add to Home Screen.”');return false;">How to install</a>
         </div>
-        <div class="preview-wrap"><canvas id="preview-canvas" width="1080" height="1080"></canvas></div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <!-- ============================ SCHEDULE ============================ -->
-  <main class="app hidden" id="tab-schedule">
-    <section class="panel wide">
-      <div class="panel-head"><span class="step-num">1</span><h2>Build your posting schedule</h2></div>
-      <div class="sched-toolbar">
-        <label>Source
-          <select id="sched-source">
-            <option value="Bible">Bible</option>
-            <option value="Gita">Bhagavad Gita</option>
-            <option value="Both">Both (2 posts/day)</option>
-          </select>
-        </label>
-        <label>Days
-          <select id="sched-days"><option>7</option><option>14</option><option>30</option></select>
-        </label>
-        <label>Time <input type="time" id="sched-time" value="09:00" /></label>
-        <label>Background <select id="sched-bg"></select></label>
-        <button class="btn" id="sched-build">↻ Build table</button>
-      </div>
-      <div class="sched-scroll"><table class="sched-table" id="sched-table"></table></div>
-    </section>
-
-    <section class="panel wide">
-      <div class="panel-head"><span class="step-num">2</span><h2>Verify &amp; export</h2></div>
-      <p class="hint">Review the verses &amp; captions above. For translated posts, use the <b>Verify meaning</b> button in the Daily Studio first. When you're happy, export the bundle and import it into your scheduler.</p>
-      <div class="btn-row">
-        <button class="btn accent" id="sched-export">⬇ Export schedule bundle (.zip)</button>
-        <span class="kit-status" id="sched-status"></span>
-      </div>
-      <p class="hint" style="margin-top:14px;">
-        The bundle contains <b>schedule.csv</b> (one row per post: date, time, platform, caption, hashtags, media file), one <b>image per post</b>, and a <b>README</b>.
-        Import <code>schedule.csv</code> into a bulk scheduler — <b>Buffer</b>, <b>Publer</b>, <b>Metricool</b>, or <b>Hootsuite</b> — connect your Instagram/TikTok/Facebook/YouTube/X accounts there once, and it auto-publishes at the times you set.
-        Your platform logins stay inside your scheduler; this app never sees or stores them. So your only steps are: <b>verify → import → it posts automatically.</b>
-      </p>
-    </section>
-
-    <section class="panel wide">
-      <div class="panel-head"><span class="step-num">3</span><h2>Weekly newsletter</h2></div>
-      <p class="hint">A ready-to-send recap of the week — each day's verse, its plain-language meaning, and a thought — as a styled email you can send to your community or post as a blog.</p>
-      <div class="sched-toolbar">
-        <label>Source
-          <select id="news-source">
-            <option value="Bible">Bible</option>
-            <option value="Gita">Bhagavad Gita</option>
-            <option value="Both">Both</option>
-          </select>
-        </label>
-        <label>Week starting <input type="date" id="news-start" /></label>
-        <button class="btn accent" id="gen-newsletter">📧 Generate newsletter</button>
-        <button class="btn ghost" id="download-newsletter" style="display:none;">⬇ Download .html</button>
-        <button class="btn ghost" id="copy-newsletter" style="display:none;">Copy HTML</button>
-        <span class="kit-status" id="news-status"></span>
-      </div>
-      <iframe id="news-preview" title="Newsletter preview"></iframe>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <p>Translations via the free MyMemory API. Backgrounds are original generated art (royalty-free). Bible text is public-domain / commonly-rendered; Gita verses are widely-accepted English renderings. Music entries are suggestions — add tracks from each platform's licensed library. 🌿</p>
+  <footer class="site">
+    <div class="wrap row">
+      <div class="logo"><span class="mark">✦</span> EverVerse</div>
+      <div class="note" id="foot-note">Pre-launch preview. EverVerse is being prepared for the world — thank you for being early.</div>
+    </div>
   </footer>
+
+  <!-- ACCESS GATE -->
+  <div class="gate" id="gate">
+    <div class="panel">
+      <div class="mark">✦</div>
+      <h3>Preview access</h3>
+      <p>EverVerse is in a private pre-launch. Enter your preview code to step inside.</p>
+      <input id="gate-code" type="password" inputmode="text" autocomplete="off" placeholder="preview code" />
+      <div class="err" id="gate-err"></div>
+      <button class="btn primary" id="gate-go" style="width:100%;">Enter EverVerse</button>
+      <button class="close" id="gate-close">Not yet — keep looking around</button>
+    </div>
+  </div>
 
   <script src="verses.js"></script>
   <script src="meanings.js"></script>
-  <script src="sermons.js"></script>
-  <script src="content.js"></script>
-  <script src="backgrounds.js"></script>
-  <script src="zip.js"></script>
-  <script src="video.js"></script>
-  <script src="hub.js"></script>
-  <script src="app.js"></script>
+  <script>
+    // ---- Pre-launch gate ----------------------------------------------
+    // Flip PRELAUNCH to false to open EverVerse to the public (Enter goes
+    // straight into the app with no code). Change PREVIEW_CODE to your own.
+    var PRELAUNCH = true;
+    var PREVIEW_CODE = "everlight";   // share only with trusted early testers
+    var APP_URL = "app.html";
+
+    function hasAccess(){ try { return localStorage.getItem("ev_preview_ok") === "1"; } catch(e){ return false; } }
+    function grantAccess(){ try { localStorage.setItem("ev_preview_ok","1"); } catch(e){} }
+
+    function enter(){
+      if (!PRELAUNCH || hasAccess()) { window.location.href = APP_URL; return; }
+      document.getElementById("gate").classList.add("open");
+      setTimeout(function(){ document.getElementById("gate-code").focus(); }, 50);
+    }
+    function tryCode(){
+      var v = document.getElementById("gate-code").value.trim().toLowerCase();
+      if (v === PREVIEW_CODE.toLowerCase()) { grantAccess(); window.location.href = APP_URL; }
+      else { document.getElementById("gate-err").textContent = "That code isn't right — try again."; }
+    }
+    document.querySelectorAll("[data-enter]").forEach(function(b){ b.addEventListener("click", enter); });
+    document.getElementById("gate-go").addEventListener("click", tryCode);
+    document.getElementById("gate-code").addEventListener("keydown", function(e){ if(e.key==="Enter") tryCode(); });
+    document.getElementById("gate-close").addEventListener("click", function(){ document.getElementById("gate").classList.remove("open"); });
+
+    // If public (post-launch), soften the pre-launch wording.
+    if (!PRELAUNCH){
+      var b=document.getElementById("badge"); if(b) b.style.display="none";
+      var f=document.getElementById("foot-note"); if(f) f.textContent="Daily faith, for every soul.";
+    }
+    if (hasAccess()){ var b2=document.getElementById("badge"); if(b2) b2.textContent="Preview access ✓"; }
+
+    // ---- Live "today's blessing" --------------------------------------
+    try{
+      var v = verseForDate(new Date());
+      document.getElementById("hv-text").textContent = "“" + v.text + "”";
+      document.getElementById("hv-ref").textContent = "— " + v.ref + "  ·  " + (v.faith==="Gita"?"Bhagavad Gita":"Bible");
+      document.getElementById("hv-mean").innerHTML = "<b>In simple words:</b> " + meaningFor(v);
+    }catch(e){
+      document.getElementById("hv-text").textContent = "“The Lord is my shepherd; I shall not want.”";
+      document.getElementById("hv-ref").textContent = "— Psalm 23:1";
+    }
+
+    // ---- Offline support ----------------------------------------------
+    if ("serviceWorker" in navigator){
+      window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+    }
+  </script>
 </body>
 </html>
