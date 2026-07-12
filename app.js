@@ -1,4 +1,4 @@
-// app.js — God Blessing Daily Verse Studio
+// app.js — EverVerse Daily Verse Studio
 "use strict";
 
 const $ = (id) => document.getElementById(id);
@@ -93,7 +93,7 @@ function renderVerse(canvas, W, H, opts) {
     ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`;
     ctx.fillStyle = hexToRgba(pal.text, 0.72);
     ctx.textBaseline = "bottom";
-    ctx.fillText("✧ God Blessing", W / 2, H - H * 0.04);
+    ctx.fillText("✦ EverVerse", W / 2, H - H * 0.04);
     ctx.textBaseline = "middle";
   }
 }
@@ -263,7 +263,7 @@ async function shareToday() {
   const blob = await canvasToBlob(cv);
   const file = new File([blob], top8Filename("square") + ".png", { type: "image/png" });
   const caption = buildPostKit(daily.verse).platforms.find((p) => p.key === "instagram").caption;
-  const shared = await shareFiles([file], caption, "God Blessing");
+  const shared = await shareFiles([file], caption, "EverVerse");
   if (shared) {
     hint.textContent = "Shared. Pick an app to post to 🙌";
   } else {
@@ -279,7 +279,7 @@ let lastVideoBlob = null;
 async function shareVideo() {
   if (!lastVideoBlob) return;
   const file = new File([lastVideoBlob], top8Filename("video") + ".webm", { type: "video/webm" });
-  const shared = await shareFiles([file], `${daily.verse.ref} — God Blessing`, "God Blessing");
+  const shared = await shareFiles([file], `${daily.verse.ref} — EverVerse`, "EverVerse");
   if (!shared) $("video-download").click();
 }
 
@@ -414,13 +414,13 @@ function buildNewsletterHtml(rows) {
 <body style="margin:0;background:#f4f5f9;padding:24px 12px;font-family:'Segoe UI',Arial,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.09);">
 <tr><td style="background:linear-gradient(135deg,#7c5cff,#4bc0c8);padding:30px 30px 24px;color:#fff;">
-  <div style="font-size:27px;font-weight:700;">✧ God Blessing</div>
+  <div style="font-size:27px;font-weight:700;">✦ EverVerse</div>
   <div style="font-size:14px;opacity:.92;margin-top:4px;">Your week of blessings &middot; ${fmt(start)} &ndash; ${fmt(end)}</div>
 </td></tr>
 <tr><td style="padding:14px 30px 0;"><p style="font-size:15px;color:#555;line-height:1.6;">Here are this week's verses, each with its meaning in plain words. Take a moment with the one that speaks to you. 🙏</p></td></tr>
 <tr><td style="padding:0 30px;"><table width="100%" cellpadding="0" cellspacing="0">${items}</table></td></tr>
 <tr><td style="padding:24px 30px 30px;color:#999;font-size:12px;text-align:center;line-height:1.6;">
-  Sent with love from God Blessing. Reply and tell us which verse blessed you this week.
+  Sent with love from EverVerse. Reply and tell us which verse blessed you this week.
 </td></tr></table></body></html>`;
 }
 let lastNewsletterHtml = "";
@@ -488,7 +488,7 @@ function renderPlatformCards() {
       shareBtn.onclick = async () => {
         const blob = await canvasToBlob(renderPlatformFull(p));
         const file = new File([blob], kitFilename(p.key, "png"), { type: "image/png" });
-        const ok = await shareFiles([file], activeCaptionText(p), "God Blessing");
+        const ok = await shareFiles([file], activeCaptionText(p), "EverVerse");
         if (!ok) downloadPlatformImage(p);
       };
       actions.appendChild(shareBtn);
@@ -526,7 +526,7 @@ function kitFilename(suffix, ext) {
 function buildCaptionsText(kit) {
   const d = daily.date;
   const ds = d.toDateString();
-  let out = `GOD BLESSING — DAILY POST KIT\n${ds}\n\n`;
+  let out = `EVERVERSE — DAILY POST KIT\n${ds}\n\n`;
   out += `Verse: "${kit.verse.text}"\n${kit.verse.ref} (${kit.verse.faith === "Gita" ? "Bhagavad Gita" : kit.verse.faith})\n`;
   out += `Theme: ${kit.verse.topic}\n`;
   if (daily.lang !== "en") {
@@ -793,7 +793,7 @@ function studioDownload() {
   renderStudio();
   const a = document.createElement("a");
   const ref = (studio.source.ref || "verse").replace(/[^\w]+/g, "_").toLowerCase();
-  a.download = `god_blessing_${ref}_${studio.render.lang}.png`;
+  a.download = `eververse_${ref}_${studio.render.lang}.png`;
   a.href = $("preview-canvas").toDataURL("image/png");
   a.click();
 }
@@ -892,7 +892,7 @@ function renderScheduleTable() {
 
 function scheduleReadme(count) {
   return [
-    "GOD BLESSING — SCHEDULE BUNDLE",
+    "EVERVERSE — SCHEDULE BUNDLE",
     "",
     `Posts: ${count}`,
     "",
@@ -943,7 +943,7 @@ async function exportScheduleBundle() {
     }
     files.push({ name: "schedule.csv", bytes: new TextEncoder().encode(csv) });
     files.push({ name: "README.txt", bytes: new TextEncoder().encode(scheduleReadme(scheduleRows.length)) });
-    downloadBlob(createZipBlob(files, new Date()), `god_blessing_schedule_${fmtDate(scheduleRows[0].date)}.zip`);
+    downloadBlob(createZipBlob(files, new Date()), `eververse_schedule_${fmtDate(scheduleRows[0].date)}.zip`);
     status.textContent = `✓ Bundle ready — ${scheduleRows.length} posts across ${PLATFORMS.length} platforms, ${files.length} files.`;
   } catch (e) {
     status.textContent = `⚠ ${e.message}`;
@@ -964,7 +964,7 @@ function initSchedule() {
   const t = daily.startDate;
   $("news-start").value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   $("gen-newsletter").onclick = generateNewsletter;
-  $("download-newsletter").onclick = () => downloadBlob(new Blob([lastNewsletterHtml], { type: "text/html" }), "god_blessing_newsletter.html");
+  $("download-newsletter").onclick = () => downloadBlob(new Blob([lastNewsletterHtml], { type: "text/html" }), "eververse_newsletter.html");
   $("copy-newsletter").onclick = () => { navigator.clipboard?.writeText(lastNewsletterHtml); $("news-status").textContent = "HTML copied to clipboard."; };
 
   rebuild();

@@ -44,7 +44,7 @@ const REFLECTIONS = {
 /*  Hashtags                                                         */
 /* ---------------------------------------------------------------- */
 const HASHTAGS = {
-  base:   ["#faith", "#blessed", "#dailyverse", "#godblessing", "#inspiration"],
+  base:   ["#faith", "#blessed", "#dailyverse", "#eververse", "#inspiration"],
   Bible:  ["#bible", "#biblequotes", "#jesus", "#scripture", "#christian", "#godisgood", "#prayer", "#gospel"],
   Gita:   ["#bhagavadgita", "#gita", "#krishna", "#spirituality", "#sanatandharma", "#wisdom", "#dharma", "#yoga"],
   topic: {

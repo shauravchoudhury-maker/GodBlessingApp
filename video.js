@@ -126,7 +126,7 @@ function drawVideoFrame(ctx, W, H, bg, fit, pal, opts, p) {
     ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`;
     ctx.fillStyle = hexToRgba(pal.text, 0.72);
     ctx.textBaseline = "bottom";
-    ctx.fillText("✧ God Blessing", W / 2, H - H * 0.04);
+    ctx.fillText("✦ EverVerse", W / 2, H - H * 0.04);
     ctx.textBaseline = "middle";
   }
 }

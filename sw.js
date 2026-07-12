@@ -1,5 +1,5 @@
-// sw.js — offline app-shell service worker for God Blessing PWA.
-const CACHE = "godblessing-v2";
+// sw.js — offline app-shell service worker for EverVerse PWA.
+const CACHE = "eververse-v3";
 const ASSETS = [
   "./",
   "./index.html",

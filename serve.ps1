@@ -1,4 +1,4 @@
-# Minimal static file server for local preview of God Blessing app.
+# Minimal static file server for local preview of the EverVerse app.
 param([int]$Port = 8123)
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path

@@ -1,4 +1,4 @@
-# ✧ God Blessing — Daily Verse Studio
+# ✦ EverVerse — Daily Verse Studio
 
 A self-contained web app (installable as a phone/tablet **PWA**) that turns daily
 scripture verses into shareable **images, videos, and platform-ready captions** —

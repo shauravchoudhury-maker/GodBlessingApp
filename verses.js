@@ -1,5 +1,5 @@
 // verses.js
-// Verified, curated verse database for the God Blessing daily engine.
+// Verified, curated verse database for the EverVerse daily engine.
 // Bible verses use commonly-rendered English (public-domain / paraphrase).
 // Gita verses use widely-accepted English renderings referenced by chapter:verse.
 // Grow toward 365 in reviewed batches — the daily engine cycles through whatever exists.
