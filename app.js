@@ -862,6 +862,71 @@ async function exportScheduleBundle() {
   }
 }
 
+/* ---- Batch video export ------------------------------------------ */
+let batchVideoCancel = false;
+function bgForVerseApp(v) {
+  const list = ["sunrise","aurora","rays","mesh","clouds","watercolor","ocean","forest","bokeh"];
+  const h = v.ref.split("").reduce((a,c)=>(a*31+c.charCodeAt(0))|0,5);
+  return list[Math.abs(h) % list.length];
+}
+function buildVerseBatch(scope) {
+  if (scope === "bible") return VERSE_DB.filter((v)=>v.faith==="Bible");
+  if (scope === "gita") return VERSE_DB.filter((v)=>v.faith==="Gita");
+  if (scope === "all") return VERSE_DB.slice();
+  const days = scope === "next30" ? 30 : 7;
+  const out = [], today = new Date();
+  for (let d = 0; d < days; d++) {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()+d);
+    ["Bible","Gita"].forEach((s)=>{ const list = VERSE_DB.filter((v)=>v.faith===s); out.push(list[dayOfYear(date)%list.length]); });
+  }
+  return out;
+}
+function batchCount() {
+  return $("bv-type").value === "sermons" ? SERMONS.length : buildVerseBatch($("bv-scope").value).length;
+}
+function updateBatchEstimate() {
+  const sermon = $("bv-type").value === "sermons";
+  $("bv-scope-wrap").style.display = sermon ? "none" : "";
+  const n = batchCount(), dur = Number($("bv-duration").value);
+  const mins = Math.max(1, Math.ceil(n * (dur + 2) / 60));
+  $("bv-estimate").textContent = `${n} videos · about ${mins} min to generate (real time). Large batches use more memory — for the whole library, consider running it in parts (e.g. by source).`;
+}
+async function runBatchVideo() {
+  if (!videoSupported()) { $("bv-status").textContent = "This browser can't record video — use Chrome or Edge."; return; }
+  const type = $("bv-type").value, fmt = $("bv-format").value, dur = Number($("bv-duration").value), music = $("bv-music").checked;
+  const dims = fmt === "square" ? { w:720, h:720 } : { w:720, h:1280 };
+  const items = type === "sermons" ? SERMONS.map((s)=>({ s })) : buildVerseBatch($("bv-scope").value).map((v)=>({ v }));
+  batchVideoCancel = false;
+  $("bv-cancel").style.display = "inline-block"; $("bv-run").disabled = true;
+  const files = [], status = $("bv-status");
+  for (let i = 0; i < items.length; i++) {
+    if (batchVideoCancel) break;
+    const it = items[i];
+    const onProgress = (p) => { status.textContent = `Video ${i+1}/${items.length} — ${Math.round(p*100)}%`; };
+    try {
+      let blob, name;
+      if (it.v) {
+        blob = await generateVerseVideo({ text: it.v.text, ref: it.v.ref, paletteKey: it.v.theme, theme: it.v.theme,
+          bgKey: bgForVerseApp(it.v), watermark: true, showRef: true, durationSec: dur, withMusic: music, w: dims.w, h: dims.h, onProgress });
+        name = `${it.v.ref.replace(/[^\w]+/g,"_").toLowerCase()}.webm`;
+      } else {
+        blob = await generateSermonVideo(it.s, { durationSec: Math.max(dur,12), withMusic: music, w: dims.w, h: dims.h, onProgress });
+        name = `sermon_${it.s.id}.webm`;
+      }
+      files.push({ name: `eververse_${name}`, bytes: new Uint8Array(await blob.arrayBuffer()) });
+    } catch (e) { /* skip a failed item */ }
+  }
+  $("bv-cancel").style.display = "none"; $("bv-run").disabled = false;
+  if (!files.length) { status.textContent = "No videos were generated."; return; }
+  status.textContent = `Zipping ${files.length} videos…`;
+  try {
+    downloadBlob(createZipBlob(files, new Date()), `eververse_videos_${type}.zip`);
+    status.textContent = batchVideoCancel
+      ? `Stopped — ${files.length} videos zipped.`
+      : `✓ Done — ${files.length} videos zipped & downloaded.`;
+  } catch (e) { status.textContent = "⚠ Batch too large to zip in memory — try a smaller scope."; }
+}
+
 function initSchedule() {
   BACKGROUNDS.forEach((b) => $("sched-bg").add(new Option(b.name, b.key)));
   $("sched-bg").value = "sunrise";
@@ -878,6 +943,14 @@ function initSchedule() {
   $("gen-newsletter").onclick = generateNewsletter;
   $("download-newsletter").onclick = () => downloadBlob(new Blob([lastNewsletterHtml], { type: "text/html" }), "eververse_newsletter.html");
   $("copy-newsletter").onclick = () => { navigator.clipboard?.writeText(lastNewsletterHtml); $("news-status").textContent = "HTML copied to clipboard."; };
+
+  // Batch video export
+  $("bv-type").onchange = updateBatchEstimate;
+  $("bv-scope").onchange = updateBatchEstimate;
+  $("bv-duration").onchange = updateBatchEstimate;
+  $("bv-run").onclick = runBatchVideo;
+  $("bv-cancel").onclick = () => { batchVideoCancel = true; };
+  updateBatchEstimate();
 
   rebuild();
 }

@@ -1,5 +1,5 @@
 // sw.js — offline app-shell service worker for EverVerse PWA.
-const CACHE = "eververse-v11";
+const CACHE = "eververse-v12";
 const ASSETS = [
   "./",
   "./index.html",

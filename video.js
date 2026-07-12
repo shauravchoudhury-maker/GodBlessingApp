@@ -151,6 +151,20 @@ function videoSupported() {
     !!pickVideoMime();
 }
 
+// A short "sermon teaser" video — the takeaway line + source ref + music.
+function generateSermonVideo(sermon, opts) {
+  const base = (typeof VERSE_DB !== "undefined") ? VERSE_DB.find((v) => v.ref === sermon.verseRef) : null;
+  return generateVerseVideo(Object.assign({
+    text: sermon.takeaway,
+    ref: sermon.verseRef,
+    paletteKey: base ? base.theme : "royal",
+    theme: base ? base.theme : "royal",
+    bgKey: "aurora",
+    watermark: true, showRef: true,
+    durationSec: 12, withMusic: true, w: 720, h: 1280,
+  }, opts || {}));
+}
+
 async function generateVerseVideo(opts) {
   if (!videoSupported()) throw new Error("This browser can't record video (MediaRecorder/captureStream unavailable).");
   const W = opts.w || 720, H = opts.h || 1280;

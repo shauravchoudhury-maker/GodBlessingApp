@@ -346,6 +346,38 @@
       </div>
       <iframe id="news-preview" title="Newsletter preview"></iframe>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">4</span><h2>Batch video export</h2></div>
+      <p class="hint">Turn verses and sermons into short videos (animated text + music) for upload to every platform. Videos render in real time — keep this tab open. They download together as one .zip.</p>
+      <div class="sched-toolbar">
+        <label>Content
+          <select id="bv-type"><option value="verses">Verses</option><option value="sermons">Sermons (all)</option></select>
+        </label>
+        <label id="bv-scope-wrap">Scope
+          <select id="bv-scope">
+            <option value="next7">Next 7 days (Bible+Gita)</option>
+            <option value="next30">Next 30 days</option>
+            <option value="bible">All Bible</option>
+            <option value="gita">All Gita</option>
+            <option value="all">Entire library</option>
+          </select>
+        </label>
+        <label>Format
+          <select id="bv-format"><option value="portrait">Vertical 9:16</option><option value="square">Square 1:1</option></select>
+        </label>
+        <label>Duration
+          <select id="bv-duration"><option value="10">10s</option><option value="12" selected>12s</option><option value="15">15s</option></select>
+        </label>
+        <label class="checkbox" style="display:inline-flex;"><input type="checkbox" id="bv-music" checked /> Music</label>
+      </div>
+      <div class="btn-row">
+        <button class="btn accent" id="bv-run">🎬 Generate videos (.zip)</button>
+        <button class="btn ghost" id="bv-cancel" style="display:none;">Cancel</button>
+        <span class="kit-status" id="bv-status"></span>
+      </div>
+      <p class="hint" id="bv-estimate"></p>
+    </section>
   </main>
 
   <footer class="app-footer">
