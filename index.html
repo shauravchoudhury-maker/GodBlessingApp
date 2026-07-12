@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>God Blessing — Daily Verse Studio</title>
+  <meta name="description" content="Daily scripture verses turned into shareable images, videos and captions for every platform." />
+  <meta name="theme-color" content="#0e1220" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="God Blessing" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">✧</span>
+      <div>
+        <h1>God Blessing</h1>
+        <p class="tagline">One verse a day → ready-to-post images &amp; captions for every platform</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="daily"><span class="tab-ico">🏠</span><span class="tab-lbl">Daily</span></button>
+      <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
+      <button class="tab" data-tab="schedule"><span class="tab-ico">🗓</span><span class="tab-lbl">Schedule</span></button>
+    </nav>
+  </header>
+
+  <!-- ============================ DAILY ============================ -->
+  <main class="app" id="tab-daily">
+    <section class="panel">
+      <div class="panel-head"><span class="step-num">1</span><h2>Today's verse</h2></div>
+
+      <div class="field">
+        <label for="bible-select">📖 Bible — verse for the next 120 days</label>
+        <select id="bible-select"></select>
+      </div>
+      <div class="field">
+        <label for="gita-select">🕉 Bhagavad Gita — verse for the next 120 days</label>
+        <select id="gita-select"></select>
+      </div>
+      <button class="btn ghost small" id="today-btn">↺ Reset to today (Bible)</button>
+
+      <div class="verse-card" id="verse-card">
+        <div class="verse-badges">
+          <span class="badge" id="verse-faith">—</span>
+          <span class="badge alt" id="verse-topic">—</span>
+        </div>
+        <blockquote class="verse-text" id="verse-text">Loading today's blessing…</blockquote>
+        <cite class="verse-ref" id="verse-ref">—</cite>
+      </div>
+
+      <div class="field">
+        <label for="daily-lang">🌐 Show verse in language</label>
+        <select id="daily-lang"></select>
+        <div class="translation-status" id="daily-trans-status"></div>
+        <button class="btn ghost small" id="verify-meaning" style="display:none; margin-top:6px;">🔎 Verify meaning (grammar check)</button>
+        <div class="fidelity" id="fidelity-box"></div>
+      </div>
+
+      <div class="field">
+        <label for="daily-bg">Background art</label>
+        <select id="daily-bg"></select>
+      </div>
+      <div class="field">
+        <label for="daily-palette">Color palette</label>
+        <select id="daily-palette"></select>
+      </div>
+
+      <div class="music-card" id="music-card">
+        <div class="music-head">🎵 Suggested music <span id="music-mood" class="badge alt"></span></div>
+        <div class="music-idea" id="music-idea">—</div>
+        <details>
+          <summary>Where to find free-to-use tracks</summary>
+          <ul id="music-sources"></ul>
+        </details>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><span class="step-num">2</span><h2>Preview</h2></div>
+      <div class="preview-wrap">
+        <canvas id="daily-canvas" width="1080" height="1080"></canvas>
+      </div>
+      <label class="checkbox"><input type="checkbox" id="daily-watermark" checked /> Add “God Blessing” mark</label>
+      <button class="btn accent block" id="share-today">📤 Share today's post</button>
+      <p class="hint" id="share-hint"></p>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">3</span><h2>Your daily post kit</h2></div>
+      <p class="hint">One click builds a sized image + tailored caption &amp; hashtags for every platform, zipped together.</p>
+      <div class="btn-row kit-actions">
+        <button class="btn accent" id="download-kit">⬇ Download Post Kit (.zip)</button>
+        <button class="btn" id="gen-top8">🌐 Top-8 language images (.zip)</button>
+        <span class="kit-status" id="kit-status"></span>
+      </div>
+      <div class="kit-status" id="top8-status"></div>
+      <div class="platform-grid" id="platform-grid"></div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">4</span><h2>Video &amp; music</h2></div>
+      <p class="hint">Creates a short animated video (moving background + fading verse) with original, browser-synthesized music — royalty-free by construction. Exports .webm (works on YouTube/Facebook; for TikTok/Reels you can drop the webm into any free converter or the platform's editor).</p>
+      <div class="video-grid">
+        <div class="controls">
+          <div class="field">
+            <label for="vid-format">Format</label>
+            <select id="vid-format">
+              <option value="portrait">Vertical 9:16 (Reels/TikTok/Shorts)</option>
+              <option value="square">Square 1:1</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="vid-duration">Duration</label>
+            <select id="vid-duration">
+              <option value="10">10 seconds</option>
+              <option value="12" selected>12 seconds</option>
+              <option value="15">15 seconds</option>
+            </select>
+          </div>
+          <label class="checkbox"><input type="checkbox" id="vid-music" checked /> Include music</label>
+          <button class="btn accent" id="gen-video">🎬 Generate video</button>
+          <div class="kit-status" id="video-status"></div>
+          <button class="btn" id="share-video" style="display:none;">📤 Share video</button>
+          <a id="video-download" class="btn" style="display:none;">⬇ Download .webm</a>
+        </div>
+        <div class="preview-wrap">
+          <video id="video-preview" controls playsinline muted></video>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ STUDIO ============================ -->
+  <main class="app hidden" id="tab-studio">
+    <section class="panel">
+      <div class="panel-head"><span class="step-num">1</span><h2>Choose a verse</h2></div>
+      <div class="field">
+        <label for="faith-select">Filter by source</label>
+        <select id="faith-select"><option value="all">All sources</option></select>
+      </div>
+      <div class="field">
+        <label for="verse-select">Verse</label>
+        <select id="verse-select"></select>
+      </div>
+      <div class="or-divider"><span>or write your own</span></div>
+      <div class="field"><label for="custom-text">Custom text</label><textarea id="custom-text" rows="3" placeholder="Paste or type any verse, quote or blessing…"></textarea></div>
+      <div class="field"><label for="custom-ref">Reference (optional)</label><input id="custom-ref" type="text" placeholder="e.g. Psalm 23:1" /></div>
+      <button class="btn ghost" id="use-custom-btn">Use custom text</button>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><span class="step-num">2</span><h2>Translate</h2></div>
+      <div class="source-box">
+        <div class="source-ref" id="source-ref">—</div>
+        <div class="source-text" id="source-text">Select a verse to begin.</div>
+      </div>
+      <div class="field"><label for="lang-select">Language</label><select id="lang-select"></select></div>
+      <div class="btn-row">
+        <button class="btn" id="translate-btn" disabled>Translate</button>
+        <button class="btn ghost" id="translate-all-btn" disabled>Translate top 8</button>
+      </div>
+      <div class="translation-status" id="translation-status"></div>
+      <div class="translation-list" id="translation-list"></div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">3</span><h2>Design &amp; download</h2></div>
+      <div class="design-grid">
+        <div class="controls">
+          <div class="field"><label for="format-select">Format</label><select id="format-select"></select></div>
+          <div class="field"><label for="studio-bg">Background art</label><select id="studio-bg"></select></div>
+          <div class="field"><label for="palette-select">Color palette</label><select id="palette-select"></select></div>
+          <div class="field"><label for="render-lang">Text to show</label><select id="render-lang"></select></div>
+          <div class="field"><label for="font-scale">Text size <span id="font-scale-val">100%</span></label><input id="font-scale" type="range" min="60" max="160" value="100" /></div>
+          <label class="checkbox"><input type="checkbox" id="show-ref" checked /> Show reference</label>
+          <label class="checkbox"><input type="checkbox" id="show-watermark" /> Add “God Blessing” mark</label>
+          <button class="btn accent" id="download-btn">⬇ Download PNG</button>
+        </div>
+        <div class="preview-wrap"><canvas id="preview-canvas" width="1080" height="1080"></canvas></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ SCHEDULE ============================ -->
+  <main class="app hidden" id="tab-schedule">
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">1</span><h2>Build your posting schedule</h2></div>
+      <div class="sched-toolbar">
+        <label>Source
+          <select id="sched-source">
+            <option value="Bible">Bible</option>
+            <option value="Gita">Bhagavad Gita</option>
+            <option value="Both">Both (2 posts/day)</option>
+          </select>
+        </label>
+        <label>Days
+          <select id="sched-days"><option>7</option><option>14</option><option>30</option></select>
+        </label>
+        <label>Time <input type="time" id="sched-time" value="09:00" /></label>
+        <label>Background <select id="sched-bg"></select></label>
+        <button class="btn" id="sched-build">↻ Build table</button>
+      </div>
+      <div class="sched-scroll"><table class="sched-table" id="sched-table"></table></div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">2</span><h2>Verify &amp; export</h2></div>
+      <p class="hint">Review the verses &amp; captions above. For translated posts, use the <b>Verify meaning</b> button in the Daily Studio first. When you're happy, export the bundle and import it into your scheduler.</p>
+      <div class="btn-row">
+        <button class="btn accent" id="sched-export">⬇ Export schedule bundle (.zip)</button>
+        <span class="kit-status" id="sched-status"></span>
+      </div>
+      <p class="hint" style="margin-top:14px;">
+        The bundle contains <b>schedule.csv</b> (one row per post: date, time, platform, caption, hashtags, media file), one <b>image per post</b>, and a <b>README</b>.
+        Import <code>schedule.csv</code> into a bulk scheduler — <b>Buffer</b>, <b>Publer</b>, <b>Metricool</b>, or <b>Hootsuite</b> — connect your Instagram/TikTok/Facebook/YouTube/X accounts there once, and it auto-publishes at the times you set.
+        Your platform logins stay inside your scheduler; this app never sees or stores them. So your only steps are: <b>verify → import → it posts automatically.</b>
+      </p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Translations via the free MyMemory API. Backgrounds are original generated art (royalty-free). Bible text is public-domain / commonly-rendered; Gita verses are widely-accepted English renderings. Music entries are suggestions — add tracks from each platform's licensed library. 🌿</p>
+  </footer>
+
+  <script src="verses.js"></script>
+  <script src="content.js"></script>
+  <script src="backgrounds.js"></script>
+  <script src="zip.js"></script>
+  <script src="video.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
