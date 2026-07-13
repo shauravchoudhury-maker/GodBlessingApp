@@ -17,5 +17,11 @@
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "assets/screenshots/01-today.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "A daily blessing, every day" },
+    { "src": "assets/screenshots/02-languages.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Read & listen in your language" },
+    { "src": "assets/screenshots/03-meaning.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "The meaning, in plain words" },
+    { "src": "assets/screenshots/04-multifaith.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Bible & Bhagavad Gita, for every soul" }
   ]
 }
