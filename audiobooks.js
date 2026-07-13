@@ -224,6 +224,127 @@ function audiobookListing(book, chapters, stats) {
   return L.join("\n");
 }
 
+// --- PDF book (self-contained writer, standard Times fonts) ---------------
+// Keeps everything ASCII so string length == byte length (xref offsets stay valid).
+function asciiClean(s) {
+  return (s || "")
+    .normalize("NFKD").replace(/[̀-ͯ]/g, "")
+    .replace(/[‘’‚‹›]/g, "'")
+    .replace(/[“”„«»]/g, '"')
+    .replace(/[–—―]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/[^\x20-\x7E]/g, "");
+}
+
+function createBookPdfBlob(book) {
+  const PW = 432, PH = 648, ML = 56, MR = 56, MT = 66, MB = 64; // 6x9" trade paperback
+  const usableW = PW - ML - MR;
+  const meas = document.createElement("canvas").getContext("2d");
+  const fontCss = (size, font) =>
+    `${font === "F3" ? "italic " : ""}${font === "F2" ? "700" : "400"} ${size}px "Times New Roman", Georgia, serif`;
+  const textWidth = (t, size, font) => { meas.font = fontCss(size, font); return meas.measureText(asciiClean(t)).width; };
+  function wrap(t, size, font) {
+    meas.font = fontCss(size, font);
+    const words = asciiClean(t).split(/\s+/).filter(Boolean); const lines = []; let cur = "";
+    for (const w of words) { const test = cur ? cur + " " + w : w; if (meas.measureText(test).width > usableW && cur) { lines.push(cur); cur = w; } else cur = test; }
+    if (cur) lines.push(cur); return lines;
+  }
+  const pages = []; let cur = []; let y = PH - MT;
+  function newPage() { pages.push(cur); cur = []; y = PH - MT; }
+  function ensure(h) { if (y - h < MB) newPage(); }
+  function gap(h) { ensure(h); y -= h; }
+  function para(text, size, font, leading, opts) {
+    opts = opts || {};
+    wrap(text, size, font).forEach((ln) => {
+      ensure(leading); y -= leading;
+      const x = opts.center ? (PW - textWidth(ln, size, font)) / 2 : ML + (opts.indent || 0);
+      cur.push({ x, y, size, font, text: ln });
+    });
+  }
+
+  // Title page
+  y = PH - 200;
+  para(book.title, 30, "F2", 34, { center: true });
+  gap(8); para(book.subtitle, 14, "F3", 20, { center: true });
+  gap(30); para("* * *", 12, "F1", 16, { center: true });
+  y = 150; para("A production of EverVerse", 11, "F1", 16, { center: true });
+  para("eververse.org", 11, "F1", 16, { center: true });
+  newPage();
+
+  // Introduction
+  para("Introduction", 16, "F2", 24); gap(6);
+  para(book.intro, 11.5, "F1", 16.5);
+  newPage();
+
+  // Verses
+  versesForFaith(book.faith).forEach((v, i) => {
+    gap(16); ensure(64);
+    para(`${i + 1}. ${v.ref}`, 12.5, "F2", 17); gap(3);
+    para(v.text, 11.5, "F3", 16.5); gap(3);
+    para(`In simple words: ${meaningFor(v)}`, 11.5, "F1", 16.5);
+  });
+
+  // Reflections
+  const serms = sermonsForFaith(book.faith);
+  if (serms.length) {
+    newPage();
+    para("Reflections", 18, "F2", 26, { center: true }); gap(10);
+    serms.forEach((s) => {
+      gap(18); ensure(74);
+      para(s.title, 14, "F2", 19);
+      para(`On ${s.verseRef}`, 10.5, "F3", 15); gap(4);
+      para(s.verseText, 11.5, "F3", 16.5); gap(4);
+      (s.body || []).forEach((p) => { para(p, 11.5, "F1", 16.5); gap(4); });
+      para(`To carry with you: ${s.takeaway}`, 11.5, "F2", 16.5);
+    });
+  }
+
+  // Colophon
+  newPage();
+  y = PH * 0.55;
+  para(book.closing.replace(/This has been a production.*$/i, "").trim(), 12, "F3", 18, { center: true });
+  gap(24);
+  para("EverVerse - a new blessing every day at eververse.org", 10.5, "F1", 15, { center: true });
+  newPage(); // flush last page
+
+  // Page numbers (skip the title page)
+  pages.forEach((items, idx) => {
+    if (idx === 0) return;
+    const label = String(idx + 1);
+    items.push({ x: (PW - textWidth(label, 9, "F1")) / 2, y: MB - 28, size: 9, font: "F1", text: label });
+  });
+
+  return assemblePdf(pages, PW, PH);
+}
+
+function assemblePdf(pages, PW, PH) {
+  const esc = (s) => asciiClean(s).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  const objects = [];
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>";
+  objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding /WinAnsiEncoding >>";
+  objects[5] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic /Encoding /WinAnsiEncoding >>";
+  const pageIds = []; let nextId = 6;
+  pages.forEach((items) => {
+    const contentId = nextId++, pageId = nextId++;
+    let stream = "";
+    items.forEach((it) => { stream += `BT /${it.font} ${it.size} Tf ${it.x.toFixed(2)} ${it.y.toFixed(2)} Td (${esc(it.text)}) Tj ET\n`; });
+    objects[contentId] = `<< /Length ${stream.length} >>\nstream\n${stream}endstream`;
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents ${contentId} 0 R >>`;
+    pageIds.push(pageId);
+  });
+  objects[2] = `<< /Type /Pages /Kids [${pageIds.map((id) => id + " 0 R").join(" ")}] /Count ${pageIds.length} >>`;
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = []; const maxId = nextId - 1;
+  for (let id = 1; id <= maxId; id++) { offsets[id] = pdf.length; pdf += `${id} 0 obj\n${objects[id]}\nendobj\n`; }
+  const xrefStart = pdf.length;
+  pdf += `xref\n0 ${maxId + 1}\n0000000000 65535 f \n`;
+  for (let id = 1; id <= maxId; id++) pdf += String(offsets[id]).padStart(10, "0") + " 00000 n \n";
+  pdf += `trailer\n<< /Size ${maxId + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
 // --- Cover art (square, brand-consistent) ---------------------------------
 function drawAudiobookCover(canvas, book, size) {
   const S = size || 1400;

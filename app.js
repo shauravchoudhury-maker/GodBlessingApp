@@ -1074,6 +1074,7 @@ function initAudiobooks() {
   $("ab-token").value = getTtsToken();
   $("ab-token").oninput = () => setTtsToken($("ab-token").value);
   $("ab-select").onchange = renderAudiobook;
+  $("ab-pdf").onclick = () => { const b = abCurrentBook(); downloadBlob(createBookPdfBlob(b), `${b.id}-book.pdf`); };
   $("ab-manuscript").onclick = () => { const b = abCurrentBook(); downloadBlob(new Blob([audiobookManuscript(b, abChapters)], { type: "text/plain;charset=utf-8" }), `${b.id}-manuscript.txt`); };
   $("ab-listing").onclick = () => { const b = abCurrentBook(); downloadBlob(new Blob([audiobookListing(b, abChapters, audiobookStats(abChapters))], { type: "text/plain;charset=utf-8" }), `${b.id}-listing.txt`); };
   $("ab-cover-dl").onclick = () => { const b = abCurrentBook(); const c = document.createElement("canvas"); drawAudiobookCover(c, b, 2400); c.toBlob((blob) => downloadBlob(blob, `${b.id}-cover.jpg`), "image/jpeg", 0.92); };
