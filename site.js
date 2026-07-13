@@ -208,7 +208,7 @@ function openVerseDetail(v) {
   $("dt-close").onclick = closeDetail;
   $("dt-lang").onchange = ()=>translateDetailVerse($("dt-lang").value);
   $("dt-listen").onclick = ()=>speakText(detailState.lang==="en" ? narrationFor(v) : (detailState.trans ? detailState.trans.text : v.text), detailState.lang);
-  $("dt-share").onclick = ()=>sharePost(v);
+  $("dt-share").onclick = shareDetailPost;
   const content = $("detail-sheet").querySelector(".content");
   const bar = EVReact.reactionBar(v);
   if (bar.children.length) content.appendChild(bar);
@@ -222,15 +222,18 @@ function translateDetailVerse(code) {
     detailState.lang = "en"; detailState.trans = null;
     $("dt-verse").textContent = `“${v.text}”`; $("dt-verse").dir = "ltr";
     $("dt-mean").innerHTML = `<b>In simple words:</b> ${escapeHtml(meaningFor(v))}`; $("dt-mean").dir = "ltr";
+    renderVerseImage($("dt-canvas"), v, 720, 720); // image back to English
     $("dt-status").textContent = ""; return;
   }
   const meta = LANGUAGES.find((l)=>l.code===code);
   $("dt-status").textContent = `Translating to ${meta.name}…`;
   Promise.all([translateText(v.text, code), translateText(meaningFor(v), code)]).then(([tv, tm])=>{
-    detailState.lang = code; detailState.trans = { text:tv, rtl:!!meta.rtl };
+    detailState.lang = code; detailState.trans = { text:tv, rtl:!!meta.rtl, meaning:tm };
     $("dt-verse").textContent = `“${tv}”`; $("dt-verse").dir = meta.rtl ? "rtl" : "ltr";
     $("dt-mean").innerHTML = `<b>In simple words:</b> ${escapeHtml(tm)}`; $("dt-mean").dir = meta.rtl ? "rtl" : "ltr";
-    $("dt-status").textContent = `Showing in ${meta.name}. (Machine translation.)`;
+    // re-render the on-image text in the chosen language
+    renderVerse($("dt-canvas"), 720, 720, { text: tv, ref: v.ref, rtl: !!meta.rtl, paletteKey: v.theme, bgKey: bgForVerse(v), watermark: true, showRef: true });
+    $("dt-status").textContent = `Image, text & voice now in ${meta.name}. (Machine translation.)`;
   }).catch((e)=>{ $("dt-status").textContent = `⚠ ${e.message}. Try again shortly.`; });
 }
 
@@ -293,17 +296,24 @@ async function translateDetailSermon(code) {
 }
 
 /* ---- Share -------------------------------------------------------- */
-function sharePost(v) {
-  const c = document.createElement("canvas"); renderVerseImage(c, v, 1080, 1080);
-  const text = `“${v.text}” — ${v.ref}\n\n${meaningFor(v)}\n\n✦ eververse.org`;
+// Share an image whose ON-IMAGE text and caption are in the given language.
+function sharePostImage(v, text, rtl, meaning) {
+  const c = document.createElement("canvas");
+  renderVerse(c, 1080, 1080, { text, ref: v.ref, rtl: !!rtl, paletteKey: v.theme, bgKey: bgForVerse(v), watermark: true, showRef: true });
+  const caption = `“${text}” — ${v.ref}\n\n${meaning}\n\n✦ eververse.org`;
   c.toBlob(async (blob)=>{
     const file = new File([blob], "eververse_" + v.ref.replace(/[^\w]+/g,"_").toLowerCase() + ".png", { type:"image/png" });
     if (navigator.canShare && navigator.canShare({ files:[file] })) {
-      try { await navigator.share({ files:[file], text, title:"EverVerse" }); return; } catch (e) { if (e && e.name==="AbortError") return; }
+      try { await navigator.share({ files:[file], text: caption, title:"EverVerse" }); return; } catch (e) { if (e && e.name==="AbortError") return; }
     }
     const a = document.createElement("a"); a.download = file.name; a.href = c.toDataURL("image/png"); a.click();
-    try { await navigator.clipboard.writeText(text); } catch (_) {}
+    try { await navigator.clipboard.writeText(caption); } catch (_) {}
   }, "image/png");
+}
+function sharePost(v) { sharePostImage(v, v.text, false, meaningFor(v)); }
+function shareDetailPost() {
+  const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
+  sharePostImage(v, useT ? t.text : v.text, useT ? t.rtl : false, useT ? (t.meaning || meaningFor(v)) : meaningFor(v));
 }
 async function shareSermon() {
   const s = detailState.s;
