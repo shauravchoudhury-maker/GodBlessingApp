@@ -13,12 +13,12 @@
 // Until real values are pasted, reactions/comments/trending stay gracefully off.
 
 const FIREBASE_CONFIG = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID",
+  apiKey: "AIzaSyCD7IWtNtfyxVHo0GcEiUwAZN2RGB8u8vc",
+  authDomain: "eververse2117.firebaseapp.com",
+  projectId: "eververse2117",
+  storageBucket: "eververse2117.firebasestorage.app",
+  messagingSenderId: "666579920808",
+  appId: "1:666579920808:web:00a1d0a3348f7e3aa2df9d",
 };
 
 const FIREBASE_READY = FIREBASE_CONFIG.apiKey.indexOf("PASTE") === -1;
