@@ -63,14 +63,14 @@
       <div class="panel-head"><span class="step-num">1</span><h2>Today's verse</h2></div>
 
       <div class="field">
-        <label for="bible-select">📖 Bible — verse for the next 120 days</label>
-        <select id="bible-select"></select>
+        <label for="daily-tradition">Tradition</label>
+        <select id="daily-tradition"></select>
       </div>
       <div class="field">
-        <label for="gita-select">🕉 Bhagavad Gita — verse for the next 120 days</label>
-        <select id="gita-select"></select>
+        <label for="daily-day">Verse for the next 120 days</label>
+        <select id="daily-day"></select>
       </div>
-      <button class="btn ghost small" id="today-btn">↺ Reset to today (Bible)</button>
+      <button class="btn ghost small" id="today-btn">↺ Reset to today</button>
 
       <div class="verse-card" id="verse-card">
         <div class="verse-badges">
@@ -142,7 +142,7 @@
 
     <section class="panel wide">
       <div class="panel-head"><span class="step-num">4</span><h2>Video &amp; music</h2></div>
-      <p class="hint">Creates a short animated video (moving background + fading verse) with original, browser-synthesized music — royalty-free by construction. Exports .webm (works on YouTube/Facebook; for TikTok/Reels you can drop the webm into any free converter or the platform's editor).</p>
+      <p class="hint">Creates a short animated video (moving background + fading verse) with original, browser-synthesized music — royalty-free by construction. Exports <b>MP4</b> where your browser supports it (accepted by TikTok, Instagram, Facebook &amp; YouTube), otherwise WebM.</p>
       <div class="video-grid">
         <div class="controls">
           <div class="field">
@@ -164,7 +164,7 @@
           <button class="btn accent" id="gen-video">🎬 Generate video</button>
           <div class="kit-status" id="video-status"></div>
           <button class="btn" id="share-video" style="display:none;">📤 Share video</button>
-          <a id="video-download" class="btn" style="display:none;">⬇ Download .webm</a>
+          <a id="video-download" class="btn" style="display:none;">⬇ Download video</a>
         </div>
         <div class="preview-wrap">
           <video id="video-preview" controls playsinline muted></video>
@@ -192,7 +192,7 @@
           <div class="field"><label for="vo-token">Voice-over access token</label><input id="vo-token" type="password" autocomplete="off" placeholder="your PROXY_SECRET" /></div>
           <button class="btn accent" id="vo-run">🎬 Generate voice-over video</button>
           <div class="kit-status" id="vo-status"></div>
-          <a id="vo-download" class="btn" style="display:none;">⬇ Download .webm</a>
+          <a id="vo-download" class="btn" style="display:none;">⬇ Download video</a>
         </div>
         <div class="preview-wrap"><video id="vo-preview" controls playsinline></video></div>
       </div>

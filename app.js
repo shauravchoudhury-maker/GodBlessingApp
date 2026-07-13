@@ -50,10 +50,12 @@ async function runVoiceOver() {
     }
     const url = URL.createObjectURL(blob);
     const vp = $("vo-preview"); vp.src = url; vp.load();
+    const ext = videoFileExt(blob);
     const a = $("vo-download"); a.href = url;
-    a.download = `eververse_voiceover_${ref.replace(/[^\w]+/g, "_").toLowerCase()}_${lang}.webm`;
+    a.download = `eververse_voiceover_${ref.replace(/[^\w]+/g, "_").toLowerCase()}_${lang}.${ext}`;
+    a.textContent = `⬇ Download .${ext}`;
     a.style.display = "inline-block";
-    status.textContent = `✓ Voice-over video ready (${(blob.size / 1048576).toFixed(1)} MB).`;
+    status.textContent = `✓ Voice-over video ready (${(blob.size / 1048576).toFixed(1)} MB, ${ext.toUpperCase()}).`;
   } catch (e) {
     status.textContent = `⚠ ${e.message || e}`;
   } finally { btn.disabled = false; }
@@ -98,8 +100,9 @@ const PLAN_DAYS = 120;
 // Build a 90-day reading plan per source, anchored at startDate. Each source
 // cycles through its own verses so Bible and Gita are fully independent.
 function buildPlans(startDate) {
-  const plans = { Bible: [], Gita: [] };
-  ["Bible", "Gita"].forEach((src) => {
+  const plans = {};
+  [...new Set(VERSE_DB.map((v) => v.faith))].forEach((src) => {
+    plans[src] = [];
     const list = VERSE_DB.filter((v) => v.faith === src);
     const startDoy = dayOfYear(startDate);
     for (let d = 0; d < PLAN_DAYS; d++) {
@@ -118,7 +121,7 @@ function setActiveVerse() {
   daily.verse = v;
   daily.date = entry.date;
   daily.paletteKey = v.theme;
-  $("verse-faith").textContent = v.faith === "Gita" ? "Bhagavad Gita" : v.faith;
+  $("verse-faith").textContent = faithLabel(v.faith);
   $("verse-topic").textContent = v.topic;
   $("verse-text").textContent = `“${v.text}”`;
   $("verse-ref").textContent = v.ref;
@@ -292,9 +295,10 @@ async function generateDailyVideo() {
     lastVideoBlob = blob;
     const url = URL.createObjectURL(blob);
     const v = $("video-preview"); v.src = url; v.load();
-    const a = $("video-download"); a.href = url; a.download = top8Filename("video") + ".webm"; a.style.display = "inline-block";
+    const ext = videoFileExt(blob);
+    const a = $("video-download"); a.href = url; a.download = top8Filename("video") + "." + ext; a.textContent = `⬇ Download .${ext}`; a.style.display = "inline-block";
     $("share-video").style.display = (navigator.canShare) ? "inline-block" : "none";
-    status.textContent = `✓ Video ready (${(blob.size / 1048576).toFixed(1)} MB, ${dur}s${music ? ", with music" : ""}).`;
+    status.textContent = `✓ Video ready (${(blob.size / 1048576).toFixed(1)} MB, ${ext.toUpperCase()}, ${dur}s${music ? ", with music" : ""}).`;
   } catch (e) {
     status.textContent = `⚠ ${e.message || e}`;
   } finally {
@@ -605,14 +609,15 @@ async function downloadTop8() {
   }
 }
 
-// Fill a source's 90-day dropdown with "Day N · date — ref" options.
-function populatePlanSelect(selectId, source) {
-  const sel = $(selectId);
+// Fill the day dropdown with "Day N · date — ref" for the active tradition.
+function populateDaySelect() {
+  const sel = $("daily-day");
   sel.innerHTML = "";
-  daily.plans[source].forEach((entry, i) => {
+  (daily.plans[daily.activeSource] || []).forEach((entry, i) => {
     const dateLabel = entry.date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
     sel.add(new Option(`Day ${i + 1} · ${dateLabel} — ${entry.verse.ref}`, String(i)));
   });
+  sel.value = String(daily.dayIndex);
 }
 
 function initDaily() {
@@ -624,22 +629,22 @@ function initDaily() {
   $("daily-lang").add(new Option("English (original)", "en"));
   LANGUAGES.forEach((l) => $("daily-lang").add(new Option(l.name, l.code)));
 
-  // build both 90-day plans and fill the dropdowns
+  // build 120-day plans for every tradition and fill the dropdowns
   daily.plans = buildPlans(daily.startDate);
-  populatePlanSelect("bible-select", "Bible");
-  populatePlanSelect("gita-select", "Gita");
+  const faiths = Object.keys(daily.plans);
+  $("daily-tradition").innerHTML = "";
+  faiths.forEach((f) => $("daily-tradition").add(new Option(faithLabel(f), f)));
+  daily.activeSource = faiths[0]; daily.dayIndex = 0;
+  populateDaySelect();
 
-  $("bible-select").onchange = () => {
-    daily.activeSource = "Bible"; daily.dayIndex = Number($("bible-select").value);
-    $("gita-select").selectedIndex = -1; setActiveVerse();
+  $("daily-tradition").onchange = () => {
+    daily.activeSource = $("daily-tradition").value; daily.dayIndex = 0;
+    populateDaySelect(); setActiveVerse();
   };
-  $("gita-select").onchange = () => {
-    daily.activeSource = "Gita"; daily.dayIndex = Number($("gita-select").value);
-    $("bible-select").selectedIndex = -1; setActiveVerse();
-  };
+  $("daily-day").onchange = () => { daily.dayIndex = Number($("daily-day").value); setActiveVerse(); };
   $("today-btn").onclick = () => {
-    daily.activeSource = "Bible"; daily.dayIndex = 0;
-    $("bible-select").value = "0"; $("gita-select").selectedIndex = -1; setActiveVerse();
+    daily.activeSource = faiths[0]; daily.dayIndex = 0;
+    $("daily-tradition").value = faiths[0]; populateDaySelect(); setActiveVerse();
   };
   $("daily-lang").onchange = () => { daily.lang = $("daily-lang").value; applyDailyLanguage(); };
   $("daily-bg").onchange = () => { daily.bgKey = $("daily-bg").value; renderDailyAll(); };
@@ -659,9 +664,6 @@ function initDaily() {
   $("localize-captions").onclick = localizeCaptions;
   $("fav-verse").onclick = () => { toggleFav("verse", daily.verse.ref, `${daily.verse.ref} — ${daily.verse.text.slice(0, 40)}…`); updateFavVerse(); };
 
-  // default: Bible, day 1
-  daily.activeSource = "Bible"; daily.dayIndex = 0;
-  $("bible-select").value = "0"; $("gita-select").selectedIndex = -1;
   setActiveVerse();
 }
 
@@ -833,7 +835,7 @@ function buildScheduleRows() {
   const src = $("sched-source").value;
   const days = Number($("sched-days").value);
   const time = $("sched-time").value || "09:00";
-  const sources = src === "Both" ? ["Bible", "Gita"] : [src];
+  const sources = src === "all" ? Object.keys(daily.plans) : [src];
   const rows = [];
   for (let d = 0; d < days; d++) {
     sources.forEach((s) => {
@@ -857,7 +859,7 @@ function renderScheduleTable() {
     const timeInput = document.createElement("input"); timeInput.type = "time"; timeInput.value = r.time;
     timeInput.onchange = () => { scheduleRows[i].time = timeInput.value; };
     timeTd.appendChild(timeInput);
-    const srcTd = document.createElement("td"); srcTd.innerHTML = `<span class="pill">${r.source === "Gita" ? "Gita" : "Bible"}</span>`;
+    const srcTd = document.createElement("td"); srcTd.innerHTML = `<span class="pill">${r.source}</span>`;
     const verseTd = document.createElement("td"); verseTd.textContent = r.verse.ref;
     const capTd = document.createElement("td");
     capTd.style.maxWidth = "360px";
@@ -916,7 +918,7 @@ async function exportScheduleBundle() {
       files.push({ name: "media/" + media, bytes: dataUrlToBytes(renderScheduleImage(r.verse, bg).toDataURL("image/png")) });
       const kit = buildPostKit(r.verse);
       kit.platforms.forEach((p) => {
-        csv += [dateStr, r.time, p.name, (r.source === "Gita" ? "Bhagavad Gita" : "Bible"),
+        csv += [dateStr, r.time, p.name, faithLabel(r.source),
           r.verse.ref, p.caption, p.hashtags.join(" "), media].map(csvCell).join(",") + "\n";
       });
       status.textContent = `Rendering ${i + 1}/${scheduleRows.length}…`;
@@ -939,14 +941,14 @@ function bgForVerseApp(v) {
   return list[Math.abs(h) % list.length];
 }
 function buildVerseBatch(scope) {
-  if (scope === "bible") return VERSE_DB.filter((v)=>v.faith==="Bible");
-  if (scope === "gita") return VERSE_DB.filter((v)=>v.faith==="Gita");
   if (scope === "all") return VERSE_DB.slice();
+  const faiths = [...new Set(VERSE_DB.map((v) => v.faith))];
+  if (faiths.indexOf(scope) !== -1) return VERSE_DB.filter((v) => v.faith === scope); // a single tradition
   const days = scope === "next30" ? 30 : 7;
   const out = [], today = new Date();
   for (let d = 0; d < days; d++) {
     const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()+d);
-    ["Bible","Gita"].forEach((s)=>{ const list = VERSE_DB.filter((v)=>v.faith===s); out.push(list[dayOfYear(date)%list.length]); });
+    faiths.forEach((s)=>{ const list = VERSE_DB.filter((v)=>v.faith===s); out.push(list[dayOfYear(date)%list.length]); });
   }
   return out;
 }
@@ -977,10 +979,10 @@ async function runBatchVideo() {
       if (it.v) {
         blob = await generateVerseVideo({ text: it.v.text, ref: it.v.ref, paletteKey: it.v.theme, theme: it.v.theme,
           bgKey: bgForVerseApp(it.v), watermark: true, showRef: true, durationSec: dur, withMusic: music, w: dims.w, h: dims.h, onProgress });
-        name = `${it.v.ref.replace(/[^\w]+/g,"_").toLowerCase()}.webm`;
+        name = `${it.v.ref.replace(/[^\w]+/g,"_").toLowerCase()}.${videoFileExt(blob)}`;
       } else {
         blob = await generateSermonVideo(it.s, { durationSec: Math.max(dur,12), withMusic: music, w: dims.w, h: dims.h, onProgress });
-        name = `sermon_${it.s.id}.webm`;
+        name = `sermon_${it.s.id}.${videoFileExt(blob)}`;
       }
       files.push({ name: `eververse_${name}`, bytes: new Uint8Array(await blob.arrayBuffer()) });
     } catch (e) { /* skip a failed item */ }
@@ -999,6 +1001,19 @@ async function runBatchVideo() {
 function initSchedule() {
   BACKGROUNDS.forEach((b) => $("sched-bg").add(new Option(b.name, b.key)));
   $("sched-bg").value = "sunrise";
+
+  // Data-driven source lists (all traditions).
+  const allFaiths = [...new Set(VERSE_DB.map((v) => v.faith))];
+  $("sched-source").innerHTML = "";
+  allFaiths.forEach((f) => $("sched-source").add(new Option(faithLabel(f), f)));
+  $("sched-source").add(new Option("All traditions", "all"));
+  const bv = $("bv-scope");
+  bv.innerHTML = "";
+  bv.add(new Option("Next 7 days (all traditions)", "next7"));
+  bv.add(new Option("Next 30 days (all traditions)", "next30"));
+  allFaiths.forEach((f) => bv.add(new Option("All " + faithLabel(f), f)));
+  bv.add(new Option("Entire library", "all"));
+
   const rebuild = () => { scheduleRows = buildScheduleRows(); renderScheduleTable(); $("sched-status").textContent = ""; };
   $("sched-build").onclick = rebuild;
   $("sched-source").onchange = rebuild;

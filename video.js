@@ -135,7 +135,12 @@ function drawVideoFrame(ctx, W, H, bg, fit, pal, opts, p) {
 /*  Public: generate a webm blob                                       */
 /* ------------------------------------------------------------------ */
 function pickVideoMime() {
+  // Prefer MP4/H.264 (accepted by TikTok/Instagram/Facebook); fall back to WebM.
   const candidates = [
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4;codecs=avc1.640028,mp4a.40.2",
+    "video/mp4;codecs=avc1",
+    "video/mp4",
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm;codecs=vp8",
@@ -144,6 +149,8 @@ function pickVideoMime() {
   if (typeof MediaRecorder === "undefined") return null;
   return candidates.find((c) => MediaRecorder.isTypeSupported(c)) || null;
 }
+function mimeContainer(mime) { return mime && mime.indexOf("mp4") !== -1 ? "video/mp4" : "video/webm"; }
+function videoFileExt(blob) { return blob && blob.type && blob.type.indexOf("mp4") !== -1 ? "mp4" : "webm"; }
 
 function videoSupported() {
   return typeof MediaRecorder !== "undefined" &&
@@ -251,7 +258,7 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
   const chunks = [];
   rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-  const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: "video/webm" })); });
+  const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: mimeContainer(mime) })); });
 
   rec.start();
   src.start();
@@ -350,7 +357,7 @@ async function generateVerseVideo(opts) {
   const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
   const chunks = [];
   rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-  const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: "video/webm" })); });
+  const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: mimeContainer(mime) })); });
 
   rec.start();
   const interval = 1000 / fps;
