@@ -22,6 +22,7 @@ async function runVoiceOver() {
     const v = verseForSourceDate(content === "verse-gita" ? "Gita" : "Bible", new Date());
     text = `${v.text} ${meaningFor(v)}`; ref = v.ref; paletteKey = v.theme;
   }
+  const netMsg = (m) => /failed to fetch|networkerror|load failed|typeerror/i.test(String(m));
   btn.disabled = true; $("vo-download").style.display = "none";
   status.textContent = "Preparing…";
   try {
@@ -29,14 +30,24 @@ async function runVoiceOver() {
     if (lang !== "en") {
       const meta = LANGUAGES.find((l) => l.code === lang);
       status.textContent = `Translating to ${meta.name}…`;
-      narration = await translateText(text, lang); rtl = !!meta.rtl;
+      try { narration = await translateText(text, lang); rtl = !!meta.rtl; }
+      catch (te) { status.textContent = `⚠ Couldn't translate to ${meta.name} (translation service busy). Try English, or retry shortly.`; return; }
     }
-    status.textContent = "Creating narration & recording…";
-    const blob = await generateVoiceOverVideo({
-      narrationText: narration, captionText: narration, ref, rtl, paletteKey,
-      bgKey: "aurora", voiceId, watermark: true, w: dims.w, h: dims.h,
-      onProgress: (p) => { status.textContent = `Recording… ${Math.round(p * 100)}%`; },
-    });
+    status.textContent = "Creating narration (voice service)…";
+    let blob;
+    try {
+      blob = await generateVoiceOverVideo({
+        narrationText: narration, captionText: narration, ref, rtl, paletteKey,
+        bgKey: "aurora", voiceId, watermark: true, w: dims.w, h: dims.h,
+        onProgress: (p) => { status.textContent = `Recording… ${Math.round(p * 100)}%`; },
+      });
+    } catch (ve) {
+      const m = String(ve && ve.message || ve);
+      status.textContent = netMsg(m)
+        ? "⚠ Couldn't reach the voice service. Make sure you're on https://eververse.org, your access token is correct, and that an ad-blocker / VPN / Brave shield isn't blocking workers.dev. Then reload and retry."
+        : `⚠ ${m}`;
+      return;
+    }
     const url = URL.createObjectURL(blob);
     const vp = $("vo-preview"); vp.src = url; vp.load();
     const a = $("vo-download"); a.href = url;
