@@ -21,6 +21,18 @@ Apple requires **macOS + Xcode** to build/submit — you cannot do it from Windo
    **App Store Connect** → fill the listing → submit. Review ~1–3 days.
    - No Mac? Use a cloud Mac: **MacinCloud**, **Codemagic**, or a friend's Mac.
 
+### 🪟 Microsoft Store — Windows (you can do this from Windows)
+This is the easiest one for you, and it's the same PWABuilder flow.
+1. PWABuilder → **Windows** → **Download** (it generates an **MSIX** package).
+2. Create a **Microsoft Partner Center** account — **~$19 one-time** for an
+   individual (partner.microsoft.com/dashboard → register as an app developer).
+   *Tip:* If you first **reserve the app name** in Partner Center, PWABuilder can
+   auto-fill your Publisher ID / Package identity so the MSIX matches your listing.
+3. Partner Center → **Create a new app** → reserve the name **EverVerse** →
+   **Packages** → upload the `.msix` → fill the listing (reuse the draft below) → submit.
+4. Review is usually 1–3 days. The app installs from the Microsoft Store and runs
+   as a real desktop window (we set `display_override` so it gets a clean title bar).
+
 ## Alternative: Capacitor (more native power)
 For background audio, native push, etc., wrap with **Capacitor** (needs Node.js +
 Android Studio, and Xcode for iOS). More setup; ask and I'll scaffold the project.

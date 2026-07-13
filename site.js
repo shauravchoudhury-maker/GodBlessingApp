@@ -108,11 +108,13 @@ function buildFeedCell(v, date) {
 function initToday() {
   $("today-date").textContent = new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"});
   const today = new Date();
-  const wrap = $("today-posts"); wrap.innerHTML = "";
-  wrap.appendChild(buildPostCard(verseForSourceDate("Bible", today), "Bible"));
-  wrap.appendChild(buildPostCard(verseForSourceDate("Gita", today), "Bhagavad Gita"));
-  // Recent feed showcases every tradition (today + yesterday across all faiths).
   const faiths = faithsIn(VERSE_DB);
+  // Spotlight rotates daily so every tradition gets its turn in the hero.
+  const off = dayOfYear(today) % faiths.length;
+  const featured = [faiths[off], faiths[(off + 1) % faiths.length]];
+  const wrap = $("today-posts"); wrap.innerHTML = "";
+  featured.forEach((f) => wrap.appendChild(buildPostCard(verseForSourceDate(f, today), faithLabel(f))));
+  // Recent feed showcases every tradition (today + yesterday across all faiths).
   const feed = $("today-recent"); feed.innerHTML = "";
   for (let d = 0; d <= 1; d++) {
     const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()-d);
@@ -338,6 +340,10 @@ function init() {
   document.querySelectorAll("[data-go]").forEach((el)=>el.addEventListener("click", ()=>go(el.dataset.go)));
   $("detail").addEventListener("click", (e)=>{ if (e.target === $("detail")) closeDetail(); });
   initToday();
+  // deep-link support (app shortcuts / shared links): index.html#sermons etc.
+  const routeHash = () => { const h = (location.hash || "").replace("#", ""); if (["posts","trending","sermons","verses"].indexOf(h) !== -1) go(h); };
+  routeHash();
+  window.addEventListener("hashchange", routeHash);
   if ("serviceWorker" in navigator) window.addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 }
 document.addEventListener("DOMContentLoaded", init);

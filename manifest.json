@@ -2,7 +2,7 @@
   "id": "./",
   "name": "EverVerse — Daily Faith & Wellness",
   "short_name": "EverVerse",
-  "description": "A daily religious wellness app: verses, meanings and sermons from the Bible and Bhagavad Gita — read and listen in your own language, every day.",
+  "description": "A daily religious wellness app: verses, meanings and sermons from the Bible, Bhagavad Gita, Guru Granth Sahib, Dhammapada and the Tripitaka — read and listen in your own language, every day.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -17,6 +17,11 @@
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Today's blessing", "short_name": "Today", "url": "index.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Sermons", "short_name": "Sermons", "url": "index.html#sermons", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Verses", "short_name": "Verses", "url": "index.html#verses", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ],
   "screenshots": [
     { "src": "assets/screenshots/01-today.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "A daily blessing, every day" },

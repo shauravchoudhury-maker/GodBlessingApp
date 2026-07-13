@@ -19,7 +19,7 @@ async function runVoiceOver() {
     text = `${s.verseText} ${s.body.join(" ")} ${s.takeaway}`;
     ref = s.verseRef; paletteKey = (VERSE_DB.find((v) => v.ref === s.verseRef) || {}).theme || "royal";
   } else {
-    const v = verseForSourceDate(content === "verse-gita" ? "Gita" : "Bible", new Date());
+    const v = verseForSourceDate(content.replace("verse-", ""), new Date());
     text = `${v.text} ${meaningFor(v)}`; ref = v.ref; paletteKey = v.theme;
   }
   const netMsg = (m) => /failed to fetch|networkerror|load failed|typeerror/i.test(String(m));
@@ -50,11 +50,13 @@ async function runVoiceOver() {
     }
     const url = URL.createObjectURL(blob);
     const vp = $("vo-preview"); vp.src = url; vp.load();
+    lastVoiceOverBlob = blob;
     const ext = videoFileExt(blob);
     const a = $("vo-download"); a.href = url;
     a.download = `eververse_voiceover_${ref.replace(/[^\w]+/g, "_").toLowerCase()}_${lang}.${ext}`;
     a.textContent = `⬇ Download .${ext}`;
     a.style.display = "inline-block";
+    $("vo-share").style.display = navigator.canShare ? "inline-block" : "none";
     status.textContent = `✓ Voice-over video ready (${(blob.size / 1048576).toFixed(1)} MB, ${ext.toUpperCase()}).`;
   } catch (e) {
     status.textContent = `⚠ ${e.message || e}`;
@@ -62,16 +64,29 @@ async function runVoiceOver() {
 }
 function initVoiceOver() {
   if (!$("vo-run")) return;
-  SERMONS.forEach((s) => $("vo-sermon").add(new Option(s.title, s.id)));
+  // content: today's verse for EVERY tradition, plus any sermon
+  $("vo-content").innerHTML = "";
+  [...new Set(VERSE_DB.map((v) => v.faith))].forEach((f) => $("vo-content").add(new Option("Today's verse — " + faithLabel(f), "verse-" + f)));
+  $("vo-content").add(new Option("A sermon…", "sermon"));
+  SERMONS.forEach((s) => $("vo-sermon").add(new Option(faithLabel(s.faith) + " · " + s.title, s.id)));
   $("vo-lang").add(new Option("English (original)", "en"));
   LANGUAGES.forEach((l) => $("vo-lang").add(new Option(l.name, l.code)));
   $("vo-content").onchange = () => { $("vo-sermon-wrap").style.display = $("vo-content").value === "sermon" ? "" : "none"; };
   $("vo-token").value = getTtsToken();
   $("vo-token").oninput = () => setTtsToken($("vo-token").value);
   $("vo-run").onclick = runVoiceOver;
+  $("vo-share").onclick = shareVoiceOver;
   if (typeof TTS_READY === "undefined" || !TTS_READY) {
     $("vo-setup").textContent = "⚙ Not connected yet — follow TTS_SETUP.md, deploy the Worker, then paste its URL into tts-config.js.";
   }
+}
+let lastVoiceOverBlob = null;
+async function shareVoiceOver() {
+  if (!lastVoiceOverBlob) return;
+  const ext = videoFileExt(lastVoiceOverBlob);
+  const file = new File([lastVoiceOverBlob], "eververse_voiceover." + ext, { type: lastVoiceOverBlob.type });
+  const ok = await shareFiles([file], "A blessing from EverVerse ✦ eververse.org", "EverVerse");
+  if (!ok) $("vo-download").click();
 }
 
 // renderVerse + wrapLines/fitText/hexToRgba now live in render.js (shared with
