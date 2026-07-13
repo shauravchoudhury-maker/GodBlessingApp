@@ -171,6 +171,32 @@
         </div>
       </div>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">5</span><h2>🎙 Voice-over video</h2></div>
+      <p class="hint">Real spoken narration + on-screen captions — like a pastor delivering the verse or sermon — in any language, ready to upload. Powered by ElevenLabs via your private voice service (see TTS_SETUP.md).</p>
+      <div class="kit-status" id="vo-setup"></div>
+      <div class="video-grid">
+        <div class="controls">
+          <div class="field"><label for="vo-content">Content</label>
+            <select id="vo-content">
+              <option value="verse-bible">Today's verse — Bible</option>
+              <option value="verse-gita">Today's verse — Bhagavad Gita</option>
+              <option value="sermon">A sermon…</option>
+            </select>
+          </div>
+          <div class="field" id="vo-sermon-wrap" style="display:none;"><label for="vo-sermon">Sermon</label><select id="vo-sermon"></select></div>
+          <div class="field"><label for="vo-voice">Voice</label><select id="vo-voice"><option value="female">Female</option><option value="male">Male</option></select></div>
+          <div class="field"><label for="vo-lang">Language</label><select id="vo-lang"></select></div>
+          <div class="field"><label for="vo-format">Format</label><select id="vo-format"><option value="portrait">Vertical 9:16</option><option value="square">Square 1:1</option></select></div>
+          <div class="field"><label for="vo-token">Voice-over access token</label><input id="vo-token" type="password" autocomplete="off" placeholder="your PROXY_SECRET" /></div>
+          <button class="btn accent" id="vo-run">🎬 Generate voice-over video</button>
+          <div class="kit-status" id="vo-status"></div>
+          <a id="vo-download" class="btn" style="display:none;">⬇ Download .webm</a>
+        </div>
+        <div class="preview-wrap"><video id="vo-preview" controls playsinline></video></div>
+      </div>
+    </section>
   </main>
 
   <!-- ============================ READ HUB ============================ -->
@@ -391,6 +417,7 @@
   <script src="backgrounds.js"></script>
   <script src="render.js"></script>
   <script src="voice.js"></script>
+  <script src="tts-config.js"></script>
   <script src="zip.js"></script>
   <script src="video.js"></script>
   <script src="hub.js"></script>

@@ -3,6 +3,64 @@
 
 const $ = (id) => document.getElementById(id);
 
+// Voice-over access token (used by video.js fetchTTS; kept on-device only).
+function getTtsToken() { try { return localStorage.getItem("ev_tts_token") || ""; } catch (e) { return ""; } }
+function setTtsToken(t) { try { localStorage.setItem("ev_tts_token", t); } catch (e) {} }
+
+async function runVoiceOver() {
+  const status = $("vo-status"), btn = $("vo-run");
+  if (typeof TTS_READY === "undefined" || !TTS_READY) { status.textContent = "Voice-over isn't connected yet — see TTS_SETUP.md and paste your Worker URL into tts-config.js."; return; }
+  const content = $("vo-content").value, lang = $("vo-lang").value, fmt = $("vo-format").value;
+  const voiceId = (typeof TTS_VOICES !== "undefined" ? TTS_VOICES[$("vo-voice").value] : undefined);
+  const dims = fmt === "square" ? { w: 720, h: 720 } : { w: 720, h: 1280 };
+  let text, ref, paletteKey;
+  if (content === "sermon") {
+    const s = SERMONS.find((x) => x.id === $("vo-sermon").value) || SERMONS[0];
+    text = `${s.verseText} ${s.body.join(" ")} ${s.takeaway}`;
+    ref = s.verseRef; paletteKey = (VERSE_DB.find((v) => v.ref === s.verseRef) || {}).theme || "royal";
+  } else {
+    const v = verseForSourceDate(content === "verse-gita" ? "Gita" : "Bible", new Date());
+    text = `${v.text} ${meaningFor(v)}`; ref = v.ref; paletteKey = v.theme;
+  }
+  btn.disabled = true; $("vo-download").style.display = "none";
+  status.textContent = "Preparing…";
+  try {
+    let narration = text, rtl = false;
+    if (lang !== "en") {
+      const meta = LANGUAGES.find((l) => l.code === lang);
+      status.textContent = `Translating to ${meta.name}…`;
+      narration = await translateText(text, lang); rtl = !!meta.rtl;
+    }
+    status.textContent = "Creating narration & recording…";
+    const blob = await generateVoiceOverVideo({
+      narrationText: narration, captionText: narration, ref, rtl, paletteKey,
+      bgKey: "aurora", voiceId, watermark: true, w: dims.w, h: dims.h,
+      onProgress: (p) => { status.textContent = `Recording… ${Math.round(p * 100)}%`; },
+    });
+    const url = URL.createObjectURL(blob);
+    const vp = $("vo-preview"); vp.src = url; vp.load();
+    const a = $("vo-download"); a.href = url;
+    a.download = `eververse_voiceover_${ref.replace(/[^\w]+/g, "_").toLowerCase()}_${lang}.webm`;
+    a.style.display = "inline-block";
+    status.textContent = `✓ Voice-over video ready (${(blob.size / 1048576).toFixed(1)} MB).`;
+  } catch (e) {
+    status.textContent = `⚠ ${e.message || e}`;
+  } finally { btn.disabled = false; }
+}
+function initVoiceOver() {
+  if (!$("vo-run")) return;
+  SERMONS.forEach((s) => $("vo-sermon").add(new Option(s.title, s.id)));
+  $("vo-lang").add(new Option("English (original)", "en"));
+  LANGUAGES.forEach((l) => $("vo-lang").add(new Option(l.name, l.code)));
+  $("vo-content").onchange = () => { $("vo-sermon-wrap").style.display = $("vo-content").value === "sermon" ? "" : "none"; };
+  $("vo-token").value = getTtsToken();
+  $("vo-token").oninput = () => setTtsToken($("vo-token").value);
+  $("vo-run").onclick = runVoiceOver;
+  if (typeof TTS_READY === "undefined" || !TTS_READY) {
+    $("vo-setup").textContent = "⚙ Not connected yet — follow TTS_SETUP.md, deploy the Worker, then paste its URL into tts-config.js.";
+  }
+}
+
 // renderVerse + wrapLines/fitText/hexToRgba now live in render.js (shared with
 // the public site). render.js is loaded before app.js.
 
@@ -984,6 +1042,7 @@ function init() {
   initStudio();
   initSchedule();
   initHub();
+  initVoiceOver();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);

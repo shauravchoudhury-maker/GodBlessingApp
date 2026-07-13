@@ -151,6 +151,145 @@ function videoSupported() {
     !!pickVideoMime();
 }
 
+/* ================================================================== */
+/*  Voice-over video (real TTS narration + synced captions)            */
+/* ================================================================== */
+// Fetch spoken audio (mp3 ArrayBuffer) from the ElevenLabs proxy.
+async function fetchTTS(text, opts) {
+  if (typeof TTS_READY === "undefined" || !TTS_READY) throw new Error("Voice-over isn't set up yet — add your Worker URL in tts-config.js.");
+  const headers = { "Content-Type": "application/json" };
+  const tok = (typeof getTtsToken === "function") ? getTtsToken() : "";
+  if (tok) headers["x-ev-token"] = tok;
+  const res = await fetch(TTS_PROXY_URL, {
+    method: "POST", headers,
+    body: JSON.stringify({ text, voiceId: opts.voiceId || (typeof TTS_VOICES !== "undefined" ? TTS_VOICES.female : undefined), modelId: "eleven_multilingual_v2" }),
+  });
+  if (res.status === 401) throw new Error("Voice-over access token is missing or wrong.");
+  if (!res.ok) throw new Error("Voice service error (" + res.status + ").");
+  return await res.arrayBuffer();
+}
+
+// Split narration into caption "pages" (~14 words each, on sentence boundaries).
+function buildCaptionPages(text) {
+  const sentences = (text || "").replace(/\s+/g, " ").trim().match(/[^.!?]+[.!?]*/g) || [text];
+  const pages = [];
+  let cur = "";
+  for (const s of sentences) {
+    const test = (cur ? cur + " " : "") + s.trim();
+    if (test.split(" ").length > 14 && cur) { pages.push(cur.trim()); cur = s.trim(); }
+    else cur = test;
+  }
+  if (cur.trim()) pages.push(cur.trim());
+  return pages.length ? pages : [text];
+}
+
+function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption) {
+  const minDim = Math.min(W, H);
+  const scale = 1.0 + 0.1 * easeInOut(p);
+  const drawW = W * scale, drawH = H * scale;
+  ctx.drawImage(bg, 0, 0, bg.width, bg.height, -(drawW - W) / 2, -(drawH - H) / 2 + (drawH - H) * 0.15 * (p - 0.5), drawW, drawH);
+  const vig = ctx.createRadialGradient(W / 2, H * 0.46, minDim * 0.2, W / 2, H * 0.5, Math.max(W, H) * 0.75);
+  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.4)");
+  ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const fit = fitText(ctx, caption || "", W - W * 0.14 * 2, H * 0.5, 'Georgia, "Times New Roman", serif', minDim * 0.066, "600");
+  ctx.font = `600 ${fit.size}px Georgia, serif`;
+  ctx.fillStyle = pal.text;
+  ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = fit.size * 0.16; ctx.shadowOffsetY = fit.size * 0.04;
+  let y = H * 0.46 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+  if (opts.ref) {
+    ctx.direction = "ltr";
+    ctx.font = `italic 600 ${minDim * 0.03}px Georgia, serif`;
+    ctx.fillStyle = pal.accent;
+    ctx.fillText("— " + opts.ref, W / 2, H * 0.86);
+  }
+  // progress bar
+  ctx.fillStyle = hexToRgba(pal.accent, 0.9);
+  ctx.fillRect(0, H - 8, W * p, 8);
+  if (opts.watermark) {
+    ctx.direction = "ltr";
+    ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`;
+    ctx.fillStyle = hexToRgba(pal.text, 0.72);
+    ctx.textBaseline = "bottom";
+    ctx.fillText("✦ EverVerse", W / 2, H - H * 0.045);
+    ctx.textBaseline = "middle";
+  }
+}
+
+// Core: given a decoded AudioBuffer + caption pages, record the captioned,
+// voiced video. Exposed so the pipeline can be tested with any audio source.
+async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
+  if (!videoSupported()) throw new Error("This browser can't record video.");
+  const W = opts.w || 720, H = opts.h || 1280;
+  const audioCtx = opts._audioCtx;
+  const dur = Math.max(1, audioBuf.duration);
+  const pal = THEME_PALETTES[opts.paletteKey] || THEME_PALETTES.royal;
+  const seed = (opts.ref || "vo").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
+
+  const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const bg = document.createElement("canvas"); bg.width = Math.round(W * 1.25); bg.height = Math.round(H * 1.25);
+  drawBackground(opts.bgKey || "aurora", bg.getContext("2d"), bg.width, bg.height, pal, seed >>> 0);
+
+  // Caption schedule proportional to page length.
+  const totalChars = pages.reduce((a, s) => a + s.length, 0) || 1;
+  let acc = 0;
+  const sched = pages.map((s) => { const start = (acc / totalChars) * dur; acc += s.length; return { text: s, start, end: (acc / totalChars) * dur }; });
+
+  const streamDest = audioCtx.createMediaStreamDestination();
+  const src = audioCtx.createBufferSource(); src.buffer = audioBuf; src.connect(streamDest);
+
+  const videoStream = canvas.captureStream(0);
+  const vtrack = videoStream.getVideoTracks()[0];
+  const stream = new MediaStream([vtrack, ...streamDest.stream.getAudioTracks()]);
+  const mime = pickVideoMime();
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
+  const chunks = [];
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: "video/webm" })); });
+
+  rec.start();
+  src.start();
+  const start = performance.now(), interval = 1000 / 30;
+  await new Promise((resolve) => {
+    function tick() {
+      const t = (performance.now() - start) / 1000, p = Math.min(1, t / dur);
+      let cap = sched.length ? sched[sched.length - 1].text : "";
+      for (const s of sched) { if (t >= s.start && t < s.end) { cap = s.text; break; } }
+      if (t < (sched[0] ? sched[0].start : 0)) cap = sched[0] ? sched[0].text : "";
+      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, cap);
+      if (vtrack.requestFrame) vtrack.requestFrame();
+      if (opts.onProgress) opts.onProgress(p);
+      if (t >= dur + 0.2) { resolve(); return; }
+      setTimeout(tick, interval);
+    }
+    tick();
+  });
+  try { src.stop(); } catch (e) {}
+  rec.stop();
+  stream.getTracks().forEach((tr) => tr.stop());
+  return finished;
+}
+
+// Full pipeline: fetch TTS for the text, decode it, render the voiced video.
+async function generateVoiceOverVideo(opts) {
+  const mp3 = opts.audioArrayBuffer || await fetchTTS(opts.narrationText || opts.text, opts);
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AC();
+  if (audioCtx.state === "suspended") { try { await audioCtx.resume(); } catch (e) {} }
+  const audioBuf = await audioCtx.decodeAudioData(mp3.slice(0));
+  const pages = buildCaptionPages(opts.captionText || opts.narrationText || opts.text);
+  opts._audioCtx = audioCtx;
+  const blob = await renderVoiceOverVideoFromAudio(audioBuf, pages, opts);
+  try { await audioCtx.close(); } catch (e) {}
+  return blob;
+}
+
 // A short "sermon teaser" video — the takeaway line + source ref + music.
 function generateSermonVideo(sermon, opts) {
   const base = (typeof VERSE_DB !== "undefined") ? VERSE_DB.find((v) => v.ref === sermon.verseRef) : null;
