@@ -265,6 +265,12 @@ const THEME_PALETTES = {
   night: { name: "Midnight",    stops: ["#0f2027", "#203a43"], text: "#f5f5f5", accent: "#9fd0e0" },
   gold:  { name: "Gilded",      stops: ["#b78628", "#8a5a00"], text: "#fff9e8", accent: "#ffe9a8" },
   forest:{ name: "Grove",       stops: ["#134e5e", "#71b280"], text: "#f0fff4", accent: "#c9f0d8" },
+  // Modern, IG-native palettes (2026): muted, contemporary, editorial.
+  blush: { name: "Blush",       stops: ["#f3a7c4", "#b25a86"], text: "#fff5f9", accent: "#ffdcea" },
+  sage:  { name: "Sage",        stops: ["#a3bd9c", "#4a6b57"], text: "#f4fbef", accent: "#dcefce" },
+  dusk:  { name: "Dusk",        stops: ["#6b76c4", "#2c2c5e"], text: "#eef0ff", accent: "#c3ccff" },
+  noir:  { name: "Noir",        stops: ["#33333a", "#0e0e13"], text: "#f4f4f7", accent: "#c9a9ff" },
+  sand:  { name: "Sand",        stops: ["#efe3cf", "#d8bf9c"], text: "#4a3a26", accent: "#8a6a3c", light: true },
 };
 
 // Target languages for the free MyMemory API (used in the Studio translator).

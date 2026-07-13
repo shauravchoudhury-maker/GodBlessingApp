@@ -306,6 +306,48 @@ function sceneMesh(ctx, W, H, pal, seed) {
   ctx.globalCompositeOperation = "source-over";
 }
 
+// Film-grain / noise texture — the signature "premium" layer on modern
+// affirmation/quote posts. Tiled + composited so it's cheap even at 1080².
+function addGrain(ctx, W, H, seed, amount) {
+  amount = amount == null ? 0.07 : amount;
+  const tile = 160;
+  const off = document.createElement("canvas"); off.width = tile; off.height = tile;
+  const octx = off.getContext("2d");
+  const img = octx.createImageData(tile, tile);
+  const rng = makeRng((seed >>> 0) + 991);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = 90 + Math.floor(rng() * 130);
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  octx.putImageData(img, 0, 0);
+  const pat = ctx.createPattern(off, "repeat");
+  ctx.save();
+  ctx.globalAlpha = amount;
+  ctx.globalCompositeOperation = "overlay";
+  ctx.fillStyle = pat;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+// A soft, modern "aura" mesh — big blurred colour fields (very on-trend).
+function sceneAura(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, shade(pal.stops[0], 12)); g.addColorStop(1, shade(pal.stops[1], -6));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 131);
+  const cols = [pal.accent, pal.stops[0], "#ffffff", pal.stops[1]];
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 5; i++) {
+    const x = W * (0.15 + rng() * 0.7), y = H * (0.12 + rng() * 0.7), r = W * (0.28 + rng() * 0.3);
+    const m = ctx.createRadialGradient(x, y, 0, x, y, r);
+    m.addColorStop(0, rgba(cols[i % cols.length], 0.20));
+    m.addColorStop(1, rgba(cols[i % cols.length], 0));
+    ctx.fillStyle = m; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
 // Registry — order = display order in the picker.
 const BACKGROUNDS = [
   { key: "gradient", name: "Soft Glow",  draw: sceneGradient },
@@ -322,6 +364,7 @@ const BACKGROUNDS = [
   { key: "geometric", name: "Geometric", draw: sceneGeometric },
   { key: "particles", name: "Particles", draw: sceneParticles },
   { key: "mesh",     name: "Color Mesh", draw: sceneMesh },
+  { key: "aura",     name: "Aura",       draw: sceneAura },
 ];
 
 function drawBackground(key, ctx, W, H, pal, seed) {

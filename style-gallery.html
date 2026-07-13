@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EverVerse — Image Style Glossary</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    :root { --bg:#0e1220; --panel:#161c2e; --ink:#eef1f8; --muted:#9aa3bd; --line:#26304a; --brand:#7c5cff; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",system-ui,sans-serif; }
+    header { padding:34px 20px 10px; text-align:center; }
+    header h1 { margin:0 0 6px; font-size:26px; } header p { color:var(--muted); margin:0 auto; max-width:640px; line-height:1.5; }
+    .wrap { max-width:1180px; margin:0 auto; padding:20px; }
+    h2 { margin:34px 0 4px; font-size:19px; } .sub { color:var(--muted); margin:0 0 16px; font-size:14px; }
+    .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    .card canvas { width:100%; height:auto; display:block; background:#000; }
+    .card .lbl { padding:10px 12px; font-size:13px; } .card .lbl b { display:block; } .card .lbl span { color:var(--muted); font-size:12px; }
+    .swatches { display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); }
+    .sw { border-radius:10px; height:70px; border:1px solid var(--line); display:flex; align-items:flex-end; }
+    .sw span { font-size:11px; padding:4px 8px; background:rgba(0,0,0,.35); border-radius:6px; margin:6px; }
+    footer { text-align:center; color:var(--muted); padding:30px; font-size:13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>✦ EverVerse — Image Style Glossary</h1>
+    <p>Every template, palette, and texture the studio can render. Built to out-class the affirmation feeds — grain texture, editorial layouts, and a modern palette system.</p>
+  </header>
+  <div class="wrap">
+    <h2>The 4 layouts</h2>
+    <p class="sub">Same verse, four typographic treatments. Switch per-post in the studio (Daily → Layout).</p>
+    <div class="grid" id="g-layouts"></div>
+
+    <h2>Grain texture — the signature upgrade</h2>
+    <p class="sub">The film-grain layer is what makes modern gradient posts feel premium. Left: off. Right: on.</p>
+    <div class="grid" id="g-grain"></div>
+
+    <h2>Palette system</h2>
+    <p class="sub">Classic + five new contemporary palettes. Any palette works with any layout &amp; background.</p>
+    <div class="swatches" id="g-swatches"></div>
+    <div class="grid" id="g-palettes" style="margin-top:16px;"></div>
+
+    <h2>Background art library</h2>
+    <p class="sub">Procedural, royalty-free scenes — pair any with any palette.</p>
+    <div class="grid" id="g-bgs"></div>
+  </div>
+  <footer>EverVerse · internal style reference · eververse.org</footer>
+
+  <script src="verses.js"></script>
+  <script src="backgrounds.js"></script>
+  <script src="render.js"></script>
+  <script>
+    const SIZE = 460;
+    function card(parent, opts, title, sub) {
+      const c = document.createElement("div"); c.className = "card";
+      const cv = document.createElement("canvas");
+      renderVerse(cv, SIZE, SIZE, opts);
+      const l = document.createElement("div"); l.className = "lbl";
+      l.innerHTML = `<b>${title}</b><span>${sub || ""}</span>`;
+      c.append(cv, l); parent.appendChild(c);
+    }
+    const V = { text: "Be still, and know that I am God.", ref: "Psalm 46:10" };
+
+    // Layouts
+    [["classic","serif","aura","Classic","centered serif"],
+     ["affirmation","sans","mesh","Affirmation","bold modern sans"],
+     ["editorial","serif","gradient","Editorial","left kicker + rule"],
+     ["minimal","serif","gradient","Minimal","calm & airy"]].forEach(([layout,font,bg,t,s])=>
+      card(document.getElementById("g-layouts"), {text:V.text, ref:V.ref, paletteKey:"dusk", bgKey:bg, layout, font, watermark:true, showRef:true, grain:true}, t, s));
+
+    // Grain off vs on
+    card(document.getElementById("g-grain"), {text:V.text, ref:V.ref, paletteKey:"blush", bgKey:"aura", layout:"affirmation", font:"sans", watermark:true, showRef:true, grain:false}, "Grain: off", "flat gradient");
+    card(document.getElementById("g-grain"), {text:V.text, ref:V.ref, paletteKey:"blush", bgKey:"aura", layout:"affirmation", font:"sans", watermark:true, showRef:true, grain:true}, "Grain: on", "film texture");
+
+    // Palette swatches + rendered examples
+    const pals = Object.keys(THEME_PALETTES);
+    pals.forEach((k)=>{
+      const p = THEME_PALETTES[k];
+      const d = document.createElement("div"); d.className = "sw";
+      d.style.background = `linear-gradient(135deg, ${p.stops[0]}, ${p.stops[1]})`;
+      d.innerHTML = `<span style="color:${p.text}">${p.name}</span>`;
+      document.getElementById("g-swatches").appendChild(d);
+    });
+    ["blush","sage","noir","sand","gold","calm"].forEach((k)=>
+      card(document.getElementById("g-palettes"), {text:V.text, ref:V.ref, paletteKey:k, bgKey:"aura", layout:"affirmation", font:"sans", watermark:true, showRef:true, grain:true}, THEME_PALETTES[k].name, k));
+
+    // Backgrounds
+    BACKGROUNDS.forEach((b)=>
+      card(document.getElementById("g-bgs"), {text:V.text, ref:V.ref, paletteKey:"royal", bgKey:b.key, layout:"classic", font:"serif", watermark:true, showRef:true, grain:true}, b.name, b.key));
+  </script>
+</body>
+</html>

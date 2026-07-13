@@ -3,6 +3,9 @@
 
 const $ = (id) => document.getElementById(id);
 
+// Studio-wide image style (read by render.js renderVerse as a fallback).
+let EV_STYLE = { layout: "classic", font: "serif", grain: true };
+
 // Voice-over access token (used by video.js fetchTTS; kept on-device only).
 function getTtsToken() { try { return localStorage.getItem("ev_tts_token") || ""; } catch (e) { return ""; } }
 function setTtsToken(t) { try { localStorage.setItem("ev_tts_token", t); } catch (e) {} }
@@ -665,6 +668,10 @@ function initDaily() {
   $("daily-bg").onchange = () => { daily.bgKey = $("daily-bg").value; renderDailyAll(); };
   $("daily-palette").onchange = () => { daily.paletteKey = $("daily-palette").value; renderDailyAll(); };
   $("daily-watermark").onchange = () => { daily.watermark = $("daily-watermark").checked; renderDailyAll(); };
+  $("daily-layout").value = EV_STYLE.layout; $("daily-font").value = EV_STYLE.font; $("daily-grain").checked = EV_STYLE.grain;
+  $("daily-layout").onchange = () => { EV_STYLE.layout = $("daily-layout").value; renderDailyAll(); };
+  $("daily-font").onchange = () => { EV_STYLE.font = $("daily-font").value; renderDailyAll(); };
+  $("daily-grain").onchange = () => { EV_STYLE.grain = $("daily-grain").checked; renderDailyAll(); };
   $("download-kit").onclick = downloadKit;
   $("gen-top8").onclick = downloadTop8;
   $("verify-meaning").onclick = checkMeaning;
