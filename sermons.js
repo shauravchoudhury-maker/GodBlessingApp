@@ -124,6 +124,78 @@ const SERMONS = [
     ],
     takeaway: "You were never meant to carry it all. Surrender the weight — and find you are free.",
   },
+  {
+    id: "sikh-earn-share",
+    title: "Earn Honestly, Give Freely",
+    faith: "Sikh", theme: "gold", verseRef: "Guru Granth Sahib, Ang 1245",
+    verseText: "One who works for what they eat, and gives away some of what they have — O Nanak, they know the true path.",
+    body: [
+      "It's tempting to think holiness lives somewhere far off — in mountaintops or grand rituals. Guru Nanak points somewhere much closer: your daily work and your open hand.",
+      "Earn your bread honestly, he says, and then share it. Not because you have extra, but because giving is how the heart stays soft and connected. A life of honest labour and quiet generosity is itself the spiritual path — no ladder to climb, just this, done with love.",
+      "Today, you can walk that path in the smallest way: do your work with integrity, and give something away — your time, your help, a portion of what you have. That is where the sacred and the ordinary meet.",
+    ],
+    takeaway: "Honest work and an open hand — that ordinary, generous life is the true path.",
+  },
+  {
+    id: "sikh-one-light",
+    title: "The One Light in Everyone",
+    faith: "Sikh", theme: "royal", verseRef: "Guru Granth Sahib, Ang 1349",
+    verseText: "First, God created the Light; from that One Light came the whole creation. So who is good, and who is bad?",
+    body: [
+      "We spend so much energy sorting people — us and them, worthy and unworthy, insider and outsider. This verse gently dismantles all of it.",
+      "If one Light gave rise to everyone, then that same Light is shining, however dimly, in the person who annoys you, the stranger, even the one you'd call an enemy. The labels we hang on each other are small; the shared source is vast.",
+      "You don't have to agree with everyone to honour the Light in them. Today, try seeing one person you'd normally dismiss as a carrier of that same sacred flame. It changes how you speak, how you soften, how you love.",
+    ],
+    takeaway: "One Light shines in every person — so look past the labels and honour the sacred in all.",
+  },
+  {
+    id: "dhp-guard-mind",
+    title: "Tend the Garden of Your Mind",
+    faith: "Dhammapada", theme: "night", verseRef: "Dhammapada 1",
+    verseText: "Mind precedes all things; mind is their chief, they are mind-made. Speak or act with a pure mind, and happiness follows like a shadow that never leaves.",
+    body: [
+      "The Buddha begins the Dhammapada with a quietly radical idea: your life takes the shape of your thoughts. What you repeatedly dwell on becomes the mood you live in, the words you speak, the acts you do.",
+      "This isn't about forcing positivity. It's about tending — noticing the seeds of bitterness or fear before they take over, and gently watering thoughts of kindness, patience and truth instead.",
+      "You can't control every thought that arises, but you can choose which ones you feed. Feed the good ones today, and watch how peace begins to follow you around like a shadow that won't leave.",
+    ],
+    takeaway: "Your life follows your thoughts — tend your mind with care, and peace will follow you.",
+  },
+  {
+    id: "dhp-conquer-self",
+    title: "The Victory That Matters",
+    faith: "Dhammapada", theme: "bold", verseRef: "Dhammapada 103",
+    verseText: "Though one may conquer a thousand men in battle a thousand times, the one who conquers themselves is the greatest victor.",
+    body: [
+      "The world celebrates victories over others — the argument won, the rival beaten, the competitor left behind. The Buddha points to a harder, quieter conquest.",
+      "The truly great victory is over yourself: over the flash of anger, the pull of craving, the habit you keep returning to. No one applauds these wins, and no one else even sees them — but they change everything.",
+      "You don't have to win them all at once. Just the next one: the pause before the harsh reply, the choice to let go instead of grasp. Each small self-conquest is a greater triumph than any battle.",
+    ],
+    takeaway: "The greatest victory isn't over others — it's mastering yourself, one quiet choice at a time.",
+  },
+  {
+    id: "trip-love-no-walls",
+    title: "A Love Without Walls",
+    faith: "Tripitaka", theme: "warm", verseRef: "Metta Sutta",
+    verseText: "As a mother would protect her only child with her life, so let one cultivate boundless love toward all living beings.",
+    body: [
+      "We know how to love a few people fiercely — a child, a partner, a close friend. The Metta Sutta invites us to take that same protective tenderness and let it grow until it has no edges.",
+      "Boundless love doesn't mean feeling warm about everyone all the time. It means genuinely wishing every being well — even those you'll never meet, even those who trouble you. It's a practice: quietly wishing safety, ease and happiness outward, ring by widening ring.",
+      "Start small today. Wish yourself well, then someone you love, then someone neutral, then someone difficult, then all beings everywhere. A heart practised this way slowly loses its walls.",
+    ],
+    takeaway: "Take the fierce love you feel for a few, and let it grow until it leaves no one out.",
+  },
+  {
+    id: "trip-path-out",
+    title: "There Is a Way Through",
+    faith: "Tripitaka", theme: "night", verseRef: "Dhammacakkappavattana Sutta",
+    verseText: "There is suffering; there is a cause of suffering; there is an end of suffering; and there is a path that leads to its end.",
+    body: [
+      "The Buddha's very first teaching is startlingly honest: yes, there is suffering. He doesn't pretend life is painless. But he refuses to stop there.",
+      "Suffering has causes — much of it in our grasping and resisting — and because it has causes, it can end. And there is a real, walkable path out. This is not despair; it is the most hopeful thing imaginable: you are not trapped.",
+      "Whatever weighs on you today, hold both truths together — the pain is real, and it is not the end of the story. There is a way through, one honest step at a time.",
+    ],
+    takeaway: "Your pain is real — and it is not the whole story. There is a way through, step by step.",
+  },
 ];
 
 function sermonById(id) { return SERMONS.find((s) => s.id === id); }

@@ -83,7 +83,7 @@ function renderSermonList() {
     const card = document.createElement("div");
     card.className = "sermon-card";
     card.innerHTML =
-      `<div class="sc-badges"><span class="badge">${s.faith === "Gita" ? "Gita" : "Bible"}</span><span class="badge alt">${s.theme}</span><span class="sc-min">${estReadMin(s)} min</span></div>` +
+      `<div class="sc-badges"><span class="badge">${s.faith}</span><span class="badge alt">${s.theme}</span><span class="sc-min">${estReadMin(s)} min</span></div>` +
       `<h3 class="sc-title"></h3><div class="sc-verse"></div><div class="sc-preview"></div>`;
     card.querySelector(".sc-title").textContent = s.title;
     card.querySelector(".sc-verse").textContent = s.verseRef;
@@ -99,7 +99,7 @@ function openSermon(id) {
   if (!s) return;
   currentSermon = s; sermonLang = "en"; sermonTrans = null;
   $$("reader-title").textContent = s.title;
-  $$("reader-meta").textContent = `${s.faith === "Gita" ? "Bhagavad Gita" : "Bible"} · ${s.theme} · ${estReadMin(s)} min read`;
+  $$("reader-meta").textContent = `${faithLabel(s.faith)} · ${s.theme} · ${estReadMin(s)} min read`;
   $$("reader-verse").textContent = `“${s.verseText}” — ${s.verseRef}`;
   $$("reader-lang").value = "en";
   $$("reader-trans-status").textContent = "";
@@ -263,6 +263,9 @@ function maybeRemind() {
 
 /* ---- Init -------------------------------------------------------- */
 function initHub() {
+  $$("sermon-source").innerHTML = "";
+  $$("sermon-source").add(new Option("All sources", "all"));
+  [...new Set(SERMONS.map((s) => s.faith))].forEach((f) => $$("sermon-source").add(new Option(faithLabel(f), f)));
   const themes = [...new Set(SERMONS.map((s) => s.theme))].sort();
   themes.forEach((t) => $$("sermon-theme").add(new Option(t, t)));
   $$("sermon-source").onchange = renderSermonList;

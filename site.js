@@ -12,6 +12,12 @@ function renderVerseImage(canvas, v, W, H) {
   renderVerse(canvas, W, H, { text:v.text, ref:v.ref, paletteKey:v.theme, bgKey:bgForVerse(v), watermark:true, showRef:true });
 }
 function verseForSourceDate(source, date) { const list = VERSE_DB.filter((v)=>v.faith===source); return list[dayOfYear(date)%list.length]; }
+function faithsIn(list) { return [...new Set(list.map((x)=>x.faith))]; }
+function populateSourceSelect(sel, faiths, allLabel, allValue) {
+  sel.innerHTML = "";
+  sel.add(new Option(allLabel, allValue));
+  faiths.forEach((f) => sel.add(new Option(faithLabel(f), f)));
+}
 
 // Top languages shown on the main page for every post.
 const TOP4 = [["es","Español"],["pt","Português"],["hi","हिन्दी"]];
@@ -91,7 +97,7 @@ function buildFeedCell(v, date) {
   const cell = document.createElement("div"); cell.className = "cell";
   const c = document.createElement("canvas"); renderVerseImage(c, v, 320, 320); cell.appendChild(c);
   const cap = document.createElement("div"); cap.className = "cap";
-  const d = document.createElement("div"); d.className = "d"; d.textContent = date.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " · " + (v.faith==="Gita"?"Gita":"Bible");
+  const d = document.createElement("div"); d.className = "d"; d.textContent = date.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " · " + v.faith;
   const r = document.createElement("div"); r.className = "r"; r.textContent = v.ref;
   cap.append(d, r); cell.append(cap);
   cell.onclick = ()=>openVerseDetail(v);
@@ -105,11 +111,12 @@ function initToday() {
   const wrap = $("today-posts"); wrap.innerHTML = "";
   wrap.appendChild(buildPostCard(verseForSourceDate("Bible", today), "Bible"));
   wrap.appendChild(buildPostCard(verseForSourceDate("Gita", today), "Bhagavad Gita"));
+  // Recent feed showcases every tradition (today + yesterday across all faiths).
+  const faiths = faithsIn(VERSE_DB);
   const feed = $("today-recent"); feed.innerHTML = "";
-  for (let d = 1; d <= 5; d++) {
+  for (let d = 0; d <= 1; d++) {
     const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()-d);
-    feed.appendChild(buildFeedCell(verseForSourceDate("Bible", date), date));
-    feed.appendChild(buildFeedCell(verseForSourceDate("Gita", date), date));
+    faiths.forEach((f) => feed.appendChild(buildFeedCell(verseForSourceDate(f, date), date)));
   }
 }
 
@@ -121,10 +128,11 @@ function renderPosts() {
   const today = new Date();
   for (let d = 0; d < POSTS_DAYS; d++) {
     const date = new Date(today.getFullYear(), today.getMonth(), today.getDate()-d);
-    (src==="Both" ? ["Bible","Gita"] : [src]).forEach((s)=>feed.appendChild(buildFeedCell(verseForSourceDate(s,date), date)));
+    (src==="all" ? faithsIn(VERSE_DB) : [src]).forEach((s)=>feed.appendChild(buildFeedCell(verseForSourceDate(s,date), date)));
   }
 }
 function initPosts() {
+  populateSourceSelect($("posts-source"), faithsIn(VERSE_DB), "All traditions", "all");
   $("posts-more").style.display = "none"; // fixed 5-day window
   $("posts-source").onchange = renderPosts;
   renderPosts();
@@ -136,7 +144,7 @@ function renderSermonList() {
   const list = $("sermon-list"); list.innerHTML = "";
   SERMONS.filter((s)=>(src==="all"||s.faith===src)&&(th==="all"||s.theme===th)).forEach((s)=>{
     const t = document.createElement("div"); t.className = "tile";
-    t.innerHTML = `<div class="badges"><span class="badge">${s.faith==="Gita"?"Gita":"Bible"}</span><span class="badge alt">${s.theme}</span></div><h3></h3><div class="v"></div><p></p>`;
+    t.innerHTML = `<div class="badges"><span class="badge">${s.faith}</span><span class="badge alt">${s.theme}</span></div><h3></h3><div class="v"></div><p></p>`;
     t.querySelector("h3").textContent = s.title;
     t.querySelector(".v").textContent = s.verseRef;
     t.querySelector("p").textContent = s.body[0].slice(0,120) + "…";
@@ -145,6 +153,7 @@ function renderSermonList() {
   });
 }
 function initSermons() {
+  populateSourceSelect($("sermon-source"), faithsIn(SERMONS), "All sources", "all");
   [...new Set(SERMONS.map((s)=>s.theme))].sort().forEach((t)=>$("sermon-theme").add(new Option(t,t)));
   $("sermon-source").onchange = renderSermonList;
   $("sermon-theme").onchange = renderSermonList;
@@ -171,6 +180,7 @@ function applyVerseFilter() {
   versesShown = 0; $("verses-list").innerHTML = ""; renderVerseRows();
 }
 function initVerses() {
+  populateSourceSelect($("verses-source"), faithsIn(VERSE_DB), "All sources", "all");
   $("verses-source").onchange = applyVerseFilter;
   $("verses-search").oninput = debounce(applyVerseFilter, 220);
   $("verses-more").onclick = renderVerseRows;
@@ -188,7 +198,7 @@ function openVerseDetail(v) {
     `<div class="imgwrap"><canvas id="dt-canvas"></canvas></div>
      <div class="content">
        <button class="close" id="dt-close">✕</button>
-       <div class="meta">${v.faith==="Gita"?"Bhagavad Gita":"Bible"}</div>
+       <div class="meta">${faithLabel(v.faith)}</div>
        <blockquote class="verse serif" id="dt-verse"></blockquote>
        <div class="ref">— ${escapeHtml(v.ref)}</div>
        <div class="mean" id="dt-mean"></div>
@@ -256,9 +266,9 @@ function openSermonDetail(s) {
   $("detail-sheet").innerHTML =
     `<div class="content">
        <button class="close" id="dt-close">✕</button>
-       <div class="badges"><span class="badge">${s.faith==="Gita"?"Gita":"Bible"}</span><span class="badge alt">${s.theme}</span></div>
+       <div class="badges"><span class="badge">${s.faith}</span><span class="badge alt">${s.theme}</span></div>
        <h2>${escapeHtml(s.title)}</h2>
-       <div class="meta">${s.faith==="Gita"?"Bhagavad Gita":"Bible"} · ${escapeHtml(s.verseRef)}</div>
+       <div class="meta">${faithLabel(s.faith)} · ${escapeHtml(s.verseRef)}</div>
        <blockquote class="verse serif" id="dt-verse">“${escapeHtml(s.verseText)}”</blockquote>
        <div class="ref">— ${escapeHtml(s.verseRef)}</div>
        <div class="langrow"><span style="font-size:14px;color:var(--muted);">🌐 Read in</span><select class="pill" id="dt-lang"></select></div>

@@ -780,7 +780,7 @@ function studioDownload() {
 }
 
 function initStudio() {
-  ["Bible", "Gita"].forEach((f) => $("faith-select").add(new Option(f === "Gita" ? "Bhagavad Gita" : f, f)));
+  [...new Set(VERSE_DB.map((v) => v.faith))].forEach((f) => $("faith-select").add(new Option(faithLabel(f), f)));
   populateStudioVerses();
   LANGUAGES.forEach((l) => $("lang-select").add(new Option(l.name, l.code)));
   Object.entries(IMAGE_FORMATS).forEach(([k, f]) => $("format-select").add(new Option(`${f.name} (${f.w}×${f.h})`, k)));

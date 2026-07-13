@@ -107,6 +107,41 @@ const MEANINGS = {
   "Bhagavad Gita 17:15": "Speak what's true, kind, and helpful — words like that heal instead of harm.",
   "Bhagavad Gita 18:48": "No work is ever perfect, so don't abandon your calling waiting for flawless — just begin.",
   "Bhagavad Gita 18:65": "Keep your heart set on the divine — you are dear, and you will find your way home.",
+
+  // ---- Guru Granth Sahib ----
+  "Mool Mantar": "One loving Creator is behind everything — beyond fear and hate, beyond time — and you can know that presence by grace, not by force.",
+  "Japji Sahib": "Real riches aren't worn on the outside — carry contentment, humility and a quiet mind, and you're already wealthy.",
+  "Guru Granth Sahib, Ang 62": "Knowing truth is good, but living it is higher — let your life, not just your words, be honest.",
+  "Guru Granth Sahib, Ang 1245": "Earn honestly and share freely — that simple, generous way of living is the real path.",
+  "Guru Granth Sahib (Guru Nanak)": "A humble heart full of love is worth more than all the wealth of kings.",
+  "Guru Granth Sahib, Ang 1349": "One Light shines in everyone — so look past 'good' and 'bad' labels and see the sacred in every person.",
+  "Guru Granth Sahib (Guru Tegh Bahadur)": "What you're searching for isn't far away — the Divine already lives within you; look inward.",
+  "Guru Granth Sahib (Sukhmani Sahib)": "When you rest your mind on God, the worry and fear quietly lift.",
+  "Japji Sahib (Pauri 25)": "Every good thing in your life is a gift — the more you notice and give thanks, the more blessing you find.",
+  "Guru Granth Sahib, Ang 1427": "True strength is gentle: frighten no one, and don't live in fear of anyone.",
+
+  // ---- Dhammapada ----
+  "Dhammapada 1": "Your life follows your thoughts — tend your mind with care, and peace follows you like a shadow.",
+  "Dhammapada 5": "You can't put out a fire with fire; only love can end resentment. Choose love — it's the way through.",
+  "Dhammapada 183": "The whole path in one line: stop harming, do good, and clean up your own heart.",
+  "Dhammapada 223": "Meet anger with kindness, greed with generosity, lies with truth — respond, don't react.",
+  "Dhammapada 103": "The hardest, greatest victory isn't over others — it's mastering yourself.",
+  "Dhammapada 165": "No one can clean your heart for you, and no one can stain it either — your choices are truly your own.",
+  "Dhammapada 252": "It's easy to spot everyone else's flaws — turn that honest gaze gently on yourself.",
+  "Dhammapada 276": "Teachers can point the way, but only you can take the steps — begin walking.",
+  "Dhammapada 197": "You can stay light and free inside, even surrounded by anger — peace is a choice you keep making.",
+  "Dhammapada 100": "One true, kind, peaceful word matters more than a flood of empty ones.",
+  "Dhammapada 204": "Notice the real riches you already have: your health, a content heart, people you trust, and inner freedom.",
+
+  // ---- Tripitaka (suttas) ----
+  "Dhammacakkappavattana Sutta": "Suffering is real, it has causes, it can end — and there's a practical path out. You are not stuck.",
+  "Metta Sutta": "Love others with the fierce, protective tenderness a mother has for her child — and let that love leave no one out.",
+  "Karaniya Metta Sutta": "Let your kindness reach in every direction, holding no one outside it — a heart with no walls.",
+  "Kalama Sutta": "Don't accept things just because you're told to — test them in your own life, and keep what is kind and true.",
+  "Mahaparinibbana Sutta": "Everything changes and passes — so don't cling; live wholeheartedly and keep growing while you can.",
+  "Samyutta Nikaya": "When you truly see that nothing stays the same, you stop grasping — and that letting-go is where peace begins.",
+  "Sedaka Sutta": "Caring for yourself and caring for others aren't opposites — do one well and you strengthen the other.",
+  "Anguttara Nikaya": "Gratitude is rare and precious — being genuinely thankful is a mark of a good and grounded heart.",
 };
 
 // Warm fallback by topic so every verse shows a meaning while the batch grows.

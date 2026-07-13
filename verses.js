@@ -208,7 +208,52 @@ const VERSE_DB = [
   { faith: "Gita", ref: "Bhagavad Gita 17:15", theme: "calm",   topic: "wisdom",   text: "Speech that is truthful, kind, beneficial, and does not disturb others is a discipline of the tongue." },
   { faith: "Gita", ref: "Bhagavad Gita 18:48", theme: "bold",   topic: "purpose",  text: "Do not abandon the work you are meant to do, even if flawed, for every effort has some imperfection, as fire has smoke." },
   { faith: "Gita", ref: "Bhagavad Gita 18:65", theme: "warm",   topic: "love",     text: "Fix your mind on me, be devoted to me, and you will surely come to me. This I promise, for you are dear to me." },
+
+  // ------------------- SIKHISM · GURU GRANTH SAHIB -------------------
+  { faith: "Sikh", ref: "Mool Mantar",  theme: "royal",  topic: "faith",   text: "There is One Creator, whose Name is Truth — fearless, without hatred, timeless and without form, beyond birth and death, known by the Guru's grace." },
+  { faith: "Sikh", ref: "Japji Sahib",  theme: "calm",   topic: "wisdom",  text: "Let contentment be your earrings, humility your begging bowl, and meditation the ashes upon your body." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 62", theme: "forest", topic: "wisdom", text: "Truth is higher than everything; but higher still is truthful living." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 1245", theme: "gold", topic: "purpose", text: "One who works for what they eat, and gives away some of what they have — O Nanak, they know the true path." },
+  { faith: "Sikh", ref: "Guru Granth Sahib (Guru Nanak)", theme: "warm", topic: "love", text: "Even kings and emperors with mountains of wealth cannot compare with an ant filled with the love of God." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 1349", theme: "royal", topic: "purpose", text: "First, God created the Light; from that One Light came the whole creation. So who is good, and who is bad?" },
+  { faith: "Sikh", ref: "Guru Granth Sahib (Guru Tegh Bahadur)", theme: "night", topic: "guidance", text: "As fragrance dwells within the flower, and reflection within the mirror, so God dwells within you — seek Him in your own heart." },
+  { faith: "Sikh", ref: "Guru Granth Sahib (Sukhmani Sahib)", theme: "calm", topic: "peace", text: "In the remembrance of God the mind is at peace, and every sorrow and fear departs." },
+  { faith: "Sikh", ref: "Japji Sahib (Pauri 25)", theme: "hope", topic: "gratitude", text: "By His grace we receive every gift; the more we give thanks, the more there remains to give." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 1427", theme: "bold", topic: "courage", text: "One who frightens no one, and is not afraid of anyone — recognize that person as truly wise." },
+
+  // --------------------- BUDDHISM · DHAMMAPADA ----------------------
+  { faith: "Dhammapada", ref: "Dhammapada 1",   theme: "night",  topic: "wisdom",  text: "Mind precedes all things; mind is their chief, they are mind-made. Speak or act with a pure mind, and happiness follows like a shadow that never leaves." },
+  { faith: "Dhammapada", ref: "Dhammapada 5",   theme: "calm",   topic: "peace",   text: "Hatred is never ended by hatred, but by love alone — this is an eternal law." },
+  { faith: "Dhammapada", ref: "Dhammapada 183", theme: "forest", topic: "wisdom",  text: "To avoid all evil, to cultivate good, and to purify one's own mind — this is the teaching of the Awakened Ones." },
+  { faith: "Dhammapada", ref: "Dhammapada 223", theme: "warm",   topic: "love",    text: "Conquer anger with kindness, evil with good, greed with generosity, and lies with truth." },
+  { faith: "Dhammapada", ref: "Dhammapada 103", theme: "bold",   topic: "strength", text: "Though one may conquer a thousand men in battle a thousand times, the one who conquers themselves is the greatest victor." },
+  { faith: "Dhammapada", ref: "Dhammapada 165", theme: "royal",  topic: "purpose", text: "By oneself is one purified; by oneself is one defiled. No one can purify another — purity and impurity depend on oneself." },
+  { faith: "Dhammapada", ref: "Dhammapada 252", theme: "calm",   topic: "wisdom",  text: "The faults of others are easily seen; our own are hard to see." },
+  { faith: "Dhammapada", ref: "Dhammapada 276", theme: "bold",   topic: "courage", text: "You yourselves must walk the path; the Awakened Ones only show the way." },
+  { faith: "Dhammapada", ref: "Dhammapada 197", theme: "hope",   topic: "joy",     text: "Happily let us live, free from hatred among those who hate." },
+  { faith: "Dhammapada", ref: "Dhammapada 100", theme: "calm",   topic: "peace",   text: "Better than a thousand empty words is one word that brings peace." },
+  { faith: "Dhammapada", ref: "Dhammapada 204", theme: "gold",   topic: "gratitude", text: "Health is the greatest gift, contentment the greatest wealth, trust the finest kinship, and freedom the highest joy." },
+
+  // -------------------- BUDDHISM · TRIPITAKA (SUTTAS) ---------------
+  { faith: "Tripitaka", ref: "Dhammacakkappavattana Sutta", theme: "night", topic: "wisdom", text: "There is suffering; there is a cause of suffering; there is an end of suffering; and there is a path that leads to its end." },
+  { faith: "Tripitaka", ref: "Metta Sutta", theme: "warm", topic: "love", text: "As a mother would protect her only child with her life, so let one cultivate boundless love toward all living beings." },
+  { faith: "Tripitaka", ref: "Karaniya Metta Sutta", theme: "hope", topic: "love", text: "Let your love flow outward through the whole world — above, below, and all around — without limit and without ill will." },
+  { faith: "Tripitaka", ref: "Kalama Sutta", theme: "bold", topic: "wisdom", text: "Do not believe merely because it is tradition or hearsay. When you know for yourselves that a thing is good and blameless, then take it up and live by it." },
+  { faith: "Tripitaka", ref: "Mahaparinibbana Sutta", theme: "calm", topic: "comfort", text: "All things that arise must pass away. Therefore, strive on with diligence." },
+  { faith: "Tripitaka", ref: "Samyutta Nikaya", theme: "forest", topic: "peace", text: "All conditioned things are impermanent; seeing this clearly with wisdom, one turns toward peace." },
+  { faith: "Tripitaka", ref: "Sedaka Sutta", theme: "royal", topic: "guidance", text: "Protecting oneself, one protects others; protecting others, one protects oneself." },
+  { faith: "Tripitaka", ref: "Anguttara Nikaya", theme: "gold", topic: "gratitude", text: "A person of integrity is grateful and thankful — such gratitude is rare and precious in this world." },
 ];
+
+// Display names for each source/faith (the `faith` key → human label).
+const FAITH_LABELS = {
+  Bible: "Bible",
+  Gita: "Bhagavad Gita",
+  Sikh: "Guru Granth Sahib",
+  Dhammapada: "Dhammapada",
+  Tripitaka: "Tripitaka",
+};
+function faithLabel(f) { return FAITH_LABELS[f] || f; }
 
 // Background palettes keyed by theme (two-stop gradients + text/accent colors).
 const THEME_PALETTES = {
