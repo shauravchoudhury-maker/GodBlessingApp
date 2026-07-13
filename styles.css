@@ -257,3 +257,23 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   .tab-lbl { font-size: 10px; }
   .app-header h1 { font-size: 18px; }
 }
+
+/* ---- Audiobooks ---- */
+.ab-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+.ab-cover-wrap { flex: 0 0 auto; }
+#ab-cover { width: 220px; height: 220px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.28); display: block; }
+.ab-meta { flex: 1 1 260px; min-width: 240px; }
+.ab-title { font-family: Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.15; }
+.ab-sub { font-style: italic; color: var(--muted, #667); margin-top: 4px; }
+.ab-stats { margin-top: 10px; font-size: 13px; color: var(--muted, #667); display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.ab-stats b { color: var(--ink, #223); }
+.ab-desc { margin-top: 12px; font-size: 14px; line-height: 1.6; }
+.ab-chapters { margin-top: 12px; max-height: 320px; overflow-y: auto; border: 1px solid var(--line, #e6e6ef); border-radius: 10px; }
+.ab-chap { display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; border-bottom: 1px solid var(--line, #eee); font-size: 13.5px; }
+.ab-chap:last-child { border-bottom: 0; }
+.ab-chap .n { flex: 0 0 34px; color: var(--muted, #889); font-variant-numeric: tabular-nums; }
+.ab-chap .t { flex: 1 1 auto; }
+.ab-chap .w { flex: 0 0 auto; color: var(--muted, #99a); font-size: 12px; }
+.ab-chap.kind-open, .ab-chap.kind-close, .ab-chap.kind-part { background: rgba(124,92,255,.06); font-weight: 600; }
+.ab-chap.kind-sermon .t { font-style: italic; }
+@media (max-width: 520px) { #ab-cover { width: 160px; height: 160px; } .ab-title { font-size: 22px; } }

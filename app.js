@@ -1055,10 +1055,130 @@ function initSchedule() {
 }
 
 /* ================================================================== */
+/*  Audiobooks                                                         */
+/* ================================================================== */
+let abChapters = [];
+let abBusy = false;
+let abCancel = false;
+
+function abSlug(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "track"; }
+function abCurrentBook() { return audiobookById($("ab-select").value); }
+function abVoiceId() { return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[$("ab-gender").value] : undefined; }
+function canvasToBytes(canvas, type, q) {
+  return new Promise((resolve) => canvas.toBlob(async (b) => resolve(new Uint8Array(await b.arrayBuffer())), type, q));
+}
+
+function initAudiobooks() {
+  if (!$("ab-select")) return;
+  AUDIOBOOKS.forEach((b) => $("ab-select").add(new Option(`${b.title} — ${faithLabel(b.faith)}`, b.id)));
+  $("ab-token").value = getTtsToken();
+  $("ab-token").oninput = () => setTtsToken($("ab-token").value);
+  $("ab-select").onchange = renderAudiobook;
+  $("ab-manuscript").onclick = () => { const b = abCurrentBook(); downloadBlob(new Blob([audiobookManuscript(b, abChapters)], { type: "text/plain;charset=utf-8" }), `${b.id}-manuscript.txt`); };
+  $("ab-listing").onclick = () => { const b = abCurrentBook(); downloadBlob(new Blob([audiobookListing(b, abChapters, audiobookStats(abChapters))], { type: "text/plain;charset=utf-8" }), `${b.id}-listing.txt`); };
+  $("ab-cover-dl").onclick = () => { const b = abCurrentBook(); const c = document.createElement("canvas"); drawAudiobookCover(c, b, 2400); c.toBlob((blob) => downloadBlob(blob, `${b.id}-cover.jpg`), "image/jpeg", 0.92); };
+  $("ab-sample").onclick = runAudiobookSample;
+  $("ab-run").onclick = runAudiobookFull;
+  $("ab-cancel").onclick = () => { abCancel = true; };
+  if (typeof TTS_READY === "undefined" || !TTS_READY) {
+    $("ab-setup").textContent = "⚙ Connect your EverVerse voice in tts-config.js to narrate. You can still export the manuscript, listing and cover art now.";
+  }
+  renderAudiobook();
+}
+
+function renderAudiobook() {
+  const book = abCurrentBook();
+  abChapters = buildAudiobookChapters(book);
+  drawAudiobookCover($("ab-cover"), book, 600);
+  $("ab-title").textContent = book.title;
+  $("ab-sub").textContent = book.subtitle;
+  const s = audiobookStats(abChapters);
+  $("ab-stats").innerHTML =
+    `<span><b>${s.chapters}</b> chapters</span>` +
+    `<span><b>${fmtDuration(s.minutes)}</b> listening</span>` +
+    `<span><b>${s.words.toLocaleString()}</b> words</span>` +
+    `<span>~<b>${s.chars.toLocaleString()}</b> voice credits</span>`;
+  $("ab-desc").textContent = book.intro;
+  const wrap = $("ab-chapters"); wrap.innerHTML = "";
+  abChapters.forEach((c, i) => {
+    const row = document.createElement("div");
+    row.className = "ab-chap kind-" + c.kind;
+    row.innerHTML = `<span class="n">${String(i).padStart(2, "0")}</span><span class="t"></span><span class="w">${countWords(c.script)} w</span>`;
+    row.querySelector(".t").textContent = c.title;
+    wrap.appendChild(row);
+  });
+  $("ab-status").textContent = "";
+  $("ab-audio").style.display = "none";
+  $("ab-download").style.display = "none";
+}
+
+function abVoiceReady() {
+  if (typeof TTS_READY === "undefined" || !TTS_READY) {
+    $("ab-status").textContent = "Voice isn't connected yet — add your Worker URL in tts-config.js.";
+    return false;
+  }
+  return true;
+}
+
+async function runAudiobookSample() {
+  if (abBusy || !abVoiceReady()) return;
+  const book = abCurrentBook();
+  const sample = buildAudiobookChapters(book).filter((c) => c.kind === "open" || c.kind === "verse").slice(0, 2);
+  const text = sample.map((c) => c.script).join("  ");
+  abBusy = true;
+  $("ab-sample").disabled = true; $("ab-run").disabled = true;
+  $("ab-status").textContent = "Narrating a sample…";
+  try {
+    const buf = await fetchTTS(text, { voiceId: abVoiceId() });
+    const url = URL.createObjectURL(new Blob([new Uint8Array(buf)], { type: "audio/mpeg" }));
+    $("ab-audio").src = url; $("ab-audio").style.display = "block";
+    $("ab-download").href = url; $("ab-download").download = `${book.id}-sample.mp3`; $("ab-download").style.display = "inline-block";
+    $("ab-status").textContent = "Sample ready — this is your ACX 'retail audio sample'. ▶ Listen or download.";
+  } catch (e) {
+    $("ab-status").textContent = "Voice error: " + (e && e.message ? e.message : e);
+  } finally {
+    abBusy = false; $("ab-sample").disabled = false; $("ab-run").disabled = false;
+  }
+}
+
+async function runAudiobookFull() {
+  if (abBusy || !abVoiceReady()) return;
+  const book = abCurrentBook();
+  const chapters = buildAudiobookChapters(book);
+  abBusy = true; abCancel = false;
+  $("ab-cancel").style.display = "inline-block";
+  $("ab-sample").disabled = true; $("ab-run").disabled = true;
+  $("ab-audio").style.display = "none"; $("ab-download").style.display = "none";
+  const files = [];
+  try {
+    for (let i = 0; i < chapters.length; i++) {
+      if (abCancel) { $("ab-status").textContent = "Cancelled after " + files.length + " chapters."; break; }
+      $("ab-status").textContent = `Narrating ${i + 1} / ${chapters.length}: ${chapters[i].title}…`;
+      const buf = await fetchTTS(chapters[i].script, { voiceId: abVoiceId() });
+      files.push({ name: `audio/${String(i).padStart(2, "0")}-${abSlug(chapters[i].title)}.mp3`, bytes: new Uint8Array(buf) });
+    }
+    if (!abCancel && files.length) {
+      $("ab-status").textContent = "Building cover + packaging…";
+      const cover = document.createElement("canvas"); drawAudiobookCover(cover, book, 2400);
+      files.push({ name: `${book.id}-cover.jpg`, bytes: await canvasToBytes(cover, "image/jpeg", 0.92) });
+      files.push({ name: "manuscript.txt", bytes: new TextEncoder().encode(audiobookManuscript(book, chapters)) });
+      files.push({ name: "listing.txt", bytes: new TextEncoder().encode(audiobookListing(book, chapters, audiobookStats(chapters))) });
+      const zip = createZipBlob(files, new Date());
+      downloadBlob(zip, `${book.id}-audiobook.zip`);
+      $("ab-status").textContent = `Done — ${files.length - 3} chapter MP3s + cover + manuscript + listing, zipped and downloaded.`;
+    }
+  } catch (e) {
+    $("ab-status").textContent = "Voice error after " + files.length + " chapters: " + (e && e.message ? e.message : e) + " (Your credits may be exhausted — try one book at a time.)";
+  } finally {
+    abBusy = false; $("ab-sample").disabled = false; $("ab-run").disabled = false; $("ab-cancel").style.display = "none";
+  }
+}
+
+/* ================================================================== */
 /*  Tabs + boot                                                        */
 /* ================================================================== */
 function initTabs() {
-  const panels = { daily: "tab-daily", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule" };
+  const panels = { daily: "tab-daily", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks" };
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -1084,6 +1204,7 @@ function init() {
   initSchedule();
   initHub();
   initVoiceOver();
+  initAudiobooks();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);

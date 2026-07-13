@@ -54,6 +54,7 @@
       <button class="tab" data-tab="read"><span class="tab-ico">📖</span><span class="tab-lbl">Read</span></button>
       <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
       <button class="tab" data-tab="schedule"><span class="tab-ico">🗓</span><span class="tab-lbl">Schedule</span></button>
+      <button class="tab" data-tab="audiobooks"><span class="tab-ico">🎧</span><span class="tab-lbl">Audiobooks</span></button>
     </nav>
   </header>
 
@@ -407,6 +408,56 @@
     </section>
   </main>
 
+  <!-- ============ AUDIOBOOKS ============ -->
+  <main class="app hidden" id="tab-audiobooks">
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">1</span><h2>🎧 Choose an audiobook</h2></div>
+      <p class="hint">Five audiobooks built from your library — each verse read aloud, then its meaning in plain words, plus the reflections. Listed by depth of content, ready for <b>Audible / ACX</b>, <b>Amazon KDP</b> and <b>Pinterest</b>.</p>
+      <div class="sched-toolbar">
+        <label>Audiobook <select id="ab-select"></select></label>
+      </div>
+      <div class="ab-layout">
+        <div class="ab-cover-wrap"><canvas id="ab-cover" aria-label="Audiobook cover"></canvas></div>
+        <div class="ab-meta">
+          <div class="ab-title" id="ab-title"></div>
+          <div class="ab-sub" id="ab-sub"></div>
+          <div class="ab-stats" id="ab-stats"></div>
+          <p class="ab-desc" id="ab-desc"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">2</span><h2>Chapters &amp; text</h2></div>
+      <div class="btn-row">
+        <button class="btn ghost" id="ab-manuscript">📖 Export manuscript (.txt)</button>
+        <button class="btn ghost" id="ab-listing">📋 Export Amazon / Audible / Pinterest listing (.txt)</button>
+        <button class="btn ghost" id="ab-cover-dl">🖼 Download cover (2400×2400)</button>
+      </div>
+      <div class="ab-chapters" id="ab-chapters"></div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">3</span><h2>Narrate &amp; export audio</h2></div>
+      <p class="hint">Uses your connected EverVerse voice. Chapters export as numbered MP3s in one .zip — upload straight to ACX (one file per chapter), or drop into a podcast host. Keep this tab open while it renders.</p>
+      <div class="sched-toolbar">
+        <label>Voice
+          <select id="ab-gender"><option value="female">Warm female</option><option value="male">Warm male</option></select>
+        </label>
+        <label>Access token <input type="password" id="ab-token" placeholder="voice access token" autocomplete="off" style="min-width:180px;" /></label>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="ab-sample">🎙 Generate sample (Opening + verse 1)</button>
+        <button class="btn accent" id="ab-run">🎧 Generate full audiobook (.zip of MP3s)</button>
+        <button class="btn ghost" id="ab-cancel" style="display:none;">Cancel</button>
+      </div>
+      <div class="kit-status" id="ab-status"></div>
+      <audio id="ab-audio" controls style="display:none;width:100%;margin-top:12px;"></audio>
+      <a id="ab-download" class="btn" style="display:none;margin-top:10px;">⬇ Download</a>
+      <p class="hint" id="ab-setup" style="margin-top:10px;"></p>
+    </section>
+  </main>
+
   <footer class="app-footer">
     <p>Translations via the free MyMemory API. Backgrounds are original generated art (royalty-free). Scripture uses public-domain / widely-accepted English renderings — Bible, Bhagavad Gita, Guru Granth Sahib, Dhammapada &amp; Tripitaka — offered with respect to each tradition. Music entries are suggestions — add tracks from each platform's licensed library. 🌿</p>
   </footer>
@@ -421,6 +472,7 @@
   <script src="tts-config.js"></script>
   <script src="zip.js"></script>
   <script src="video.js"></script>
+  <script src="audiobooks.js"></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>
