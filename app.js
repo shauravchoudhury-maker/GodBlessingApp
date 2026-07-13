@@ -1074,6 +1074,7 @@ function initAudiobooks() {
   $("ab-token").value = getTtsToken();
   $("ab-token").oninput = () => setTtsToken($("ab-token").value);
   $("ab-select").onchange = renderAudiobook;
+  $("ab-picturebook").onclick = runPictureBook;
   $("ab-pdf").onclick = () => { const b = abCurrentBook(); downloadBlob(createBookPdfBlob(b), `${b.id}-book.pdf`); };
   $("ab-manuscript").onclick = () => { const b = abCurrentBook(); downloadBlob(new Blob([audiobookManuscript(b, abChapters)], { type: "text/plain;charset=utf-8" }), `${b.id}-manuscript.txt`); };
   $("ab-listing").onclick = () => { const b = abCurrentBook(); downloadBlob(new Blob([audiobookListing(b, abChapters, audiobookStats(abChapters))], { type: "text/plain;charset=utf-8" }), `${b.id}-listing.txt`); };
@@ -1085,6 +1086,23 @@ function initAudiobooks() {
     $("ab-setup").textContent = "⚙ Connect your EverVerse voice in tts-config.js to narrate. You can still export the manuscript, listing and cover art now.";
   }
   renderAudiobook();
+}
+
+async function runPictureBook() {
+  if (abBusy) return;
+  abBusy = true;
+  const b = abCurrentBook();
+  const btn = $("ab-picturebook"); btn.disabled = true; $("ab-pdf").disabled = true;
+  $("ab-status").textContent = "Illustrating your picture book…";
+  try {
+    const blob = await createPictureBookPdfBlob(b, (i, n) => { $("ab-status").textContent = `Illustrating… ${i} / ${n} verses`; });
+    downloadBlob(blob, `${b.id}-picture-book.pdf`);
+    $("ab-status").textContent = `Picture book ready — ${(blob.size / 1048576).toFixed(1)} MB, downloaded.`;
+  } catch (e) {
+    $("ab-status").textContent = "Picture book error: " + (e && e.message ? e.message : e);
+  } finally {
+    abBusy = false; btn.disabled = false; $("ab-pdf").disabled = false;
+  }
 }
 
 function renderAudiobook() {

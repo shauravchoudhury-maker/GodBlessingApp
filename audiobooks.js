@@ -345,6 +345,153 @@ function assemblePdf(pages, PW, PH) {
   return new Blob([pdf], { type: "application/pdf" });
 }
 
+// --- Illustrated "picture book" PDF (embeds the verse-art images) ---------
+// A separate byte-based writer (the text writer is ASCII-only); JPEG image
+// XObjects need real binary offsets, so we assemble Uint8Array chunks.
+function drawTextBanner(canvas, title, subtitle, paletteKey, W, H) {
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const pal = (typeof THEME_PALETTES !== "undefined" && THEME_PALETTES[paletteKey]) || { stops: ["#41295a", "#2f0743"], text: "#fff", accent: "#c9a9ff" };
+  const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, pal.stops[0]); g.addColorStop(1, pal.stops[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const vg = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.1, W / 2, H / 2, Math.max(W, H) * 0.72);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.34)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = "center";
+  ctx.fillStyle = pal.accent; ctx.font = `${W * 0.05}px Georgia, serif`; ctx.fillText("✦", W / 2, H * 0.30);
+  ctx.fillStyle = pal.text;
+  const size = W * 0.072; ctx.font = `700 ${size}px Georgia, serif`;
+  const words = (title || "").split(" "); const lines = []; let c = "";
+  words.forEach((w) => { const t = c ? c + " " + w : w; if (ctx.measureText(t).width > W * 0.8 && c) { lines.push(c); c = w; } else c = t; });
+  if (c) lines.push(c);
+  let ty = H * 0.5 - (lines.length - 1) * size * 0.6;
+  lines.forEach((ln) => { ctx.fillText(ln, W / 2, ty); ty += size * 1.2; });
+  if (subtitle) { ctx.fillStyle = pal.accent; ctx.font = `italic ${W * 0.038}px Georgia, serif`; ctx.fillText(subtitle, W / 2, ty + H * 0.03); }
+  return canvas;
+}
+
+async function createPictureBookPdfBlob(book, onProgress) {
+  const PW = 432, PH = 648, ML = 54, MR = 54, MT = 58, MB = 54;
+  const usableW = PW - ML - MR;
+  const meas = document.createElement("canvas").getContext("2d");
+  const esc = (s) => asciiClean(s).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  const fontCss = (size, font) => `${font === "F3" ? "italic " : ""}${font === "F2" ? "700" : "400"} ${size}px "Times New Roman", Georgia, serif`;
+  const imgs = []; const pages = []; let pg = null; let y = 0;
+  function startPage(plate) { pg = { ops: "", imgs: {}, plate: !!plate }; pages.push(pg); y = PH - MT; }
+  function ensure(h) { if (y - h < MB) startPage(); }
+  function gap(h) { ensure(h); y -= h; }
+  function line(str, size, font, x, yy) { pg.ops += `BT /${font} ${size} Tf ${x.toFixed(2)} ${yy.toFixed(2)} Td (${esc(str)}) Tj ET\n`; }
+  function wrap(t, size, font, w) {
+    meas.font = fontCss(size, font); const words = asciiClean(t).split(/\s+/).filter(Boolean); const L = []; let c = "";
+    for (const wd of words) { const test = c ? c + " " + wd : wd; if (meas.measureText(test).width > w && c) { L.push(c); c = wd; } else c = test; }
+    if (c) L.push(c); return L;
+  }
+  function centerX(str, size, font) { meas.font = fontCss(size, font); return (PW - meas.measureText(asciiClean(str)).width) / 2; }
+  function para(text, size, font, leading, opts) {
+    opts = opts || {}; const w = opts.w || usableW;
+    wrap(text, size, font, w).forEach((ln) => { ensure(leading); y -= leading; line(ln, size, font, opts.center ? centerX(ln, size, font) : ML, y); });
+  }
+  function placeImage(canvas, x, yy, w, h) {
+    const bytes = dataUrlToBytes(canvas.toDataURL("image/jpeg", 0.82));
+    imgs.push({ w: canvas.width, h: canvas.height, bytes }); const idx = imgs.length - 1;
+    pg.imgs["Im" + idx] = idx;
+    pg.ops += `q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${yy.toFixed(2)} cm /Im${idx} Do Q\n`;
+  }
+
+  // Cover (full-bleed)
+  startPage(true);
+  { const c = document.createElement("canvas"); drawAudiobookCover(c, book, 1000); placeImage(c, 0, 0, PW, PH); }
+
+  // Introduction
+  startPage();
+  para(book.title, 20, "F2", 26, { center: true }); gap(4);
+  para(book.subtitle, 12, "F3", 17, { center: true }); gap(22);
+  para(book.intro, 12, "F1", 17);
+
+  // Verses — one illustrated page each
+  const verses = versesForFaith(book.faith);
+  for (let i = 0; i < verses.length; i++) {
+    const v = verses[i];
+    startPage();
+    const c = document.createElement("canvas");
+    renderVerse(c, 760, 760, { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: (typeof bgForVerseApp === "function" ? bgForVerseApp(v) : "gradient"), watermark: true, showRef: true });
+    const top = (PH - MT) - usableW;              // square art, full content width
+    placeImage(c, ML, top, usableW, usableW);
+    y = top - 22;
+    line("IN SIMPLE WORDS", 9.5, "F2", ML, y); y -= 16;
+    para(meaningFor(v), 12, "F1", 17);
+    if (onProgress && i % 6 === 0) { onProgress(i, verses.length); await new Promise((r) => setTimeout(r)); }
+  }
+
+  // Reflections
+  const serms = sermonsForFaith(book.faith);
+  if (serms.length) {
+    startPage(true);
+    { const c = document.createElement("canvas"); drawTextBanner(c, "Reflections", book.subtitle, book.palette, 1000, 1000); placeImage(c, 0, 0, PW, PH); }
+    serms.forEach((s) => {
+      startPage();
+      const c = document.createElement("canvas"); drawTextBanner(c, s.title, "On " + s.verseRef, book.palette, 1000, 560);
+      const bh = usableW * 0.56, top = (PH - MT) - bh;
+      placeImage(c, ML, top, usableW, bh); y = top - 20;
+      para(s.verseText, 11.5, "F3", 16.5); gap(6);
+      (s.body || []).forEach((p) => { para(p, 11.5, "F1", 16.5); gap(5); });
+      para("To carry with you: " + s.takeaway, 11.5, "F2", 16.5);
+    });
+  }
+
+  // Closing plate
+  startPage(true);
+  { const c = document.createElement("canvas"); drawTextBanner(c, book.closing.replace(/This has been a production.*$/i, "").trim().split(". ")[0], "eververse.org", book.palette, 1000, 1000); placeImage(c, 0, 0, PW, PH); }
+
+  // Page numbers (skip full-bleed plate pages)
+  meas.font = fontCss(9, "F1");
+  pages.forEach((p, idx) => { if (idx === 0 || p.plate) return; const lbl = String(idx + 1); p.ops += `BT /F1 9 Tf ${((PW - meas.measureText(lbl).width) / 2).toFixed(2)} ${(MB - 30).toFixed(2)} Td (${lbl}) Tj ET\n`; });
+
+  return assemblePdfImages(pages, imgs, PW, PH);
+}
+
+function assemblePdfImages(pages, imgs, PW, PH) {
+  const enc = new TextEncoder();
+  const chunks = []; let offset = 0; const offsets = [];
+  const pushStr = (s) => { const b = enc.encode(s); chunks.push(b); offset += b.length; };
+  const pushBytes = (b) => { chunks.push(b); offset += b.length; };
+  pushBytes(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A])); // %PDF-1.4 + binary marker
+
+  const nImg = imgs.length, base = 6 + nImg;
+  const contentId = (p) => base + 2 * p, pageId = (p) => base + 2 * p + 1;
+  const strObj = {};
+  strObj[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  strObj[2] = `<< /Type /Pages /Kids [${pages.map((_, p) => pageId(p) + " 0 R").join(" ")}] /Count ${pages.length} >>`;
+  strObj[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>";
+  strObj[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding /WinAnsiEncoding >>";
+  strObj[5] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic /Encoding /WinAnsiEncoding >>";
+  pages.forEach((p, i) => {
+    strObj[contentId(i)] = `<< /Length ${enc.encode(p.ops).length} >>\nstream\n${p.ops}endstream`;
+    const xobj = Object.keys(p.imgs).map((name) => `/${name} ${6 + p.imgs[name]} 0 R`).join(" ");
+    strObj[pageId(i)] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >>${xobj ? ` /XObject << ${xobj} >>` : ""} >> /Contents ${contentId(i)} 0 R >>`;
+  });
+
+  const maxId = base + 2 * pages.length - 1;
+  for (let id = 1; id <= maxId; id++) {
+    offsets[id] = offset;
+    pushStr(`${id} 0 obj\n`);
+    if (id >= 6 && id < 6 + nImg) {
+      const im = imgs[id - 6];
+      pushStr(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`);
+      pushBytes(im.bytes);
+      pushStr(`\nendstream`);
+    } else {
+      pushStr(strObj[id]);
+    }
+    pushStr(`\nendobj\n`);
+  }
+  const xrefStart = offset;
+  let xref = `xref\n0 ${maxId + 1}\n0000000000 65535 f \n`;
+  for (let id = 1; id <= maxId; id++) xref += String(offsets[id]).padStart(10, "0") + " 00000 n \n";
+  pushStr(xref);
+  pushStr(`trailer\n<< /Size ${maxId + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+  return new Blob(chunks, { type: "application/pdf" });
+}
+
 // --- Cover art (square, brand-consistent) ---------------------------------
 function drawAudiobookCover(canvas, book, size) {
   const S = size || 1400;
