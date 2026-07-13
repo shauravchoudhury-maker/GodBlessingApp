@@ -3,7 +3,7 @@
 // PROXY_SECRET stay inside the Worker; the access token is entered once in the
 // Studio (stored on your device), never committed.
 
-const TTS_PROXY_URL = "PASTE_YOUR_WORKER_URL"; // e.g. https://eververse-tts.<you>.workers.dev
+const TTS_PROXY_URL = "https://eververse-tts.shauravchoudhury.workers.dev";
 
 // ElevenLabs voice IDs — change to any voice from your ElevenLabs library.
 const TTS_VOICES = {
