@@ -98,17 +98,19 @@ function setupProtection() {
 }
 
 function go(view) {
-  if (document.body.classList.contains("browser-mode") && ["posts", "trending", "sermons", "verses"].indexOf(view) !== -1) {
+  if (document.body.classList.contains("browser-mode") && ["week","posts","trending","sermons","verses","wallpapers"].indexOf(view) !== -1) {
     view = "today";
     const cta = document.querySelector(".appcta"); if (cta) cta.scrollIntoView({ behavior: "smooth" });
   }
-  ["today","posts","trending","sermons","verses"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
+  ["today","week","posts","trending","sermons","verses","wallpapers"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
   document.querySelectorAll("nav.sections button").forEach((b)=>b.classList.toggle("active", b.dataset.go===view));
   window.scrollTo(0,0);
   if (view==="posts" && !inited.posts) { initPosts(); inited.posts = true; }
   if (view==="trending" && !inited.trending) { EVReact.renderTrending($("trending-list")); inited.trending = true; }
   if (view==="sermons" && !inited.sermons) { initSermons(); inited.sermons = true; }
   if (view==="verses" && !inited.verses) { initVerses(); inited.verses = true; }
+  if (view==="week" && !inited.week) { initWeek(); inited.week = true; }
+  if (view==="wallpapers" && !inited.wallpapers) { initWallpapers(); inited.wallpapers = true; }
 }
 
 /* ---- 3D tilt-on-hover (adds depth; skipped on touch / reduced-motion) --- */
@@ -384,12 +386,8 @@ function shareDetailPost() {
   const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
   sharePostImage(v, useT ? t.text : v.text, useT ? t.rtl : false, useT ? (t.meaning || meaningFor(v)) : meaningFor(v));
 }
-// Save the verse as a phone wallpaper / lock screen (9:19.5) to Photos.
-function saveWallpaper() {
-  const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
-  const text = useT ? t.text : v.text, rtl = useT ? t.rtl : false;
-  const c = document.createElement("canvas");
-  renderVerse(c, 1080, 2340, { text, ref: v.ref, rtl: !!rtl, paletteKey: v.theme, bgKey: bgForVerse(v), watermark: true, showRef: true });
+// Save a phone wallpaper / lock screen (9:19.5) to Photos.
+function shareCanvasAsWallpaper(c) {
   c.toBlob(async (blob) => {
     const file = new File([blob], "eververse-wallpaper.jpg", { type: "image/jpeg" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -399,6 +397,53 @@ function saveWallpaper() {
     const a = document.createElement("a"); a.download = file.name; a.href = c.toDataURL("image/jpeg", 0.95); a.click();
     showToast("Wallpaper downloaded — set it from your Photos ✦");
   }, "image/jpeg", 0.95);
+}
+function wallpaperCanvas(v, text, rtl) {
+  const c = document.createElement("canvas");
+  renderVerse(c, 1080, 2340, { text: text || v.text, ref: v.ref, rtl: !!rtl, paletteKey: v.theme, bgKey: bgForVerse(v), watermark: true, showRef: true });
+  return c;
+}
+function saveWallpaper() {
+  const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
+  shareCanvasAsWallpaper(wallpaperCanvas(v, useT ? t.text : v.text, useT ? t.rtl : false));
+}
+
+/* ---- This Week: one blessing per day ------------------------------ */
+function initWeek() {
+  const wrap = $("week-list"); if (!wrap) return; wrap.innerHTML = "";
+  const faiths = faithsIn(VERSE_DB);
+  const today = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(today.getDate() + i);
+    const f = faiths[dayOfYear(d) % faiths.length];
+    const v = verseForSourceDate(f, d);
+    const card = document.createElement("div"); card.className = "week-card" + (i === 0 ? " today" : "");
+    const c = document.createElement("canvas"); renderVerseImage(c, v, 300, 300);
+    const info = document.createElement("div"); info.className = "week-info";
+    const day = i === 0 ? "Today" : d.toLocaleDateString(undefined, { weekday: "long" });
+    info.innerHTML = `<div class="wd">${day}</div><div class="wdt">${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · ${faithLabel(f)}</div><div class="wr">${escapeHtml(v.ref)}</div>`;
+    card.append(c, info);
+    card.onclick = () => openVerseDetail(v);
+    wrap.appendChild(card);
+  }
+}
+
+/* ---- Wallpaper gallery -------------------------------------------- */
+function initWallpapers() {
+  const wrap = $("wallpaper-grid"); if (!wrap) return; wrap.innerHTML = "";
+  const byFaith = {};
+  VERSE_DB.filter((v) => v.text.length <= 95).forEach((v) => { (byFaith[v.faith] = byFaith[v.faith] || []).push(v); });
+  const picks = [];
+  Object.values(byFaith).forEach((list) => { list.sort((a, b) => a.text.length - b.text.length); picks.push(...list.slice(0, 3)); });
+  picks.slice(0, 18).forEach((v) => {
+    const card = document.createElement("div"); card.className = "wp-card";
+    const c = document.createElement("canvas");
+    renderVerse(c, 360, 780, { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: bgForVerse(v), watermark: true, showRef: true });
+    const save = document.createElement("button"); save.className = "btn primary sm"; save.textContent = "📱 Save";
+    save.onclick = () => shareCanvasAsWallpaper(wallpaperCanvas(v));
+    card.append(c, save);
+    wrap.appendChild(card);
+  });
 }
 async function shareSermon() {
   const s = detailState.s;

@@ -201,3 +201,21 @@ body.browser-mode nav.sections button[data-go="verses"] { display: none; }
   opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 9999; max-width: 90vw; text-align: center; }
 #ev-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .lic-note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+
+/* ---- This Week + Wallpapers (app views) ---- */
+body.browser-mode nav.sections button[data-go="week"],
+body.browser-mode nav.sections button[data-go="wallpapers"] { display: none; }
+
+.week-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.week-card { display: flex; gap: 14px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+.week-card:hover { box-shadow: 0 10px 26px rgba(20,16,40,.12); transform: translateY(-1px); }
+.week-card.today { border-color: var(--brand, #7c5cff); box-shadow: 0 6px 20px rgba(124,92,255,.16); }
+.week-card canvas { width: 84px; height: 84px; border-radius: 10px; flex: 0 0 auto; }
+.week-info .wd { font-weight: 700; font-size: 16px; }
+.week-info .wdt { color: var(--muted); font-size: 13px; margin: 2px 0; }
+.week-info .wr { font-size: 13px; color: var(--ink); }
+
+.wp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; margin-top: 12px; }
+.wp-card { display: flex; flex-direction: column; gap: 8px; }
+.wp-card canvas { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,.18); display: block; }
+.wp-card .btn { width: 100%; }

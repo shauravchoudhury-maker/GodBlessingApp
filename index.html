@@ -18,10 +18,12 @@
       <div class="logo" data-go="today"><span class="mark">✦</span> EverVerse</div>
       <nav class="sections">
         <button data-go="today" class="active">Today</button>
+        <button data-go="week">This Week</button>
         <button data-go="posts">Posts</button>
         <button data-go="trending">Trending</button>
         <button data-go="sermons">Sermons</button>
         <button data-go="verses">Verses</button>
+        <button data-go="wallpapers">Wallpapers</button>
       </nav>
     </div>
   </header>
@@ -120,6 +122,24 @@
       </div>
       <div id="verses-list" style="margin-top:8px;"></div>
       <div style="text-align:center;margin-top:20px;"><button class="btn ghost" id="verses-more">Load more</button></div>
+    </div>
+  </section>
+
+  <!-- ============ THIS WEEK ============ -->
+  <section class="band hidden" id="view-week">
+    <div class="wrap">
+      <div class="section-title">This week's blessings</div>
+      <p class="section-sub">One new blessing every day — here's what's coming, rotating through the world's wisdom traditions.</p>
+      <div class="week-list" id="week-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ WALLPAPERS ============ -->
+  <section class="band hidden" id="view-wallpapers">
+    <div class="wrap">
+      <div class="section-title">Wallpapers &amp; lock screens</div>
+      <p class="section-sub">Tap <b>Save</b> to keep any design as your phone wallpaper or lock screen — a blessing every time you look.</p>
+      <div class="wp-grid" id="wallpaper-grid"></div>
     </div>
   </section>
 
