@@ -472,13 +472,26 @@ async function generateCarousel() {
     const kick = "EVERVERSE · " + faithLabel(v.faith).toUpperCase();
     const slides = [];
     const mk = (o) => { const c = document.createElement("canvas"); renderVerse(c, W, H, o); slides.push(c); };
+    // Optional cover/hook slide — the scroll-stopping first frame.
+    const hook = ($("carousel-hook") && $("carousel-hook").value.trim()) || "";
+    if (hook) {
+      const cov = document.createElement("canvas");
+      renderVerse(cov, W, H, { text: hook, paletteKey: pal, bgKey: bg, watermark: true, showRef: false, layout: "affirmation", grain: true });
+      const cc = cov.getContext("2d");
+      cc.textAlign = "center"; cc.direction = "ltr";
+      cc.font = `600 ${Math.min(W, H) * 0.032}px "Helvetica Neue", Arial, sans-serif`;
+      cc.fillStyle = hexToRgba((THEME_PALETTES[pal] || THEME_PALETTES.warm).accent, 0.95);
+      cc.fillText("swipe →", W / 2, H * 0.9);
+      slides.push(cov);
+    }
     mk({ text: daily.trans.text, ref: v.ref, rtl: daily.trans.rtl, paletteKey: pal, bgKey: bg, watermark: true, showRef: true, kicker: kick });
     mk({ text: meaningFor(v), paletteKey: pal, bgKey: bg, watermark: true, showRef: false, layout: "editorial", kicker: "IN SIMPLE WORDS" });
     mk({ text: reflectionFor(v), paletteKey: pal, bgKey: bg, watermark: true, showRef: false, layout: "editorial", kicker: "A THOUGHT" });
     const cta = document.createElement("canvas"); drawCtaSlide(cta, W, H, THEME_PALETTES[pal] || THEME_PALETTES.warm, { bgKey: bg }); slides.push(cta);
     const files = [];
     for (let i = 0; i < slides.length; i++) files.push({ name: `slide-${String(i + 1).padStart(2, "0")}.jpg`, bytes: await canvasToBytes(slides[i], "image/jpeg", 0.9) });
-    files.push({ name: "caption.txt", bytes: new TextEncoder().encode(carouselCaption(v)) });
+    const caption = hook ? (hook + "\n\n" + carouselCaption(v)) : carouselCaption(v);
+    files.push({ name: "caption.txt", bytes: new TextEncoder().encode(caption) });
     downloadBlob(createZipBlob(files, new Date()), top8Filename("carousel") + ".zip");
     $("kit-status").textContent = `Carousel ready — ${slides.length} slides + caption, zipped. Upload in order to Instagram.`;
   } catch (e) {
