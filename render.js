@@ -68,6 +68,7 @@ function renderVerse(canvas, W, H, opts) {
   const style = (typeof EV_STYLE !== "undefined") ? EV_STYLE : null;
   const layout = opts.layout || (style && style.layout) || "classic";
   const font = opts.font || (style && style.font) || null;
+  const kicker = opts.kicker || (style && style.kicker) || null;
 
   drawBackground(opts.bgKey || "gradient", ctx, W, H, pal, seed);
 
@@ -80,7 +81,7 @@ function renderVerse(canvas, W, H, opts) {
   const grainOn = (opts.grain != null) ? opts.grain : (style && style.grain != null ? style.grain : true);
   if (grainOn && typeof addGrain === "function") addGrain(ctx, W, H, seed, layout === "editorial" ? 0.05 : 0.075);
 
-  const ctxArg = { ctx, W, H, pal, opts, font, seed, minDim: Math.min(W, H) };
+  const ctxArg = { ctx, W, H, pal, opts, font, kicker, seed, minDim: Math.min(W, H) };
   if (layout === "affirmation") drawLayoutAffirmation(ctxArg);
   else if (layout === "editorial") drawLayoutEditorial(ctxArg);
   else if (layout === "minimal") drawLayoutMinimal(ctxArg);
@@ -142,7 +143,7 @@ function drawLayoutAffirmation({ ctx, W, H, pal, opts, font, minDim }) {
   if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
 }
 
-function drawLayoutEditorial({ ctx, W, H, pal, opts, font, minDim }) {
+function drawLayoutEditorial({ ctx, W, H, pal, opts, font, kicker, minDim }) {
   const text = opts.text || "";
   const padL = W * 0.11;
   const maxWidth = W - padL - W * 0.09;
@@ -152,7 +153,7 @@ function drawLayoutEditorial({ ctx, W, H, pal, opts, font, minDim }) {
   ctx.font = `700 ${minDim * 0.024}px ${EV_FONTS.sans}`;
   evSetTracking(ctx, minDim * 0.012);
   ctx.fillStyle = hexToRgba(pal.accent, 0.95);
-  ctx.fillText((opts.kicker || "EVERVERSE").toUpperCase(), padL, H * 0.15);
+  ctx.fillText((kicker || "EVERVERSE").toUpperCase(), padL, H * 0.15);
   evSetTracking(ctx, 0);
   ctx.strokeStyle = hexToRgba(pal.accent, 0.6); ctx.lineWidth = Math.max(1.5, W * 0.0022);
   ctx.beginPath(); ctx.moveTo(padL, H * 0.175); ctx.lineTo(padL + minDim * 0.14, H * 0.175); ctx.stroke();
@@ -173,6 +174,38 @@ function drawLayoutEditorial({ ctx, W, H, pal, opts, font, minDim }) {
     ctx.fillText("— " + opts.ref, padL, H * 0.8);
   }
   if (opts.watermark) drawWatermark(ctx, W, H, pal, "bottom-right");
+}
+
+// Call-to-action slide (last slide of a carousel).
+function drawCtaSlide(canvas, W, H, pal, opts) {
+  opts = opts || {};
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const minDim = Math.min(W, H);
+  drawBackground(opts.bgKey || "aura", ctx, W, H, pal, 4242);
+  const vig = ctx.createRadialGradient(W / 2, H * 0.5, minDim * 0.15, W / 2, H * 0.5, minDim * 0.8);
+  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, pal.light ? "rgba(120,90,50,0.16)" : "rgba(0,0,0,0.34)");
+  ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+  if (typeof addGrain === "function") addGrain(ctx, W, H, 4242, 0.07);
+  ctx.textAlign = "center"; ctx.fillStyle = pal.text; ctx.direction = "ltr";
+  ctx.font = `${minDim * 0.13}px Georgia, serif`;
+  ctx.fillText("✦", W / 2, H * 0.34);
+  ctx.font = `700 ${minDim * 0.062}px ${EV_FONTS.serif}`;
+  ctx.fillText("A daily blessing", W / 2, H * 0.47);
+  ctx.fillText("for every soul", W / 2, H * 0.47 + minDim * 0.08);
+  ctx.strokeStyle = hexToRgba(pal.accent, 0.7); ctx.lineWidth = Math.max(1.5, W * 0.002);
+  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.08, H * 0.62); ctx.lineTo(W / 2 + minDim * 0.08, H * 0.62); ctx.stroke();
+  ctx.font = `600 ${minDim * 0.036}px ${EV_FONTS.sans}`;
+  ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+  ctx.fillText("Follow for a verse every day", W / 2, H * 0.7);
+  ctx.font = `700 ${minDim * 0.044}px ${EV_FONTS.sans}`;
+  ctx.fillStyle = pal.text;
+  ctx.fillText("@eververse2117", W / 2, H * 0.77);
+  ctx.font = `600 ${minDim * 0.03}px ${EV_FONTS.sans}`;
+  evSetTracking(ctx, minDim * 0.006);
+  ctx.fillStyle = hexToRgba(pal.text, 0.8);
+  ctx.fillText("EVERVERSE.ORG", W / 2, H * 0.85);
+  evSetTracking(ctx, 0);
 }
 
 function drawLayoutMinimal({ ctx, W, H, pal, opts, font, minDim }) {

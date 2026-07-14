@@ -3,8 +3,17 @@
 
 const $ = (id) => document.getElementById(id);
 
-// Studio-wide image style (read by render.js renderVerse as a fallback).
-let EV_STYLE = { layout: "classic", font: "serif", grain: true };
+// The EverVerse "house style" — the signature look every post uses by default,
+// so the feed is instantly recognizable. Read by render.js renderVerse.
+const EV_SIGNATURE = { layout: "editorial", font: "serif", grain: true };
+function loadStyle() {
+  try { const s = JSON.parse(localStorage.getItem("ev_style") || "null"); return Object.assign({}, EV_SIGNATURE, s || {}); }
+  catch (e) { return Object.assign({}, EV_SIGNATURE); }
+}
+function saveStyle() {
+  try { localStorage.setItem("ev_style", JSON.stringify({ layout: EV_STYLE.layout, font: EV_STYLE.font, grain: EV_STYLE.grain })); } catch (e) {}
+}
+let EV_STYLE = loadStyle();
 
 // Voice-over access token (used by video.js fetchTTS; kept on-device only).
 function getTtsToken() { try { return localStorage.getItem("ev_tts_token") || ""; } catch (e) { return ""; } }
@@ -139,6 +148,7 @@ function setActiveVerse() {
   daily.verse = v;
   daily.date = entry.date;
   daily.paletteKey = v.theme;
+  EV_STYLE.kicker = "EVERVERSE · " + faithLabel(v.faith).toUpperCase();
   $("verse-faith").textContent = faithLabel(v.faith);
   $("verse-topic").textContent = v.topic;
   $("verse-text").textContent = `“${v.text}”`;
@@ -442,6 +452,40 @@ function renderDailyPreview() {
   });
 }
 
+/* ---- Carousels (multi-slide IG posts) ------------------------------ */
+function reflectionFor(v) {
+  const s = (typeof SERMONS !== "undefined" ? SERMONS : []).find((x) => x.verseRef === v.ref);
+  if (s && s.takeaway) return s.takeaway;
+  return "Carry this with you today. You are seen, you are loved, and you are not alone.";
+}
+function carouselCaption(v) {
+  const f = v.faith.toLowerCase();
+  return `${v.text}\n— ${v.ref}\n\nIn simple words: ${meaningFor(v)}\n\nSave this for a day you need it, and share it with someone you love. 🤍\nFollow @eververse2117 for a daily blessing from the world's wisdom traditions — eververse.org\n\n#dailyverse #${f} #faith #spirituality #dailydevotional #affirmations #wisdom #eververse`;
+}
+async function generateCarousel() {
+  const btn = $("gen-carousel"); if (btn) btn.disabled = true;
+  $("kit-status").textContent = "Building carousel…";
+  try {
+    const v = daily.verse;
+    const W = 1080, H = 1350;                 // 4:5 — the highest-reach IG feed ratio
+    const pal = daily.paletteKey, bg = daily.bgKey;
+    const kick = "EVERVERSE · " + faithLabel(v.faith).toUpperCase();
+    const slides = [];
+    const mk = (o) => { const c = document.createElement("canvas"); renderVerse(c, W, H, o); slides.push(c); };
+    mk({ text: daily.trans.text, ref: v.ref, rtl: daily.trans.rtl, paletteKey: pal, bgKey: bg, watermark: true, showRef: true, kicker: kick });
+    mk({ text: meaningFor(v), paletteKey: pal, bgKey: bg, watermark: true, showRef: false, layout: "editorial", kicker: "IN SIMPLE WORDS" });
+    mk({ text: reflectionFor(v), paletteKey: pal, bgKey: bg, watermark: true, showRef: false, layout: "editorial", kicker: "A THOUGHT" });
+    const cta = document.createElement("canvas"); drawCtaSlide(cta, W, H, THEME_PALETTES[pal] || THEME_PALETTES.warm, { bgKey: bg }); slides.push(cta);
+    const files = [];
+    for (let i = 0; i < slides.length; i++) files.push({ name: `slide-${String(i + 1).padStart(2, "0")}.jpg`, bytes: await canvasToBytes(slides[i], "image/jpeg", 0.9) });
+    files.push({ name: "caption.txt", bytes: new TextEncoder().encode(carouselCaption(v)) });
+    downloadBlob(createZipBlob(files, new Date()), top8Filename("carousel") + ".zip");
+    $("kit-status").textContent = `Carousel ready — ${slides.length} slides + caption, zipped. Upload in order to Instagram.`;
+  } catch (e) {
+    $("kit-status").textContent = "Carousel error: " + (e && e.message ? e.message : e);
+  } finally { if (btn) btn.disabled = false; }
+}
+
 function renderPlatformCards() {
   const kit = buildPostKit(daily.verse);
   const grid = $("platform-grid");
@@ -669,9 +713,15 @@ function initDaily() {
   $("daily-palette").onchange = () => { daily.paletteKey = $("daily-palette").value; renderDailyAll(); };
   $("daily-watermark").onchange = () => { daily.watermark = $("daily-watermark").checked; renderDailyAll(); };
   $("daily-layout").value = EV_STYLE.layout; $("daily-font").value = EV_STYLE.font; $("daily-grain").checked = EV_STYLE.grain;
-  $("daily-layout").onchange = () => { EV_STYLE.layout = $("daily-layout").value; renderDailyAll(); };
-  $("daily-font").onchange = () => { EV_STYLE.font = $("daily-font").value; renderDailyAll(); };
-  $("daily-grain").onchange = () => { EV_STYLE.grain = $("daily-grain").checked; renderDailyAll(); };
+  $("daily-layout").onchange = () => { EV_STYLE.layout = $("daily-layout").value; saveStyle(); renderDailyAll(); };
+  $("daily-font").onchange = () => { EV_STYLE.font = $("daily-font").value; saveStyle(); renderDailyAll(); };
+  $("daily-grain").onchange = () => { EV_STYLE.grain = $("daily-grain").checked; saveStyle(); renderDailyAll(); };
+  if ($("daily-signature")) $("daily-signature").onclick = () => {
+    EV_STYLE.layout = EV_SIGNATURE.layout; EV_STYLE.font = EV_SIGNATURE.font; EV_STYLE.grain = EV_SIGNATURE.grain;
+    $("daily-layout").value = EV_STYLE.layout; $("daily-font").value = EV_STYLE.font; $("daily-grain").checked = EV_STYLE.grain;
+    saveStyle(); renderDailyAll();
+  };
+  if ($("gen-carousel")) $("gen-carousel").onclick = generateCarousel;
   $("download-kit").onclick = downloadKit;
   $("gen-top8").onclick = downloadTop8;
   $("verify-meaning").onclick = checkMeaning;
