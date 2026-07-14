@@ -142,6 +142,19 @@ const MEANINGS = {
   "Samyutta Nikaya": "When you truly see that nothing stays the same, you stop grasping — and that letting-go is where peace begins.",
   "Sedaka Sutta": "Caring for yourself and caring for others aren't opposites — do one well and you strengthen the other.",
   "Anguttara Nikaya": "Gratitude is rare and precious — being genuinely thankful is a mark of a good and grounded heart.",
+  // Timeless Wisdom
+  "Marcus Aurelius": "You can't control what happens, but your mind is yours — and that is where your real power lives.",
+  "Epictetus": "Events don't define you; your response does. The next choice is always yours to make.",
+  "Seneca": "Most of our suffering is rehearsed in our heads for things that never come — so gently bring yourself back to now.",
+  "Lao Tzu": "Don't be overwhelmed by the whole climb. Just take the one step in front of you, and then the next.",
+  "Confucius": "Speed isn't the point — refusing to quit is. Keep going, however small the steps.",
+  "Heraclitus": "Life is always moving, and so are you. Let yourself change; you were never meant to stay the same.",
+  "Ralph Waldo Emerson": "You did what you could today — let it be enough, and let tomorrow start clean.",
+  "Henry David Thoreau": "Move toward the life you actually want, one honest choice at a time — it's closer than it feels.",
+  "Kahlil Gibran": "The hard things cracking you open are also how the light and the growth get in.",
+  "Rabindranath Tagore": "Wanting change isn't enough — take the first real step, even if it's small and scary.",
+  "Vincent van Gogh": "You don't need one grand act. A steady stack of small, faithful efforts becomes something great.",
+  "William Blake": "Everything real once began as someone's imagination — so don't dismiss the dream stirring in you.",
 };
 
 // Warm fallback by topic so every verse shows a meaning while the batch grows.

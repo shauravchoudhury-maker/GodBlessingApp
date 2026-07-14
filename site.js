@@ -6,7 +6,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<"
 const mkBtn = (label, cls, fn) => { const b = document.createElement("button"); b.className = cls; b.textContent = label; b.onclick = fn; return b; };
 function debounce(fn, ms) { let t; return function(){ clearTimeout(t); t = setTimeout(fn, ms); }; }
 
-const BG_CHOICES = ["sunrise","aurora","rays","mesh","clouds","watercolor","ocean","forest","bokeh","geometric","particles"];
+const BG_CHOICES = ["sunrise","aurora","rays","mesh","clouds","watercolor","ocean","forest","bokeh","geometric","particles","meadow","blessing","petals","canopy","strata","aura"];
 function bgForVerse(v) { const h = v.ref.split("").reduce((a,c)=>(a*31+c.charCodeAt(0))|0,5); return BG_CHOICES[Math.abs(h)%BG_CHOICES.length]; }
 function renderVerseImage(canvas, v, W, H) {
   renderVerse(canvas, W, H, { text:v.text, ref:v.ref, paletteKey:v.theme, bgKey:bgForVerse(v), watermark:true, showRef:true });

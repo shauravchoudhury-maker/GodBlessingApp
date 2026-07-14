@@ -243,6 +243,32 @@ const VERSE_DB = [
   { faith: "Tripitaka", ref: "Samyutta Nikaya", theme: "forest", topic: "peace", text: "All conditioned things are impermanent; seeing this clearly with wisdom, one turns toward peace." },
   { faith: "Tripitaka", ref: "Sedaka Sutta", theme: "royal", topic: "guidance", text: "Protecting oneself, one protects others; protecting others, one protects oneself." },
   { faith: "Tripitaka", ref: "Anguttara Nikaya", theme: "gold", topic: "gratitude", text: "A person of integrity is grateful and thankful — such gratitude is rare and precious in this world." },
+
+  // ---------------------- TIMELESS WISDOM ----------------------
+  // Public-domain thinkers (wrote in English or ultra-standard renderings) + original EverVerse affirmations.
+  { faith: "Wisdom", ref: "Marcus Aurelius", theme: "dusk",   topic: "strength",     text: "You have power over your mind — not outside events. Realize this, and you will find strength." },
+  { faith: "Wisdom", ref: "Epictetus",       theme: "bold",   topic: "strength",     text: "It is not what happens to you, but how you react to it that matters." },
+  { faith: "Wisdom", ref: "Seneca",          theme: "calm",   topic: "peace",        text: "We suffer more often in imagination than in reality." },
+  { faith: "Wisdom", ref: "Lao Tzu",         theme: "moss",   topic: "purpose",      text: "A journey of a thousand miles begins with a single step." },
+  { faith: "Wisdom", ref: "Confucius",       theme: "terra",  topic: "perseverance", text: "It does not matter how slowly you go, as long as you do not stop." },
+  { faith: "Wisdom", ref: "Heraclitus",      theme: "forest", topic: "change",       text: "No one ever steps in the same river twice, for it is not the same river and they are not the same person." },
+  { faith: "Wisdom", ref: "Ralph Waldo Emerson", theme: "calm", topic: "peace",      text: "Finish each day and be done with it. You have done what you could." },
+  { faith: "Wisdom", ref: "Henry David Thoreau", theme: "sage", topic: "purpose",    text: "Go confidently in the direction of your dreams. Live the life you have imagined." },
+  { faith: "Wisdom", ref: "Kahlil Gibran",   theme: "night",  topic: "hope",         text: "Your pain is the breaking of the shell that encloses your understanding." },
+  { faith: "Wisdom", ref: "Rabindranath Tagore", theme: "harvest", topic: "courage", text: "You can't cross the sea merely by standing and staring at the water." },
+  { faith: "Wisdom", ref: "Vincent van Gogh", theme: "gold",  topic: "purpose",      text: "Great things are not done by impulse, but by a series of small things brought together." },
+  { faith: "Wisdom", ref: "William Blake",   theme: "royal",  topic: "hope",         text: "What is now proved was once only imagined." },
+  // Original EverVerse affirmations (evocative refs double as titles)
+  { faith: "Wisdom", ref: "On beginning again", theme: "dusk",  topic: "hope",     text: "You are allowed to begin again — today, this hour, this very breath." },
+  { faith: "Wisdom", ref: "On being enough",    theme: "blush", topic: "purpose",  text: "You are already enough. You were enough long before you achieved a single thing." },
+  { faith: "Wisdom", ref: "On this moment",     theme: "calm",  topic: "peace",    text: "Breathe. This moment is the only one asking anything of you." },
+  { faith: "Wisdom", ref: "On patience",        theme: "moss",  topic: "perseverance", text: "Your pace is not your worth. Slow growth is still growth." },
+  { faith: "Wisdom", ref: "On your strength",   theme: "terra", topic: "strength", text: "You have survived every hard day so far. That is not luck — that is you." },
+  { faith: "Wisdom", ref: "On rest",            theme: "sand",  topic: "peace",    text: "Let today be gentle. You do not have to earn your rest." },
+  { faith: "Wisdom", ref: "On hope",            theme: "gold",  topic: "hope",     text: "The light you are looking for is also looking for you." },
+  { faith: "Wisdom", ref: "On self-kindness",   theme: "clay",  topic: "love",     text: "Be as kind to yourself as you would be to someone you love." },
+  { faith: "Wisdom", ref: "On your path",       theme: "sage",  topic: "purpose",  text: "You are not behind. You are exactly where your story needs you to be." },
+  { faith: "Wisdom", ref: "On courage",         theme: "harvest", topic: "courage", text: "One small brave thing today. That is all. That is enough." },
 ];
 
 // Display names for each source/faith (the `faith` key → human label).
@@ -252,6 +278,7 @@ const FAITH_LABELS = {
   Sikh: "Guru Granth Sahib",
   Dhammapada: "Dhammapada",
   Tripitaka: "Tripitaka",
+  Wisdom: "Timeless Wisdom",
 };
 function faithLabel(f) { return FAITH_LABELS[f] || f; }
 

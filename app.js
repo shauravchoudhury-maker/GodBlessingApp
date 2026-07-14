@@ -1008,7 +1008,7 @@ async function exportScheduleBundle() {
 /* ---- Batch video export ------------------------------------------ */
 let batchVideoCancel = false;
 function bgForVerseApp(v) {
-  const list = ["sunrise","aurora","rays","mesh","clouds","watercolor","ocean","forest","bokeh"];
+  const list = ["sunrise","aurora","rays","mesh","clouds","watercolor","ocean","forest","bokeh","meadow","blessing","petals","canopy","strata","aura"];
   const h = v.ref.split("").reduce((a,c)=>(a*31+c.charCodeAt(0))|0,5);
   return list[Math.abs(h) % list.length];
 }
