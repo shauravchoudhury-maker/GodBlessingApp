@@ -98,11 +98,11 @@ function setupProtection() {
 }
 
 function go(view) {
-  if (document.body.classList.contains("browser-mode") && ["week","posts","trending","sermons","verses","wallpapers"].indexOf(view) !== -1) {
+  if (document.body.classList.contains("browser-mode") && ["week","posts","trending","sermons","verses","saved","wallpapers"].indexOf(view) !== -1) {
     view = "today";
     const cta = document.querySelector(".appcta"); if (cta) cta.scrollIntoView({ behavior: "smooth" });
   }
-  ["today","week","posts","trending","sermons","verses","wallpapers"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
+  ["today","week","posts","trending","sermons","verses","saved","wallpapers"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
   document.querySelectorAll("nav.sections button").forEach((b)=>b.classList.toggle("active", b.dataset.go===view));
   window.scrollTo(0,0);
   if (view==="posts" && !inited.posts) { initPosts(); inited.posts = true; }
@@ -111,6 +111,7 @@ function go(view) {
   if (view==="verses" && !inited.verses) { initVerses(); inited.verses = true; }
   if (view==="week" && !inited.week) { initWeek(); inited.week = true; }
   if (view==="wallpapers" && !inited.wallpapers) { initWallpapers(); inited.wallpapers = true; }
+  if (view==="saved") { initSaved(); }
 }
 
 /* ---- 3D tilt-on-hover (adds depth; skipped on touch / reduced-motion) --- */
@@ -266,6 +267,7 @@ function openVerseDetail(v) {
        <div class="acts">
          <button class="btn ghost sm" id="dt-listen">🎙 Listen</button>
          <select class="pill" id="dt-voice" style="padding:7px 9px;font-size:13px;"><option value="female">Female voice</option><option value="male">Male voice</option></select>
+         <button class="btn ghost sm" id="dt-fav">♡ Save</button>
          <button class="btn ghost sm" id="dt-wallpaper">📱 Wallpaper</button>
          <button class="btn primary sm" id="dt-share">📤 Share</button>
        </div>
@@ -280,6 +282,13 @@ function openVerseDetail(v) {
   $("dt-listen").onclick = ()=>speakText(detailState.lang==="en" ? narrationFor(v) : (detailState.trans ? detailState.trans.text : v.text), detailState.lang);
   $("dt-share").onclick = shareDetailPost;
   $("dt-wallpaper").onclick = saveWallpaper;
+  const setFavLabel = () => { $("dt-fav").textContent = isFav(v.ref) ? "♥ Saved" : "♡ Save"; };
+  setFavLabel();
+  $("dt-fav").onclick = () => {
+    const added = toggleFav(v.ref); setFavLabel();
+    showToast(added ? "Saved to your favorites ♥" : "Removed from favorites");
+    if (!$("view-saved").classList.contains("hidden")) initSaved();
+  };
   const content = $("detail-sheet").querySelector(".content");
   const bar = EVReact.reactionBar(v);
   if (bar.children.length) content.appendChild(bar);
@@ -406,6 +415,29 @@ function wallpaperCanvas(v, text, rtl) {
 function saveWallpaper() {
   const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
   shareCanvasAsWallpaper(wallpaperCanvas(v, useT ? t.text : v.text, useT ? t.rtl : false));
+}
+
+/* ---- Favorites (on-device) ---------------------------------------- */
+function favIds() { try { return JSON.parse(localStorage.getItem("ev_favorites") || "[]"); } catch (e) { return []; } }
+function isFav(ref) { return favIds().indexOf(ref) !== -1; }
+function toggleFav(ref) {
+  const ids = favIds(); const i = ids.indexOf(ref);
+  if (i === -1) ids.push(ref); else ids.splice(i, 1);
+  try { localStorage.setItem("ev_favorites", JSON.stringify(ids)); } catch (e) {}
+  return i === -1;
+}
+function initSaved() {
+  const wrap = $("saved-feed"); if (!wrap) return; wrap.innerHTML = "";
+  const verses = favIds().map((ref) => VERSE_DB.find((v) => v.ref === ref)).filter(Boolean);
+  const empty = $("saved-empty"); if (empty) empty.style.display = verses.length ? "none" : "block";
+  verses.forEach((v) => {
+    const cell = document.createElement("div"); cell.className = "cell";
+    const c = document.createElement("canvas"); renderVerseImage(c, v, 320, 320); cell.appendChild(c);
+    const cap = document.createElement("div"); cap.className = "cap";
+    cap.innerHTML = `<div class="d">${faithLabel(v.faith)}</div><div class="r">${escapeHtml(v.ref)}</div>`;
+    cell.append(cap); cell.onclick = () => openVerseDetail(v); attachTilt(cell);
+    wrap.appendChild(cell);
+  });
 }
 
 /* ---- This Week: one blessing per day ------------------------------ */

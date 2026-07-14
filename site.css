@@ -204,6 +204,7 @@ body.browser-mode nav.sections button[data-go="verses"] { display: none; }
 
 /* ---- This Week + Wallpapers (app views) ---- */
 body.browser-mode nav.sections button[data-go="week"],
+body.browser-mode nav.sections button[data-go="saved"],
 body.browser-mode nav.sections button[data-go="wallpapers"] { display: none; }
 
 .week-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }

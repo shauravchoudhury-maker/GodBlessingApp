@@ -23,6 +23,7 @@
         <button data-go="trending">Trending</button>
         <button data-go="sermons">Sermons</button>
         <button data-go="verses">Verses</button>
+        <button data-go="saved">Saved</button>
         <button data-go="wallpapers">Wallpapers</button>
       </nav>
     </div>
@@ -122,6 +123,16 @@
       </div>
       <div id="verses-list" style="margin-top:8px;"></div>
       <div style="text-align:center;margin-top:20px;"><button class="btn ghost" id="verses-more">Load more</button></div>
+    </div>
+  </section>
+
+  <!-- ============ SAVED ============ -->
+  <section class="band hidden" id="view-saved">
+    <div class="wrap">
+      <div class="section-title">Your saved blessings</div>
+      <p class="section-sub">Tap the ♡ on any verse to keep it here for the days you need it.</p>
+      <div class="feed" id="saved-feed"></div>
+      <div id="saved-empty" style="display:none;color:var(--muted);text-align:center;padding:34px;">No saved blessings yet — open any verse and tap <b>♡ Save</b>.</div>
     </div>
   </section>
 
