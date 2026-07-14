@@ -271,6 +271,11 @@ const THEME_PALETTES = {
   dusk:  { name: "Dusk",        stops: ["#6b76c4", "#2c2c5e"], text: "#eef0ff", accent: "#c3ccff" },
   noir:  { name: "Noir",        stops: ["#33333a", "#0e0e13"], text: "#f4f4f7", accent: "#c9a9ff" },
   sand:  { name: "Sand",        stops: ["#efe3cf", "#d8bf9c"], text: "#4a3a26", accent: "#8a6a3c", light: true },
+  // Earthy / nature palettes.
+  terra: { name: "Terracotta",  stops: ["#c96f4a", "#7a3b28"], text: "#fff3ec", accent: "#f2c9a0" },
+  moss:  { name: "Moss",        stops: ["#6b8f5a", "#2f4a2a"], text: "#f2f7ec", accent: "#cfe3b8" },
+  clay:  { name: "Clay",        stops: ["#c98d76", "#7d4f42"], text: "#fdf1ec", accent: "#e8c3b2" },
+  harvest:{ name: "Harvest",    stops: ["#e6c680", "#b8853a"], text: "#4a3416", accent: "#8a5f24", light: true },
 };
 
 // Target languages for the free MyMemory API (used in the Studio translator).

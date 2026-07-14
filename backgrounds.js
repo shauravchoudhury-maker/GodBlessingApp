@@ -352,6 +352,118 @@ function sceneAura(ctx, W, H, pal, seed) {
   ctx.globalCompositeOperation = "source-over";
 }
 
+/* ---- Nature / blessing / earthy scenes ---- */
+
+function sceneMeadow(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], 42));
+  g.addColorStop(0.55, pal.stops[0]);
+  g.addColorStop(1, shade(pal.stops[1], -8));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const gl = ctx.createRadialGradient(W * 0.72, H * 0.2, 0, W * 0.72, H * 0.2, W * 0.6);
+  gl.addColorStop(0, rgba(pal.accent, 0.42)); gl.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 201);
+  for (let l = 0; l < 3; l++) {
+    const baseY = H * (0.72 + l * 0.08);
+    ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, baseY);
+    for (let x = 0; x <= W; x += W / 6) ctx.lineTo(x, baseY - Math.sin((x / W) * Math.PI * (1.5 + l) + rng()) * H * 0.03);
+    ctx.lineTo(W, H); ctx.closePath();
+    ctx.fillStyle = rgba(pal.stops[1], 0.3 + l * 0.22); ctx.fill();
+  }
+  ctx.strokeStyle = rgba(pal.stops[1], 0.55); ctx.lineWidth = Math.max(1, W * 0.002);
+  for (let i = 0; i < W / 12; i++) {
+    const x = rng() * W, h = H * (0.02 + rng() * 0.045);
+    ctx.beginPath(); ctx.moveTo(x, H); ctx.quadraticCurveTo(x + (rng() - 0.5) * 12, H - h * 0.6, x + (rng() - 0.5) * 16, H - h); ctx.stroke();
+  }
+  for (let i = 0; i < 22; i++) {
+    const x = rng() * W, y = H * (0.9 + rng() * 0.08);
+    ctx.fillStyle = rgba(rng() > 0.5 ? pal.accent : "#ffffff", 0.75);
+    ctx.beginPath(); ctx.arc(x, y, W * 0.004, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function sceneBlessingLight(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], 30)); g.addColorStop(1, pal.stops[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const cx = W * 0.5, cy = -H * 0.05;
+  const rng = makeRng(seed + 211);
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI - Math.PI / 2 + (rng() - 0.5) * 0.1;
+    const spread = 0.05 + rng() * 0.04;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a - spread) * H * 1.7, cy + Math.sin(a - spread) * H * 1.7);
+    ctx.lineTo(cx + Math.cos(a + spread) * H * 1.7, cy + Math.sin(a + spread) * H * 1.7);
+    ctx.closePath(); ctx.fillStyle = rgba("#fff8e0", 0.05 + rng() * 0.05); ctx.fill();
+  }
+  const glow = ctx.createRadialGradient(cx, H * 0.16, 0, cx, H * 0.16, H * 0.6);
+  glow.addColorStop(0, rgba(pal.accent, 0.6)); glow.addColorStop(0.4, rgba(pal.accent, 0.2)); glow.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 40; i++) {
+    const x = rng() * W, y = rng() * H, r = W * (0.001 + rng() * 0.004);
+    ctx.fillStyle = rgba("#fff7e0", 0.3 + rng() * 0.5);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function scenePetals(ctx, W, H, pal, seed) {
+  baseGradient(ctx, W, H, pal);
+  const glow = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.42, W * 0.7);
+  glow.addColorStop(0, "rgba(255,255,255,0.12)"); glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 223);
+  for (let i = 0; i < 26; i++) {
+    const x = rng() * W, y = rng() * H, rw = W * (0.02 + rng() * 0.035), rot = rng() * Math.PI;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = rgba(rng() > 0.55 ? pal.accent : "#ffffff", 0.14 + rng() * 0.16);
+    ctx.beginPath(); ctx.ellipse(0, 0, rw, rw * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function sceneForestLight(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], 28)); g.addColorStop(1, shade(pal.stops[1], -12));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 233);
+  // slanted light shafts
+  for (let i = 0; i < 5; i++) {
+    const x = W * (rng() * 1.1 - 0.05);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + W * 0.12, 0);
+    ctx.lineTo(x + W * 0.12 + H * 0.4, H); ctx.lineTo(x + H * 0.4, H); ctx.closePath();
+    ctx.fillStyle = rgba("#f4ffe8", 0.04 + rng() * 0.04); ctx.fill();
+  }
+  // canopy dapples (top) + foliage blobs
+  for (let i = 0; i < 30; i++) {
+    const x = rng() * W, y = rng() * H * 0.9, r = W * (0.015 + rng() * 0.06);
+    const b = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const col = rng() > 0.6 ? pal.accent : (rng() > 0.5 ? "#ffffff" : pal.stops[1]);
+    b.addColorStop(0, rgba(col, 0.14 + rng() * 0.12)); b.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = b; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function sceneEarthStrata(ctx, W, H, pal, seed) {
+  ctx.fillStyle = shade(pal.stops[0], 18); ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 241);
+  const bands = 7;
+  let y = 0;
+  for (let i = 0; i < bands; i++) {
+    const bh = H / bands * (0.7 + rng() * 0.6);
+    const t = i / bands;
+    const col = i % 2 ? pal.stops[1] : pal.stops[0];
+    ctx.beginPath(); ctx.moveTo(0, y);
+    for (let x = 0; x <= W; x += W / 8) ctx.lineTo(x, y + Math.sin((x / W) * Math.PI * 2 + i + rng()) * H * 0.02);
+    ctx.lineTo(W, y + bh + H * 0.06); ctx.lineTo(0, y + bh); ctx.closePath();
+    ctx.fillStyle = rgba(col, 0.5 + t * 0.3); ctx.fill();
+    y += bh;
+  }
+  const glow = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.35, W * 0.7);
+  glow.addColorStop(0, rgba(pal.accent, 0.2)); glow.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+}
+
 // Registry — order = display order in the picker.
 const BACKGROUNDS = [
   { key: "gradient", name: "Soft Glow",  draw: sceneGradient },
@@ -369,6 +481,11 @@ const BACKGROUNDS = [
   { key: "particles", name: "Particles", draw: sceneParticles },
   { key: "mesh",     name: "Color Mesh", draw: sceneMesh },
   { key: "aura",     name: "Aura",       draw: sceneAura },
+  { key: "meadow",   name: "Meadow",        draw: sceneMeadow },
+  { key: "blessing", name: "Blessing Light", draw: sceneBlessingLight },
+  { key: "petals",   name: "Petals",        draw: scenePetals },
+  { key: "canopy",   name: "Forest Light",  draw: sceneForestLight },
+  { key: "strata",   name: "Earth Strata",  draw: sceneEarthStrata },
 ];
 
 function drawBackground(key, ctx, W, H, pal, seed) {
