@@ -7,7 +7,7 @@
 //   • Cross-origin APIs (translation, Firestore) are never intercepted.
 //   • Navigations fall back to the cached shell when offline.
 
-const CACHE = "eververse-v35";
+const CACHE = "eververse-v36";
 const SHELL = [
   "./", "./index.html", "./app.html",
   "./styles.css", "./site.css",
@@ -80,4 +80,21 @@ self.addEventListener("fetch", (e) => {
 
   // Same-origin assets: stale-while-revalidate.
   e.respondWith(staleWhileRevalidate(req));
+});
+
+// Daily reminder (best-effort, where Periodic Background Sync is supported).
+self.addEventListener("periodicsync", (e) => {
+  if (e.tag === "daily-blessing") {
+    e.waitUntil(self.registration.showNotification("Today's blessing is ready ✦", {
+      body: "Open EverVerse for a new verse and its meaning.",
+      icon: "./icons/icon-192.png", badge: "./icons/icon-192.png", tag: "daily-blessing",
+    }));
+  }
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ("focus" in c) return c.focus(); }
+    return self.clients.openWindow("./index.html");
+  }));
 });

@@ -90,9 +90,9 @@ function setupProtection() {
   document.addEventListener("copy", (e) => {
     if (e.target && e.target.closest && e.target.closest("input,textarea")) return;
     try {
-      e.clipboardData.setData("text/plain", "© EverVerse — content is protected. To license or reuse, email licensing@eververse.org");
+      e.clipboardData.setData("text/plain", "© EverVerse — content is protected. To license or reuse, email PRteam@eververse.org");
       e.preventDefault();
-      showToast("This content is protected — to reuse, email licensing@eververse.org");
+      showToast("This content is protected — to reuse, email PRteam@eververse.org");
     } catch (_) {}
   });
 }
@@ -440,8 +440,42 @@ function initSaved() {
   });
 }
 
+/* ---- Daily reminder (best-effort local notification) -------------- */
+function remindersOn() { return localStorage.getItem("ev_reminder_on") === "1" && typeof Notification !== "undefined" && Notification.permission === "granted"; }
+async function enableReminders() {
+  if (!("Notification" in window)) { showToast("Notifications aren't supported on this device."); return; }
+  let perm = Notification.permission;
+  if (perm !== "granted") perm = await Notification.requestPermission();
+  if (perm !== "granted") { showToast("Allow notifications in settings to get daily blessings."); return; }
+  localStorage.setItem("ev_reminder_on", "1");
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (reg && reg.periodicSync && navigator.permissions) {
+      const st = await navigator.permissions.query({ name: "periodic-background-sync" }).catch(() => ({ state: "denied" }));
+      if (st.state === "granted") await reg.periodicSync.register("daily-blessing", { minInterval: 20 * 60 * 60 * 1000 }).catch(() => {});
+    }
+    if (reg) reg.showNotification("Daily blessings are on ✦", { body: "A gentle nudge each day. Rest easy.", icon: "icons/icon-192.png" });
+  } catch (e) {}
+  showToast("Daily reminders are on ✦");
+  updateReminderBtn();
+}
+function disableReminders() {
+  localStorage.removeItem("ev_reminder_on");
+  navigator.serviceWorker.ready.then((r) => { if (r && r.periodicSync) r.periodicSync.unregister("daily-blessing").catch(() => {}); }).catch(() => {});
+  showToast("Daily reminders off");
+  updateReminderBtn();
+}
+function updateReminderBtn() {
+  const b = $("reminder-btn"); if (!b) return;
+  const on = remindersOn();
+  b.textContent = on ? "🔕 Turn off daily reminders" : "🔔 Turn on daily reminders";
+  b.classList.toggle("accent", !on);
+  b.onclick = on ? disableReminders : enableReminders;
+}
+
 /* ---- This Week: one blessing per day ------------------------------ */
 function initWeek() {
+  updateReminderBtn();
   const wrap = $("week-list"); if (!wrap) return; wrap.innerHTML = "";
   const faiths = faithsIn(VERSE_DB);
   const today = new Date();
