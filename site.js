@@ -264,6 +264,7 @@ function openVerseDetail(v) {
        <div class="acts">
          <button class="btn ghost sm" id="dt-listen">🎙 Listen</button>
          <select class="pill" id="dt-voice" style="padding:7px 9px;font-size:13px;"><option value="female">Female voice</option><option value="male">Male voice</option></select>
+         <button class="btn ghost sm" id="dt-wallpaper">📱 Wallpaper</button>
          <button class="btn primary sm" id="dt-share">📤 Share</button>
        </div>
      </div>`;
@@ -276,6 +277,7 @@ function openVerseDetail(v) {
   $("dt-lang").onchange = ()=>translateDetailVerse($("dt-lang").value);
   $("dt-listen").onclick = ()=>speakText(detailState.lang==="en" ? narrationFor(v) : (detailState.trans ? detailState.trans.text : v.text), detailState.lang);
   $("dt-share").onclick = shareDetailPost;
+  $("dt-wallpaper").onclick = saveWallpaper;
   const content = $("detail-sheet").querySelector(".content");
   const bar = EVReact.reactionBar(v);
   if (bar.children.length) content.appendChild(bar);
@@ -381,6 +383,22 @@ function sharePost(v) { sharePostImage(v, v.text, false, meaningFor(v)); }
 function shareDetailPost() {
   const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
   sharePostImage(v, useT ? t.text : v.text, useT ? t.rtl : false, useT ? (t.meaning || meaningFor(v)) : meaningFor(v));
+}
+// Save the verse as a phone wallpaper / lock screen (9:19.5) to Photos.
+function saveWallpaper() {
+  const v = detailState.v, t = detailState.trans, useT = t && detailState.lang !== "en";
+  const text = useT ? t.text : v.text, rtl = useT ? t.rtl : false;
+  const c = document.createElement("canvas");
+  renderVerse(c, 1080, 2340, { text, ref: v.ref, rtl: !!rtl, paletteKey: v.theme, bgKey: bgForVerse(v), watermark: true, showRef: true });
+  c.toBlob(async (blob) => {
+    const file = new File([blob], "eververse-wallpaper.jpg", { type: "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "EverVerse wallpaper" }); showToast("Saved — now set it as your wallpaper from Photos ✦"); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    const a = document.createElement("a"); a.download = file.name; a.href = c.toDataURL("image/jpeg", 0.95); a.click();
+    showToast("Wallpaper downloaded — set it from your Photos ✦");
+  }, "image/jpeg", 0.95);
 }
 async function shareSermon() {
   const s = detailState.s;
