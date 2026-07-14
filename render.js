@@ -85,6 +85,7 @@ function renderVerse(canvas, W, H, opts) {
   if (layout === "affirmation") drawLayoutAffirmation(ctxArg);
   else if (layout === "editorial") drawLayoutEditorial(ctxArg);
   else if (layout === "minimal") drawLayoutMinimal(ctxArg);
+  else if (layout === "dimensional") drawLayoutDimensional(ctxArg);
   else drawLayoutClassic(ctxArg);
 }
 
@@ -140,6 +141,72 @@ function drawLayoutAffirmation({ ctx, W, H, pal, opts, font, minDim }) {
     ctx.fillText(opts.ref.toUpperCase(), W / 2, y + minDim * 0.03);
     evSetTracking(ctx, 0);
   }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// Layered "3D" treatment: extruded text + a foreground depth layer so the
+// words sit on a stage between background and out-of-focus front elements.
+function drawLayoutDimensional({ ctx, W, H, pal, opts, font, minDim }) {
+  const text = opts.text || "";
+  const family = EV_FONTS[font] || EV_FONTS.sans;   // bold sans reads most "3D"
+  const maxWidth = W - W * 0.12 * 2;
+  const showRef = opts.showRef !== false && opts.ref;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const fit = fitText(ctx, text, maxWidth, H * 0.56, family, minDim * 0.09 * (opts.fontScale || 1), "800");
+  ctx.font = `800 ${fit.size}px ${family}`;
+  const lh = fit.size * 1.16;
+  const blockH = fit.lines.length * lh;
+  const cx = W / 2;
+  const y0 = H * 0.45 - blockH / 2 + lh / 2;
+
+  // Soft drop shadow beneath the whole block (lift off the background)
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = fit.size * 0.5; ctx.shadowOffsetY = fit.size * 0.12;
+  ctx.fillStyle = "rgba(0,0,0,0.001)";
+  let ys = y0; for (const line of fit.lines) { ctx.fillText(line, cx, ys); ys += lh; }
+  ctx.restore();
+
+  // Extruded side (opaque dark, back → front) for genuine depth
+  const depth = Math.max(5, Math.round(fit.size * 0.12));
+  const dx = fit.size * 0.018, dy = fit.size * 0.05;
+  const side = (typeof shade === "function") ? shade(pal.stops[1], -55) : "rgba(0,0,0,0.85)";
+  ctx.fillStyle = side;
+  for (let i = depth; i >= 1; i--) {
+    let y = y0; for (const line of fit.lines) { ctx.fillText(line, cx + i * dx, y + i * dy); y += lh; }
+  }
+
+  // Top face — gradient from text colour to accent + a bright top edge highlight
+  let y = y0;
+  for (const line of fit.lines) {
+    const g = ctx.createLinearGradient(0, y - fit.size * 0.5, 0, y + fit.size * 0.5);
+    g.addColorStop(0, hexToRgba(pal.text, 1));
+    g.addColorStop(1, hexToRgba(pal.accent, 1));
+    ctx.fillStyle = g; ctx.fillText(line, cx, y);
+    ctx.fillStyle = hexToRgba("#ffffff", 0.18); ctx.fillText(line, cx, y - fit.size * 0.02);
+    y += lh;
+  }
+
+  if (showRef) {
+    ctx.textBaseline = "alphabetic"; ctx.direction = "ltr";
+    ctx.font = `600 ${minDim * 0.026}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.01);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText(opts.ref.toUpperCase(), cx, y + minDim * 0.02);
+    evSetTracking(ctx, 0);
+    ctx.textBaseline = "middle";
+  }
+
+  // Foreground depth layer — large, soft, out-of-focus orbs sitting IN FRONT
+  const orbs = [[0.1, 0.14, 0.16], [0.9, 0.86, 0.2], [0.86, 0.12, 0.12], [0.14, 0.85, 0.14]];
+  orbs.forEach(([fx, fy, rr], i) => {
+    const r = W * rr;
+    const g = ctx.createRadialGradient(W * fx, H * fy, 0, W * fx, H * fy, r);
+    g.addColorStop(0, hexToRgba(i % 2 ? pal.accent : "#ffffff", 0.16));
+    g.addColorStop(1, hexToRgba(i % 2 ? pal.accent : "#ffffff", 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W * fx, H * fy, r, 0, Math.PI * 2); ctx.fill();
+  });
+
   if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
 }
 

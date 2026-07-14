@@ -71,6 +71,19 @@ function go(view) {
   if (view==="verses" && !inited.verses) { initVerses(); inited.verses = true; }
 }
 
+/* ---- 3D tilt-on-hover (adds depth; skipped on touch / reduced-motion) --- */
+function attachTilt(el) {
+  if (window.matchMedia && (matchMedia("(pointer: coarse)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  el.classList.add("tilt");
+  el.addEventListener("pointermove", (e) => {
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(900px) rotateY(${px * 7}deg) rotateX(${-py * 7}deg) scale(1.02)`;
+  });
+  el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+}
+
 /* ---- Cards -------------------------------------------------------- */
 function buildPostCard(v, label) {
   const el = document.createElement("div"); el.className = "post";
@@ -91,6 +104,7 @@ function buildPostCard(v, label) {
   if (bar.children.length) body.appendChild(bar);
   el.append(iw, body);
   buildLangBlock(v, langs);
+  attachTilt(el);
   return el;
 }
 function buildFeedCell(v, date) {
@@ -101,6 +115,7 @@ function buildFeedCell(v, date) {
   const r = document.createElement("div"); r.className = "r"; r.textContent = v.ref;
   cap.append(d, r); cell.append(cap);
   cell.onclick = ()=>openVerseDetail(v);
+  attachTilt(cell);
   return cell;
 }
 
