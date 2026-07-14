@@ -1050,6 +1050,7 @@ async function runBatchVideo() {
       let blob, name;
       if (it.v) {
         blob = await generateVerseVideo({ text: it.v.text, ref: it.v.ref, paletteKey: it.v.theme, theme: it.v.theme,
+          kicker: "EVERVERSE · " + faithLabel(it.v.faith).toUpperCase(),
           bgKey: bgForVerseApp(it.v), watermark: true, showRef: true, durationSec: dur, withMusic: music, w: dims.w, h: dims.h, onProgress });
         name = `${it.v.ref.replace(/[^\w]+/g,"_").toLowerCase()}.${videoFileExt(blob)}`;
       } else {

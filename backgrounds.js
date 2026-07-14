@@ -308,8 +308,8 @@ function sceneMesh(ctx, W, H, pal, seed) {
 
 // Film-grain / noise texture — the signature "premium" layer on modern
 // affirmation/quote posts. Tiled + composited so it's cheap even at 1080².
-function addGrain(ctx, W, H, seed, amount) {
-  amount = amount == null ? 0.07 : amount;
+// Build a reusable noise tile (expensive part = ImageData gen; do it once).
+function makeGrainTile(seed) {
   const tile = 160;
   const off = document.createElement("canvas"); off.width = tile; off.height = tile;
   const octx = off.getContext("2d");
@@ -321,7 +321,11 @@ function addGrain(ctx, W, H, seed, amount) {
     img.data[i + 3] = 255;
   }
   octx.putImageData(img, 0, 0);
-  const pat = ctx.createPattern(off, "repeat");
+  return off;
+}
+function addGrain(ctx, W, H, seed, amount) {
+  amount = amount == null ? 0.07 : amount;
+  const pat = ctx.createPattern(makeGrainTile(seed), "repeat");
   ctx.save();
   ctx.globalAlpha = amount;
   ctx.globalCompositeOperation = "overlay";

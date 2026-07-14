@@ -73,7 +73,19 @@ function buildAmbientMusic(ac, dest, theme, dur) {
 function easeInOut(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
 function clamp01(x) { return Math.max(0, Math.min(1, x)); }
 
-function drawVideoFrame(ctx, W, H, bg, fit, pal, opts, p) {
+const EV_VIDEO_FONTS = (typeof EV_FONTS !== "undefined") ? EV_FONTS : { serif: 'Georgia, "Times New Roman", serif', sans: '"Helvetica Neue", "Segoe UI", Arial, sans-serif' };
+
+function drawGrainOverlay(ctx, W, H, grainPat, amount) {
+  if (!grainPat) return;
+  ctx.save();
+  ctx.globalAlpha = amount == null ? 0.07 : amount;
+  ctx.globalCompositeOperation = "overlay";
+  ctx.fillStyle = grainPat;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+function drawVideoFrame(ctx, W, H, bg, fit, pal, opts, p, grainPat) {
   const minDim = Math.min(W, H);
   // Ken-Burns background: slow zoom + vertical drift, always covering the frame
   const scale = 1.0 + 0.14 * easeInOut(p);
@@ -82,52 +94,70 @@ function drawVideoFrame(ctx, W, H, bg, fit, pal, opts, p) {
   const dy = -(drawH - H) / 2 + (drawH - H) * 0.2 * (p - 0.5);
   ctx.drawImage(bg, 0, 0, bg.width, bg.height, dx, dy, drawW, drawH);
 
-  // vignette
-  const vig = ctx.createRadialGradient(W / 2, H * 0.46, minDim * 0.2, W / 2, H * 0.5, Math.max(W, H) * 0.75);
-  vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(1, "rgba(0,0,0,0.32)");
+  // Adaptive vignette (soft for light palettes)
+  const vig = ctx.createRadialGradient(W / 2, H * 0.46, minDim * 0.2, W / 2, H * 0.5, Math.max(W, H) * 0.78);
+  if (pal.light) { vig.addColorStop(0, "rgba(255,255,255,0.10)"); vig.addColorStop(1, "rgba(120,90,50,0.16)"); }
+  else { vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.34)"); }
   ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+
+  // Film grain (screen-space, static — the signature texture)
+  drawGrainOverlay(ctx, W, H, grainPat, 0.07);
 
   const textAlpha = clamp01(p / 0.12);
   const refAlpha = clamp01((p - 0.06) / 0.12);
   const floatY = Math.sin(p * Math.PI * 2) * (minDim * 0.006);
+  const family = EV_VIDEO_FONTS[opts.font] || EV_VIDEO_FONTS.serif;
 
-  ctx.direction = opts.rtl ? "rtl" : "ltr";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `600 ${fit.size}px Georgia, "Times New Roman", serif`;
-  ctx.globalAlpha = textAlpha;
-  ctx.fillStyle = pal.text;
-  ctx.shadowColor = "rgba(0,0,0,0.45)";
-  ctx.shadowBlur = fit.size * 0.14;
-  ctx.shadowOffsetY = fit.size * 0.04;
-
-  const blockH = fit.lines.length * fit.lineHeight;
-  let y = H * 0.44 - blockH / 2 + fit.lineHeight / 2 + floatY;
-  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
-  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-
-  const divY = y + fit.lineHeight * 0.05;
-  ctx.globalAlpha = refAlpha;
-  ctx.strokeStyle = hexToRgba(pal.accent, 0.75);
-  ctx.lineWidth = Math.max(1.5, W * 0.002);
-  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.06, divY); ctx.lineTo(W / 2 + minDim * 0.06, divY); ctx.stroke();
-
-  if (opts.showRef !== false && opts.ref) {
-    ctx.direction = "ltr";
-    ctx.font = `italic 600 ${minDim * 0.032}px Georgia, serif`;
-    ctx.fillStyle = pal.accent;
-    ctx.fillText("— " + opts.ref, W / 2, divY + minDim * 0.05);
+  if (opts.layout === "editorial") {
+    const padL = W * 0.11;
+    ctx.direction = "ltr"; ctx.textAlign = "left";
+    // Kicker
+    ctx.globalAlpha = textAlpha; ctx.textBaseline = "alphabetic";
+    ctx.font = `700 ${minDim * 0.026}px ${EV_VIDEO_FONTS.sans}`;
+    try { ctx.letterSpacing = (minDim * 0.012) + "px"; } catch (e) {}
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText((opts.kicker || "EVERVERSE").toUpperCase(), padL, H * 0.135);
+    try { ctx.letterSpacing = "0px"; } catch (e) {}
+    ctx.strokeStyle = hexToRgba(pal.accent, 0.6); ctx.lineWidth = Math.max(1.5, W * 0.0022);
+    ctx.beginPath(); ctx.moveTo(padL, H * 0.16); ctx.lineTo(padL + minDim * 0.14, H * 0.16); ctx.stroke();
+    // Body (left-aligned)
+    ctx.textBaseline = "middle";
+    ctx.font = `600 ${fit.size}px ${family}`;
+    ctx.fillStyle = pal.text;
+    if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.32)"; ctx.shadowBlur = fit.size * 0.12; ctx.shadowOffsetY = fit.size * 0.03; }
+    let y = H * 0.44 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2 + floatY;
+    for (const line of fit.lines) { ctx.fillText(line, padL, y); y += fit.lineHeight; }
+    ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    if (opts.showRef !== false && opts.ref) {
+      ctx.globalAlpha = refAlpha; ctx.textBaseline = "alphabetic";
+      ctx.font = `italic 600 ${minDim * 0.03}px ${family}`;
+      ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+      ctx.fillText("— " + opts.ref, padL, H * 0.82);
+    }
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.direction = opts.rtl ? "rtl" : "ltr";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = `600 ${fit.size}px ${family}`;
+    ctx.globalAlpha = textAlpha; ctx.fillStyle = pal.text;
+    if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = fit.size * 0.14; ctx.shadowOffsetY = fit.size * 0.04; }
+    let y = H * 0.44 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2 + floatY;
+    for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
+    ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    const divY = y + fit.lineHeight * 0.05;
+    ctx.globalAlpha = refAlpha;
+    ctx.strokeStyle = hexToRgba(pal.accent, 0.75); ctx.lineWidth = Math.max(1.5, W * 0.002);
+    ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.06, divY); ctx.lineTo(W / 2 + minDim * 0.06, divY); ctx.stroke();
+    if (opts.showRef !== false && opts.ref) {
+      ctx.direction = "ltr"; ctx.font = `italic 600 ${minDim * 0.032}px ${family}`;
+      ctx.fillStyle = pal.accent; ctx.fillText("— " + opts.ref, W / 2, divY + minDim * 0.05);
+    }
+    ctx.globalAlpha = 1;
   }
-  ctx.globalAlpha = 1;
 
   if (opts.watermark) {
-    ctx.direction = "ltr";
-    ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`;
-    ctx.fillStyle = hexToRgba(pal.text, 0.72);
-    ctx.textBaseline = "bottom";
-    ctx.fillText("✦ EverVerse", W / 2, H - H * 0.04);
-    ctx.textBaseline = "middle";
+    if (typeof drawWatermark === "function") drawWatermark(ctx, W, H, pal, opts.layout === "editorial" ? "bottom-right" : "center");
+    else { ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`; ctx.fillStyle = hexToRgba(pal.text, 0.72); ctx.textBaseline = "bottom"; ctx.fillText("✦ EVERVERSE", W / 2, H - H * 0.04); ctx.textBaseline = "middle"; }
   }
 }
 
@@ -190,14 +220,16 @@ function buildCaptionPages(text) {
   return pages.length ? pages : [text];
 }
 
-function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption) {
+function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat) {
   const minDim = Math.min(W, H);
   const scale = 1.0 + 0.1 * easeInOut(p);
   const drawW = W * scale, drawH = H * scale;
   ctx.drawImage(bg, 0, 0, bg.width, bg.height, -(drawW - W) / 2, -(drawH - H) / 2 + (drawH - H) * 0.15 * (p - 0.5), drawW, drawH);
-  const vig = ctx.createRadialGradient(W / 2, H * 0.46, minDim * 0.2, W / 2, H * 0.5, Math.max(W, H) * 0.75);
-  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.4)");
+  const vig = ctx.createRadialGradient(W / 2, H * 0.46, minDim * 0.2, W / 2, H * 0.5, Math.max(W, H) * 0.78);
+  if (pal.light) { vig.addColorStop(0, "rgba(255,255,255,0.10)"); vig.addColorStop(1, "rgba(120,90,50,0.20)"); }
+  else { vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.42)"); }
   ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+  drawGrainOverlay(ctx, W, H, grainPat, 0.07);
 
   ctx.direction = opts.rtl ? "rtl" : "ltr";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -219,12 +251,8 @@ function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption) {
   ctx.fillStyle = hexToRgba(pal.accent, 0.9);
   ctx.fillRect(0, H - 8, W * p, 8);
   if (opts.watermark) {
-    ctx.direction = "ltr";
-    ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`;
-    ctx.fillStyle = hexToRgba(pal.text, 0.72);
-    ctx.textBaseline = "bottom";
-    ctx.fillText("✦ EverVerse", W / 2, H - H * 0.045);
-    ctx.textBaseline = "middle";
+    if (typeof drawWatermark === "function") drawWatermark(ctx, W, H, pal, "center");
+    else { ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`; ctx.fillStyle = hexToRgba(pal.text, 0.72); ctx.textBaseline = "bottom"; ctx.fillText("✦ EVERVERSE", W / 2, H - H * 0.045); ctx.textBaseline = "middle"; }
   }
 }
 
@@ -242,6 +270,8 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   const ctx = canvas.getContext("2d");
   const bg = document.createElement("canvas"); bg.width = Math.round(W * 1.25); bg.height = Math.round(H * 1.25);
   drawBackground(opts.bgKey || "aurora", bg.getContext("2d"), bg.width, bg.height, pal, seed >>> 0);
+  const grainOn = (opts.grain != null) ? opts.grain : ((typeof EV_STYLE !== "undefined" && EV_STYLE.grain != null) ? EV_STYLE.grain : true);
+  const grainPat = (grainOn && typeof makeGrainTile === "function") ? ctx.createPattern(makeGrainTile(seed), "repeat") : null;
 
   // Caption schedule proportional to page length.
   const totalChars = pages.reduce((a, s) => a + s.length, 0) || 1;
@@ -269,7 +299,7 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
       let cap = sched.length ? sched[sched.length - 1].text : "";
       for (const s of sched) { if (t >= s.start && t < s.end) { cap = s.text; break; } }
       if (t < (sched[0] ? sched[0].start : 0)) cap = sched[0] ? sched[0].text : "";
-      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, cap);
+      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, cap, grainPat);
       if (vtrack.requestFrame) vtrack.requestFrame();
       if (opts.onProgress) opts.onProgress(p);
       if (t >= dur + 0.2) { resolve(); return; }
@@ -306,6 +336,7 @@ function generateSermonVideo(sermon, opts) {
     paletteKey: base ? base.theme : "royal",
     theme: base ? base.theme : "royal",
     bgKey: "aurora",
+    kicker: "EVERVERSE · " + ((typeof faithLabel === "function" && sermon.faith) ? faithLabel(sermon.faith).toUpperCase() : "SERMON"),
     watermark: true, showRef: true,
     durationSec: 12, withMusic: true, w: 720, h: 1280,
   }, opts || {}));
@@ -328,12 +359,23 @@ async function generateVerseVideo(opts) {
   bg.width = Math.round(W * 1.25); bg.height = Math.round(H * 1.25);
   drawBackground(opts.bgKey || "gradient", bg.getContext("2d"), bg.width, bg.height, pal, seed >>> 0);
 
-  // Pre-compute text layout.
+  // Resolve the house style (falls through to EV_STYLE like the image renderer).
+  const style = (typeof EV_STYLE !== "undefined") ? EV_STYLE : null;
+  const layout = opts.layout || (style && style.layout) || "classic";
+  const font = opts.font || (style && style.font) || null;
+  const grainOn = (opts.grain != null) ? opts.grain : (style && style.grain != null ? style.grain : true);
+  const kicker = opts.kicker || (style && style.kicker) || "EVERVERSE";
+  const family = EV_VIDEO_FONTS[font] || EV_VIDEO_FONTS.serif;
+  const isEditorial = layout === "editorial";
+  const frameOpts = Object.assign({}, opts, { layout, font, kicker });
+
+  // Pre-compute text layout for the chosen layout.
   const minDim = Math.min(W, H);
-  const maxW = W - W * 0.1 * 2;
+  const maxW = isEditorial ? (W - W * 0.11 - W * 0.09) : (W - W * 0.1 * 2);
   const maxH = H * (opts.showRef !== false ? 0.5 : 0.6);
   ctx.direction = opts.rtl ? "rtl" : "ltr";
-  const fit = fitText(ctx, opts.text, maxW, maxH, 'Georgia, "Times New Roman", serif', minDim * 0.07, "600");
+  const fit = fitText(ctx, opts.text, maxW, maxH, family, minDim * (isEditorial ? 0.072 : 0.07), "600");
+  const grainPat = (grainOn && typeof makeGrainTile === "function") ? ctx.createPattern(makeGrainTile(seed), "repeat") : null;
 
   // Audio graph (optional).
   let audioCtx = null, streamDest = null;
@@ -366,7 +408,7 @@ async function generateVerseVideo(opts) {
     function tick() {
       const t = (performance.now() - start) / 1000;
       const p = Math.min(1, t / dur);
-      drawVideoFrame(ctx, W, H, bg, fit, pal, opts, p);
+      drawVideoFrame(ctx, W, H, bg, fit, pal, frameOpts, p, grainPat);
       if (vtrack.requestFrame) vtrack.requestFrame();
       else if (videoStream.requestFrame) videoStream.requestFrame();
       if (opts.onProgress) opts.onProgress(p);
