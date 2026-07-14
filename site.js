@@ -61,7 +61,47 @@ function fillLangSelect(sel) { sel.innerHTML = ""; sel.add(new Option("English",
 
 /* ---- Navigation --------------------------------------------------- */
 let inited = { posts:false, trending:false, sermons:false, verses:false };
+/* ---- App funnel + content protection ------------------------------ */
+let evDeferredPrompt = null;
+function showToast(msg) {
+  let t = document.getElementById("ev-toast");
+  if (!t) { t = document.createElement("div"); t.id = "ev-toast"; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2800);
+}
+function isAppMode() {
+  return (window.matchMedia && (matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: fullscreen)").matches || matchMedia("(display-mode: minimal-ui)").matches)) || navigator.standalone === true;
+}
+function setupFunnel() {
+  document.body.classList.add(isAppMode() ? "app-mode" : "browser-mode");
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evDeferredPrompt = e; });
+  const install = document.getElementById("install-app");
+  if (install) install.onclick = async () => {
+    if (evDeferredPrompt) { evDeferredPrompt.prompt(); try { await evDeferredPrompt.userChoice; } catch (_) {} evDeferredPrompt = null; }
+    else { showToast("On iPhone: tap Share → Add to Home Screen. On Android: browser menu → Install app."); }
+  };
+}
+function setupProtection() {
+  document.body.classList.add("protect");
+  ["contextmenu", "dragstart"].forEach((ev) => document.addEventListener(ev, (e) => {
+    if (e.target && e.target.closest && e.target.closest("input,textarea")) return;
+    e.preventDefault();
+  }));
+  document.addEventListener("copy", (e) => {
+    if (e.target && e.target.closest && e.target.closest("input,textarea")) return;
+    try {
+      e.clipboardData.setData("text/plain", "© EverVerse — content is protected. To license or reuse, email licensing@eververse.org");
+      e.preventDefault();
+      showToast("This content is protected — to reuse, email licensing@eververse.org");
+    } catch (_) {}
+  });
+}
+
 function go(view) {
+  if (document.body.classList.contains("browser-mode") && ["posts", "trending", "sermons", "verses"].indexOf(view) !== -1) {
+    view = "today";
+    const cta = document.querySelector(".appcta"); if (cta) cta.scrollIntoView({ behavior: "smooth" });
+  }
   ["today","posts","trending","sermons","verses"].forEach((k)=>$("view-"+k).classList.toggle("hidden", k!==view));
   document.querySelectorAll("nav.sections button").forEach((b)=>b.classList.toggle("active", b.dataset.go===view));
   window.scrollTo(0,0);
@@ -351,6 +391,8 @@ async function shareSermon() {
 
 /* ---- Boot --------------------------------------------------------- */
 function init() {
+  setupFunnel();
+  setupProtection();
   try { EVReact.init(); } catch (e) {}
   document.querySelectorAll("[data-go]").forEach((el)=>el.addEventListener("click", ()=>go(el.dataset.go)));
   $("detail").addEventListener("click", (e)=>{ if (e.target === $("detail")) closeDetail(); });
