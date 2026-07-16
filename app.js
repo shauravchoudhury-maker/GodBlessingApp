@@ -155,6 +155,8 @@ function setActiveVerse() {
   $("verse-ref").textContent = v.ref;
   $("daily-palette").value = v.theme;
 
+  updateExplainerStats();
+
   const track = trackFor(v);
   $("music-mood").textContent = track.mood;
   $("music-idea").textContent = track.idea;
@@ -1126,6 +1128,79 @@ function initSchedule() {
 }
 
 /* ================================================================== */
+/*  5-minute explainer (YouTube + Spotify)                             */
+/* ================================================================== */
+let exBusy = false;
+function exVoiceId() { return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[$("ex-voice").value] : undefined; }
+function initExplainer() {
+  if (!$("ex-script")) return;
+  $("ex-token").value = getTtsToken();
+  $("ex-token").oninput = () => setTtsToken($("ex-token").value);
+  $("ex-script").onclick = () => {
+    const v = daily.verse; const r = explainerScript(v);
+    downloadBlob(new Blob([r.script], { type: "text/plain;charset=utf-8" }), top8Filename("explainer-script") + ".txt");
+    $("ex-status").textContent = `Script exported — ${r.words} words ≈ ${r.minutes.toFixed(1)} min.`;
+  };
+  $("ex-meta").onclick = () => {
+    const v = daily.verse; const y = explainerYouTube(v);
+    const txt = `TITLE\n${y.title}\n\nDESCRIPTION\n${y.description}\n\nTAGS\n${y.tags}`;
+    downloadBlob(new Blob([txt], { type: "text/plain;charset=utf-8" }), top8Filename("youtube-listing") + ".txt");
+    $("ex-status").textContent = "YouTube listing exported (title + description + chapters + tags).";
+  };
+  $("ex-audio").onclick = runExplainerAudio;
+  $("ex-video").onclick = runExplainerVideo;
+  updateExplainerStats();
+}
+function updateExplainerStats() {
+  if (!$("ex-stats") || !daily.verse) return;
+  const r = explainerScript(daily.verse);
+  $("ex-stats").textContent = `${daily.verse.ref} → ${r.words} words ≈ ${r.minutes.toFixed(1)} min` +
+    (r.hasSermon ? " · sermon-backed (richest)" : " · verse-only") + ` · ~${r.script.length.toLocaleString()} voice credits`;
+}
+function exReady() {
+  if (typeof TTS_READY === "undefined" || !TTS_READY) { $("ex-status").textContent = "Voice isn't connected yet — add your Worker URL in tts-config.js."; return false; }
+  return true;
+}
+async function runExplainerAudio() {
+  if (exBusy || !exReady()) return;
+  exBusy = true; $("ex-audio").disabled = true; $("ex-video").disabled = true;
+  $("ex-status").textContent = "Narrating the explainer… (this takes a minute)";
+  try {
+    const v = daily.verse; const r = explainerScript(v);
+    const buf = await fetchTTS(r.script, { voiceId: exVoiceId() });
+    const url = URL.createObjectURL(new Blob([new Uint8Array(buf)], { type: "audio/mpeg" }));
+    $("ex-audio-preview").src = url; $("ex-audio-preview").style.display = "block";
+    const a = $("ex-download"); a.href = url; a.download = top8Filename("explainer") + ".mp3"; a.textContent = "⬇ Download MP3"; a.style.display = "inline-block";
+    $("ex-status").textContent = `✓ MP3 ready (~${r.minutes.toFixed(1)} min) — upload to Spotify for Podcasters.`;
+  } catch (e) {
+    $("ex-status").textContent = "Voice error: " + (e && e.message ? e.message : e);
+  } finally { exBusy = false; $("ex-audio").disabled = false; $("ex-video").disabled = false; }
+}
+async function runExplainerVideo() {
+  if (exBusy || !exReady()) return;
+  if (!videoSupported()) { $("ex-status").textContent = "⚠ This browser can't record video. Try Chrome/Edge."; return; }
+  exBusy = true; $("ex-audio").disabled = true; $("ex-video").disabled = true;
+  try {
+    const v = daily.verse; const r = explainerScript(v);
+    const dims = $("ex-format").value === "portrait" ? { w: 720, h: 1280 } : { w: 1280, h: 720 };
+    $("ex-status").textContent = "Narrating + rendering… keep this tab open (renders in real time).";
+    const blob = await generateVoiceOverVideo({
+      narrationText: r.script, captionText: r.script, ref: v.ref,
+      paletteKey: v.theme, bgKey: bgForVerseApp(v), voiceId: exVoiceId(),
+      watermark: true, w: dims.w, h: dims.h,
+      onProgress: (p) => { $("ex-status").textContent = `Rendering… ${Math.round(p * 100)}%`; },
+    });
+    const url = URL.createObjectURL(blob);
+    $("ex-preview").src = url; $("ex-preview").load();
+    const ext = videoFileExt(blob);
+    const a = $("ex-download"); a.href = url; a.download = top8Filename("explainer") + "." + ext; a.textContent = `⬇ Download .${ext}`; a.style.display = "inline-block";
+    $("ex-status").textContent = `✓ Video ready (${(blob.size / 1048576).toFixed(1)} MB, ${ext.toUpperCase()}) — upload to YouTube with the listing above.`;
+  } catch (e) {
+    $("ex-status").textContent = "Error: " + (e && e.message ? e.message : e);
+  } finally { exBusy = false; $("ex-audio").disabled = false; $("ex-video").disabled = false; }
+}
+
+/* ================================================================== */
 /*  Audiobooks                                                         */
 /* ================================================================== */
 let abChapters = [];
@@ -1295,6 +1370,7 @@ function init() {
   initHub();
   initVoiceOver();
   initAudiobooks();
+  initExplainer();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);

@@ -1,0 +1,166 @@
+// explainer.js
+// Builds a ~5-minute spoken "explainer" script for any verse — the YouTube /
+// Spotify long-form engine. Structure: hook → the words → where they come from
+// → what they mean → how to live it today → a short practice → closing blessing.
+// When a hand-written sermon matches the verse, its prose is woven in (richest
+// result). Otherwise the script is composed from faith/topic-aware sections.
+
+const SOURCE_CONTEXT = {
+  Bible: "These words come to us from the Bible — not a single book, but a library written across centuries by shepherds, poets, prisoners and kings. What's remarkable is that this line survived because ordinary people kept finding it true in their own lives, and passed it on.",
+  Gita: "This teaching comes from the Bhagavad Gita, and the setting matters. It's spoken on a battlefield, to a man named Arjuna who is paralysed — he can't see a good way forward. So this isn't advice from a calm room. It's wisdom meant for the moment you're overwhelmed.",
+  Sikh: "This comes from the Guru Granth Sahib — the living scripture of the Sikh tradition. It isn't written as rules; it's written as songs, meant to be sung. And its heartbeat is simple: one Light lives in every person, without exception.",
+  Dhammapada: "This is from the Dhammapada, a collection of the Buddha's shortest and sharpest teachings. Each one is less an instruction than an observation — here's how the mind actually works. You're invited to test it, not just believe it.",
+  Tripitaka: "This comes from the Tripitaka, the earliest gathered teachings of the Buddha, carried by memory long before they were ever written down. They were preserved word for word because generation after generation found that they worked.",
+  Wisdom: "These words have outlived empires. They were written long before anyone imagined our world of screens and notifications — and yet they read like they were written this morning, for exactly what you're carrying.",
+};
+
+const HOOKS = {
+  hope: "If today feels heavy, and you're not sure anything is going to shift — stay with me for the next few minutes.",
+  strength: "There's a kind of tired that sleep doesn't fix. If that's you today, this is for you.",
+  peace: "If your mind has been running all day and won't sit down, let's slow it together for five minutes.",
+  love: "Most of us are far kinder to other people than we are to ourselves. Let's talk about that.",
+  courage: "There's something you already know you need to do. This is about finding the nerve to begin.",
+  gratitude: "When everything feels like it's lacking, one small shift changes the whole day. Here it is.",
+  purpose: "If you've been wondering whether any of what you're doing actually matters — listen to this.",
+  comfort: "If you're carrying something you haven't told anyone about, you're not alone in this. Let's sit with it.",
+  guidance: "When you can't see the whole path, there's still a way to take the next step. Here's how.",
+  perseverance: "You're not behind. You're just in the part nobody posts about. Let's talk about staying in it.",
+  wisdom: "The loudest advice is rarely the wisest. Here's a quieter one that has lasted thousands of years.",
+  protection: "If you feel exposed right now — like everything could come apart — hear this.",
+  joy: "Joy isn't something you earn at the end. Here's where it actually hides.",
+  change: "Everything in your life is moving, including you. Here's how to stop fighting that.",
+};
+
+const APPLICATIONS = {
+  hope: "So what do you do with that today? You don't have to manufacture optimism. Hope isn't pretending the hard thing isn't hard. It's refusing to believe that the hard thing gets the final word. Practically: pick one small thing you can still do today, and do it. Hope is built out of small kept promises to yourself, not big feelings.",
+  strength: "Here's how you carry that into today. Stop trying to feel strong — that's not the assignment. Strength isn't the absence of shaking. It's doing the next honest thing while you shake. So name the one task you've been avoiding because you don't feel up to it, and do just the first two minutes of it. That's all.",
+  peace: "So how do you actually live this? Peace rarely arrives because your circumstances got tidy. It arrives when you stop rehearsing a future that hasn't happened. Try this today: when you catch your mind sprinting ahead, say to yourself, gently — not now. Come back to what's in front of you. That's the whole practice, done a hundred times.",
+  love: "So let's make it real. Today, catch the voice in your head speaking to you the way you'd never speak to someone you love. And then answer it. Say the kinder, truer thing out loud if you can. Being loved isn't something you have to qualify for — and neither is being loved by yourself.",
+  courage: "Here's what that looks like today. Courage isn't a feeling you wait for — it's a decision you make while afraid. So choose one small brave thing. Send the message. Ask the question. Start the thing badly. You don't need to be fearless; you just need to be willing.",
+  gratitude: "So try this today. Don't hunt for big things to be thankful for — that's exhausting and it rarely works. Find one small, ordinary, easily-missed thing. The warmth of the cup in your hands. Someone who answered when you called. Name it. Gratitude isn't denial of what's hard; it's refusing to let the hard thing blind you to everything else.",
+  purpose: "So what does that mean for your Tuesday? Purpose almost never announces itself. It shows up as the next small, useful, faithful thing in front of you. You don't have to find your whole life's meaning today. Do the next right thing well. That's how a meaningful life is actually assembled — quietly, in pieces.",
+  comfort: "So carry this today. You don't have to be okay to be held. You don't have to explain it well, or have a plan, or be further along than you are. Let one person in this week — even a little. What you're carrying was never meant to be carried in silence.",
+  guidance: "Here's how you use that today. You almost never get the whole map. You get the next step, lit just enough. So stop demanding certainty before you move. Ask instead: what is the one next step I can actually see? Take that. The path tends to reveal itself to people who are walking.",
+  perseverance: "So here's your move today. Don't measure yourself against where you thought you'd be. Measure whether you're still going. Slow is not the same as stopped, and rest is not the same as quitting. Do one small thing that keeps you in the game — and then let that be enough.",
+  wisdom: "So how do you live that? Wisdom usually sounds boring in the moment. It's the slower choice, the quieter one, the one that doesn't get applause. Today, when you feel the pull to react fast, wait sixty seconds. Almost every regret I've heard of lives inside those sixty seconds.",
+  protection: "So hold onto this today. Feeling exposed is not the same as being abandoned. You are more held than you feel. Name what's frightening you honestly — out loud or on paper. Fear shrinks in the light, and things named lose most of their grip.",
+  joy: "So look for it today. Joy isn't waiting at the finish line of your to-do list. It hides in small, unimpressive moments you're moving too fast to notice. Slow down for one of them today, on purpose. That's not indulgence. That's how people last.",
+  change: "So let this land today. You are allowed to be different from who you were. You don't have to defend an older version of yourself. Ask: what am I still doing only because I've always done it? Let one of those go this week.",
+};
+
+// "What people get this wrong about" — the beat that makes an explainer feel earned.
+const MISREADINGS = {
+  hope: "Now, here's where people misread this. They hear it as a promise that things will work out the way they want, on their timeline. It isn't. Read honestly, it never says the pain is temporary or small. It says you are not abandoned inside it. That's a very different claim — and a far sturdier one, because it doesn't collapse the moment life fails to cooperate.",
+  strength: "Here's the part people get wrong. They read this as a demand — be stronger, try harder, stop struggling. It says the opposite. It assumes you're depleted. It's spoken to people who are already at the end of themselves. The strength being described isn't manufactured by effort; it's what shows up when you finally stop pretending you have it.",
+  peace: "But notice what it doesn't say. It doesn't say the storm stops. It doesn't promise a quiet life, or that the thing you're dreading won't come. The peace here isn't the absence of trouble — it's a steadiness underneath it. People miss that, and then feel like failures when life stays loud. Life stays loud. That was never the measure.",
+  love: "Here's the common misreading. We treat love as a reward for becoming good enough — as if there's a threshold, and one day we'll cross it. But every honest reading of this says the love came first, before the improving, before the proving. You're not working toward being loved. You're working from it. That reorders everything.",
+  courage: "And here's what people get wrong. They wait to feel ready. But nothing here suggests the fear disappears first. Courage isn't the moment fear leaves; it's the moment you move while it's still sitting in your chest. If you're waiting to stop being afraid before you begin, you'll wait forever — and that waiting is the actual risk.",
+  gratitude: "Now the misreading. Gratitude gets used as a way to shut people up — be thankful, others have it worse. That's not this. Real gratitude never requires you to pretend the hard thing isn't hard. It simply refuses to let the hard thing be the only thing you can see. You can grieve and be grateful in the same hour. Most of us do.",
+  purpose: "Here's where we go wrong. We hear 'purpose' and think it means something enormous and singular — one calling, waiting to be found, and we're failing until we find it. But read it plainly: nothing here says your life needs to be impressive. It says it matters. Those aren't the same, and confusing them has exhausted a lot of good people.",
+  comfort: "But people misread this as sentiment — a nice thing to say at funerals. It's tougher than that. It doesn't deny the darkness or hurry you through it. It just refuses to let you be alone in it. That's not a soft claim; it's the hardest one to keep. And it's the only one that helps at 3am.",
+  guidance: "Here's the misreading. People want this to mean they'll get clarity — the whole plan, in advance, so they can stop feeling uncertain. It never promises that. It promises company and enough light for the next step. If you're waiting for certainty before you move, you've misunderstood what's on offer — and you'll stay exactly where you are.",
+  perseverance: "And here's what gets lost. This isn't a command to grind yourself down. Nothing here glorifies exhaustion. It's not saying never rest; it's saying never quit — and those get confused constantly. You can stop for a while and still be going. The only failure described here is deciding you're done.",
+  wisdom: "Now, the misreading. Wisdom gets mistaken for cleverness — the fastest, sharpest answer. But almost every tradition says the opposite: the wise voice is usually the quiet one, the slow one, the one willing to say 'I don't know yet.' If you're optimising for sounding right, you've already left the path this describes.",
+  protection: "Here's where people stumble. They read this as a guarantee nothing bad will happen — and then when something does, they conclude it was never true. But it doesn't promise a life without harm. It promises that harm doesn't get the last word, and that you're not facing it unaccompanied. That survives contact with real life. The other reading doesn't.",
+  joy: "But here's the misreading. We treat joy as a reward — something waiting after the work, the fixing, the arriving. Nothing here says that. Joy shows up in the middle, unearned and inconvenient and small. If you've scheduled it for later, you'll find later keeps moving.",
+  change: "Here's what people miss. We hear this as loss — everything slipping away. But read it again: if everything changes, so does the thing crushing you right now. So do you. Impermanence isn't only what takes things from you; it's the reason nothing can hold you forever.",
+};
+
+const DEEPER_FRAMES = [
+  "Sit with why this line survived. It wasn't preserved because it was beautiful — plenty of beautiful things are forgotten. It lasted because generation after generation of ordinary, exhausted, frightened people tested it against their actual lives and found it held. It has been read in famines and hospitals and prisons, by people with far less than you and far more to fear. It kept working. That's not proof it's true. But it's the closest thing to evidence that a piece of wisdom can offer.",
+  "Notice how little it asks of you. There's no qualification here, no entry requirement, no small print about deserving it. That's easy to skim past, but it's the whole point. Most of the voices you'll hear today — the feed, the inbox, the one inside your own head — will tell you that you have to earn your place. This one doesn't. It simply starts from the assumption that you already have one. Read it again with that in mind and it changes shape.",
+  "It's worth asking who this was first said to. Not to people with their lives in order. These words were carried by people in the middle of it — in exile, in doubt, in grief, on the worst day of their lives. That's who this language was built for. So if you're coming to it tired, or unsure, or barely holding it together, you're not reading someone else's mail. You're exactly the intended audience.",
+  "Here's what strikes me most. This doesn't try to fix you. It doesn't hand you a five-step plan or tell you what to optimise. It just tells you the truth and lets you sit with it. We're so used to advice that demands something that we barely recognise wisdom when it simply offers. You don't have to do anything with this line today. You just have to let it be true.",
+];
+
+// The honest objection — the beat that keeps sceptical listeners watching.
+const OBJECTION_FRAMES = [
+  "Now, let's be honest about something. You might be listening to this and thinking: that's a nice sentence, but it doesn't feel true for me today. And I want to say clearly — that's allowed. Nothing here asks you to feel it. Words like these were never meant to be believed on demand, in one sitting, on your worst day. They're meant to be lived with. You keep them nearby, and some ordinary Tuesday months from now, they land. The not-feeling-it isn't failure. It's just the part before.",
+  "Here's the honest problem though. Wisdom is easy to agree with and almost impossible to do. You'll nod at this, close the app, and be back inside the same anxious loop within ten minutes. That's not weakness — that's just how minds work. Which is exactly why this needs to be small. Not a transformation. One line, remembered once, in the moment it's needed. That's the whole mechanism. Anything grander tends to be forgotten by lunch.",
+  "And if you're sitting there thinking you've heard this before — you probably have. That's not a flaw in it. We don't actually have a shortage of wisdom in the world; we have a shortage of remembering it at the right moment. You already know most of what would help you. The point of five minutes like this isn't new information. It's putting an old truth close enough to the surface that it's there when you reach for it.",
+  "Let me name the obvious objection. If a line this old were really enough, wouldn't everything be fixed by now? But that's asking wisdom to do a job it never claimed. It doesn't remove the hard thing. It changes who you are while you're inside it — and that turns out to matter more than we expect. It won't make today easy. It might make today survivable, and then bearable, and eventually different.",
+];
+
+const QUESTIONS = [
+  "So here's a question to carry with you: if you actually believed this line — not agreed with it, believed it — what would you do differently in the next hour?",
+  "Sit with this question today: what would change if you stopped trying to earn the thing this line says you already have?",
+  "Here's the question worth sitting with: who taught you the opposite of this — and are they still worth listening to?",
+  "One question before we close: what's the smallest thing you could do today that would only make sense if this were true?",
+];
+
+const PRACTICES = [
+  "Before we finish, take one slow breath with me. In — and let it out slowly. Now say the line to yourself once more, in your own voice, as if it were written for you. Because it was.",
+  "Let's close with something small. Put your hand flat somewhere solid — a table, your chest. Breathe in for four, out for six. And carry just one word from this with you. One is enough.",
+  "Before you go, do this. Close your eyes for five seconds and picture the one person you'd want to hear this today. If you can, send it to them. Wisdom grows when it's passed on.",
+  "One last thing. Take a slow breath, and set down — just for this moment — the thing you've been gripping all day. It'll still be there. But you don't have to hold it every second.",
+];
+
+const CLOSINGS = [
+  "However today has treated you, may you find a little more room to breathe. You are seen, you are loved, and you are not carrying it alone.",
+  "May today be gentler than you expect, and may you be gentler with yourself than you've been. You are not behind. You are exactly where you are.",
+  "Go easy today. Do the next small thing. Let that be enough — because it is.",
+];
+
+function pickBy(arr, seedStr) {
+  const h = (seedStr || "x").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
+  return arr[Math.abs(h) % arr.length];
+}
+
+// Build the ~5-minute spoken script.
+function explainerScript(v) {
+  const faith = faithLabel(v.faith);
+  const meaning = meaningFor(v);
+  const sermon = (typeof SERMONS !== "undefined") ? SERMONS.find((s) => s.verseRef === v.ref) : null;
+  const hook = HOOKS[v.topic] || "Take five minutes with me. This one is worth slowing down for.";
+  const context = SOURCE_CONTEXT[v.faith] || SOURCE_CONTEXT.Wisdom;
+  const application = APPLICATIONS[v.topic] || APPLICATIONS.purpose;
+  const practice = pickBy(PRACTICES, v.ref);
+  const closing = pickBy(CLOSINGS, v.ref + "c");
+
+  const parts = [];
+  parts.push(`${hook}`);
+  parts.push(`Welcome to EverVerse. I'm going to read you one line, and then we'll spend a few minutes on what it actually means — in plain words, for an ordinary day.`);
+  parts.push(`Here it is. From ${faith}. ${v.ref}.`);
+  parts.push(`${v.text}`);
+  parts.push(`Let me read that once more, slower. ${v.text}`);
+  parts.push(`Now — where does this come from? ${context}`);
+  parts.push(`So what does it actually mean? In plain words: ${meaning}`);
+  parts.push(`${MISREADINGS[v.topic] || MISREADINGS.purpose}`);
+  if (sermon) {
+    parts.push(`Let's go deeper. ${(sermon.body || []).join(" ")}`);
+    if (sermon.takeaway) parts.push(`If you take one thing from this, take that: ${sermon.takeaway}`);
+  } else {
+    parts.push(`${pickBy(DEEPER_FRAMES, v.ref + "d")}`);
+    parts.push(`It's worth noticing what this line does not say. It doesn't ask you to be impressive, or finished, or certain. It meets you exactly where you are — which is usually tired, usually mid-way through something, and usually doing better than you give yourself credit for.`);
+  }
+  parts.push(`${pickBy(OBJECTION_FRAMES, v.ref + "o")}`);
+  parts.push(`${application}`);
+  parts.push(`${pickBy(QUESTIONS, v.ref + "q")}`);
+  parts.push(`${practice}`);
+  parts.push(`${closing}`);
+  parts.push(`This has been EverVerse — a daily blessing for every soul, from the world's wisdom traditions. If this helped, subscribe, and find a new one every day at eververse dot org.`);
+
+  const script = parts.join("\n\n");
+  const words = (script.trim().match(/\S+/g) || []).length;
+  return { script, words, minutes: words / 150, hasSermon: !!sermon };
+}
+
+// YouTube listing metadata (title / description / tags).
+function explainerYouTube(v) {
+  const { script, words, minutes } = explainerScript(v);
+  const faith = faithLabel(v.faith);
+  const meaning = meaningFor(v);
+  const title = `${v.ref} — What It Really Means | ${Math.max(3, Math.round(minutes))}-Minute ${faith} Explainer`;
+  const description =
+    `"${v.text}" — ${v.ref}\n\n` +
+    `In simple words: ${meaning}\n\n` +
+    `A five-minute explainer: where this line comes from, what it actually means in plain language, and how to live it today. From EverVerse — a daily blessing for every soul, drawn from the world's wisdom traditions.\n\n` +
+    `⏱ Chapters\n0:00 The hook\n0:20 The verse\n0:50 Where it comes from\n1:40 What it means\n2:50 How to live it today\n4:10 A short practice\n4:40 Closing blessing\n\n` +
+    `🔔 Subscribe for a new blessing every day.\n✦ eververse.org\n📱 Get the EverVerse app — daily verses, meanings, wallpapers & audiobooks.\n\n` +
+    `#${v.faith.toLowerCase()} #dailyverse #${(v.topic || "wisdom")} #spirituality #meditation #eververse`;
+  const tags = [
+    v.ref, faith, v.topic, "daily verse", "verse of the day", "meaning explained",
+    "5 minute devotional", "spirituality", "meditation", "wisdom", "eververse",
+  ].filter(Boolean).join(", ");
+  return { title, description, tags, script, words, minutes };
+}

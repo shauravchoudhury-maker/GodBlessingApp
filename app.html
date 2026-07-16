@@ -222,6 +222,31 @@
         <div class="preview-wrap"><video id="vo-preview" controls playsinline></video></div>
       </div>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">6</span><h2>▶️ 5-minute explainer (YouTube + Spotify)</h2></div>
+      <p class="hint">Long-form for the channel that actually pays: a ~5-minute spoken explainer of the verse selected above — hook → the words → where they come from → what they mean → how to live it → a practice → blessing. Export the <b>script</b> free, then narrate to <b>MP3</b> (Spotify/podcast) or a captioned <b>MP4</b> (YouTube).</p>
+      <div class="video-grid">
+        <div class="controls">
+          <div class="field"><label for="ex-voice">Voice</label><select id="ex-voice"><option value="female">Warm female</option><option value="male">Warm male</option></select></div>
+          <div class="field"><label for="ex-format">Video format</label><select id="ex-format"><option value="landscape">Landscape 16:9 (YouTube)</option><option value="portrait">Vertical 9:16 (Shorts)</option></select></div>
+          <div class="field"><label for="ex-token">Voice access token</label><input id="ex-token" type="password" autocomplete="off" placeholder="your PROXY_SECRET" /></div>
+          <div class="btn-row">
+            <button class="btn" id="ex-script">📄 Script (.txt)</button>
+            <button class="btn" id="ex-meta">📋 YouTube listing (.txt)</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn accent" id="ex-audio">🎧 Narrate → MP3 (Spotify)</button>
+            <button class="btn accent" id="ex-video">🎬 Render → MP4 (YouTube)</button>
+          </div>
+          <div class="kit-status" id="ex-status"></div>
+          <div class="kit-status" id="ex-stats"></div>
+          <audio id="ex-audio-preview" controls style="display:none;width:100%;margin-top:10px;"></audio>
+          <a id="ex-download" class="btn" style="display:none;margin-top:8px;">⬇ Download</a>
+        </div>
+        <div class="preview-wrap"><video id="ex-preview" controls playsinline></video></div>
+      </div>
+    </section>
   </main>
 
   <!-- ============================ READ HUB ============================ -->
@@ -498,6 +523,7 @@
   <script src="zip.js"></script>
   <script src="video.js"></script>
   <script src="audiobooks.js"></script>
+  <script src="explainer.js"></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>
