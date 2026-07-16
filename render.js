@@ -86,6 +86,10 @@ function renderVerse(canvas, W, H, opts) {
   else if (layout === "editorial") drawLayoutEditorial(ctxArg);
   else if (layout === "minimal") drawLayoutMinimal(ctxArg);
   else if (layout === "dimensional") drawLayoutDimensional(ctxArg);
+  else if (layout === "poster") drawLayoutPoster(ctxArg);
+  else if (layout === "quote") drawLayoutQuote(ctxArg);
+  else if (layout === "glass") drawLayoutGlass(ctxArg);
+  else if (layout === "banner") drawLayoutBanner(ctxArg);
   else drawLayoutClassic(ctxArg);
 }
 
@@ -207,6 +211,143 @@ function drawLayoutDimensional({ ctx, W, H, pal, opts, font, minDim }) {
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W * fx, H * fy, r, 0, Math.PI * 2); ctx.fill();
   });
 
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+function evRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// POSTER — huge tight-leading type, edge to edge. Built to stop the scroll.
+function drawLayoutPoster({ ctx, W, H, pal, opts, font, minDim }) {
+  const text = (opts.text || "").toUpperCase();
+  const family = EV_FONTS[font] || EV_FONTS.sans;
+  const padL = W * 0.08;
+  const maxWidth = W - padL * 2;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  const fit = fitText(ctx, text, maxWidth, H * 0.68, family, minDim * 0.135, "800");
+  ctx.font = `800 ${fit.size}px ${family}`;
+  const lh = fit.size * 1.03;
+  ctx.fillStyle = pal.text;
+  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = fit.size * 0.12; }
+  let y = H * 0.45 - (fit.lines.length * lh) / 2 + lh / 2;
+  for (const line of fit.lines) { ctx.fillText(line, padL, y); y += lh; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+  ctx.fillRect(padL, y + minDim * 0.02, minDim * 0.13, Math.max(3, minDim * 0.009));
+  if (opts.showRef !== false && opts.ref) {
+    ctx.textBaseline = "alphabetic"; ctx.direction = "ltr";
+    ctx.font = `700 ${minDim * 0.026}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.01);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText(opts.ref.toUpperCase(), padL, y + minDim * 0.085);
+    evSetTracking(ctx, 0);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "bottom-right");
+}
+
+// QUOTE — oversized decorative mark; classic, premium, instantly readable.
+function drawLayoutQuote({ ctx, W, H, pal, opts, font, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.serif;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+  ctx.font = `${minDim * 0.3}px Georgia, "Times New Roman", serif`;
+  ctx.fillStyle = hexToRgba(pal.accent, 0.32);
+  ctx.fillText("“", W / 2, H * 0.26);
+  const maxWidth = W - W * 0.12 * 2;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  const fit = fitText(ctx, opts.text || "", maxWidth, H * 0.42, family, minDim * 0.068, "600");
+  ctx.font = `600 ${fit.size}px ${family}`;
+  ctx.fillStyle = pal.text;
+  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.32)"; ctx.shadowBlur = fit.size * 0.12; }
+  let y = H * 0.52 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  ctx.strokeStyle = hexToRgba(pal.accent, 0.7); ctx.lineWidth = Math.max(1.5, W * 0.002);
+  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.05, y + minDim * 0.01); ctx.lineTo(W / 2 + minDim * 0.05, y + minDim * 0.01); ctx.stroke();
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.font = `italic 600 ${minDim * 0.032}px ${family}`;
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText("— " + opts.ref, W / 2, y + minDim * 0.06);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// GLASS — a real frosted-glass card over the art (backdrop blur). Very modern.
+function drawLayoutGlass({ ctx, W, H, pal, opts, font, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.sans;
+  const cx = W * 0.08, cw = W * 0.84;
+  const ch = H * 0.56, cy = H * 0.20;
+  const r = minDim * 0.05;
+  // Snapshot what's underneath, then blur it inside the card = true glassmorphism.
+  try {
+    const snap = document.createElement("canvas"); snap.width = W; snap.height = H;
+    snap.getContext("2d").drawImage(ctx.canvas, 0, 0);
+    ctx.save(); evRoundRect(ctx, cx, cy, cw, ch, r); ctx.clip();
+    ctx.filter = "blur(22px)"; ctx.drawImage(snap, 0, 0); ctx.filter = "none";
+    ctx.fillStyle = pal.light ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.14)";
+    ctx.fillRect(cx, cy, cw, ch);
+    ctx.restore();
+  } catch (e) {
+    ctx.save(); evRoundRect(ctx, cx, cy, cw, ch, r);
+    ctx.fillStyle = pal.light ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.16)"; ctx.fill(); ctx.restore();
+  }
+  ctx.save(); evRoundRect(ctx, cx, cy, cw, ch, r);
+  ctx.strokeStyle = hexToRgba("#ffffff", 0.35); ctx.lineWidth = Math.max(1.5, minDim * 0.003); ctx.stroke();
+  ctx.restore();
+  // Text inside the card
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  const fit = fitText(ctx, opts.text || "", cw - minDim * 0.12, ch * 0.62, family, minDim * 0.062, "700");
+  ctx.font = `700 ${fit.size}px ${family}`;
+  ctx.fillStyle = pal.text;
+  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = fit.size * 0.14; }
+  let y = cy + ch * 0.44 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.textBaseline = "alphabetic";
+    ctx.font = `600 ${minDim * 0.026}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.008);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.98);
+    ctx.fillText(opts.ref.toUpperCase(), W / 2, cy + ch - minDim * 0.05);
+    evSetTracking(ctx, 0);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// BANNER — a bold colour band across the art. Magazine-cover energy.
+function drawLayoutBanner({ ctx, W, H, pal, opts, font, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.serif;
+  const bandY = H * 0.28, bandH = H * 0.44;
+  const g = ctx.createLinearGradient(0, bandY, W, bandY + bandH);
+  g.addColorStop(0, hexToRgba(pal.stops[1], 0.94));
+  g.addColorStop(1, hexToRgba(pal.stops[0], 0.92));
+  ctx.fillStyle = g; ctx.fillRect(0, bandY, W, bandH);
+  ctx.fillStyle = hexToRgba(pal.accent, 0.9);
+  const t = Math.max(2, minDim * 0.006);
+  ctx.fillRect(0, bandY, W, t); ctx.fillRect(0, bandY + bandH - t, W, t);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  const fit = fitText(ctx, opts.text || "", W - W * 0.1 * 2, bandH * 0.6, family, minDim * 0.062, "700");
+  ctx.font = `700 ${fit.size}px ${family}`;
+  ctx.fillStyle = pal.text;
+  let y = bandY + bandH * 0.44 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.textBaseline = "alphabetic";
+    ctx.font = `600 ${minDim * 0.026}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.009);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.98);
+    ctx.fillText(opts.ref.toUpperCase(), W / 2, bandY + bandH - minDim * 0.045);
+    evSetTracking(ctx, 0);
+  }
   if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
 }
 

@@ -67,6 +67,11 @@
     [["classic","serif","aura","Classic","centered serif"],
      ["affirmation","sans","mesh","Affirmation","bold modern sans"],
      ["editorial","serif","gradient","Editorial","left kicker + rule"],
+     ["dimensional","sans","aura","Dimensional","extruded 3D depth"],
+     ["poster","sans","strata","Poster","huge bold type"],
+     ["quote","serif","petals","Quote","oversized “ mark"],
+     ["glass","sans","meadow","Glass","frosted card"],
+     ["banner","serif","canopy","Banner","colour band"],
      ["minimal","serif","gradient","Minimal","calm & airy"]].forEach(([layout,font,bg,t,s])=>
       card(document.getElementById("g-layouts"), {text:V.text, ref:V.ref, paletteKey:"dusk", bgKey:bg, layout, font, watermark:true, showRef:true, grain:true}, t, s));
 

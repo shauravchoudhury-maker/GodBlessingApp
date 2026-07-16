@@ -269,6 +269,30 @@ const VERSE_DB = [
   { faith: "Wisdom", ref: "On self-kindness",   theme: "clay",  topic: "love",     text: "Be as kind to yourself as you would be to someone you love." },
   { faith: "Wisdom", ref: "On your path",       theme: "sage",  topic: "purpose",  text: "You are not behind. You are exactly where your story needs you to be." },
   { faith: "Wisdom", ref: "On courage",         theme: "harvest", topic: "courage", text: "One small brave thing today. That is all. That is enough." },
+
+  // Voices that changed things (public domain) + proverbs from around the world.
+  { faith: "Wisdom", ref: "Frederick Douglass",  theme: "terra",   topic: "perseverance", text: "If there is no struggle, there is no progress." },
+  { faith: "Wisdom", ref: "Booker T. Washington", theme: "harvest", topic: "perseverance", text: "Success is to be measured not so much by the position one has reached, as by the obstacles overcome." },
+  { faith: "Wisdom", ref: "Theodore Roosevelt",  theme: "bold",    topic: "courage",   text: "The credit belongs to the one who is actually in the arena — whose face is marred by dust and sweat and blood." },
+  { faith: "Wisdom", ref: "Marie Curie",         theme: "dusk",    topic: "courage",   text: "Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less." },
+  { faith: "Wisdom", ref: "Emily Dickinson",     theme: "blush",   topic: "hope",      text: "Hope is the thing with feathers that perches in the soul, and sings the tune without the words, and never stops at all." },
+  { faith: "Wisdom", ref: "Walt Whitman",        theme: "sage",    topic: "purpose",   text: "I exist as I am, that is enough." },
+  { faith: "Wisdom", ref: "Sun Tzu",             theme: "night",   topic: "wisdom",    text: "In the midst of chaos, there is also opportunity." },
+  { faith: "Wisdom", ref: "Miyamoto Musashi",    theme: "noir",    topic: "wisdom",    text: "Think lightly of yourself, and deeply of the world." },
+  { faith: "Wisdom", ref: "Swami Vivekananda",   theme: "gold",    topic: "courage",   text: "Arise, awake, and stop not till the goal is reached." },
+  { faith: "Wisdom", ref: "Mahatma Gandhi",      theme: "sand",    topic: "purpose",   text: "The best way to find yourself is to lose yourself in the service of others." },
+  { faith: "Wisdom", ref: "Florence Nightingale", theme: "calm",   topic: "perseverance", text: "I attribute my success to this: I never gave or took any excuse." },
+  { faith: "Wisdom", ref: "Sojourner Truth",     theme: "royal",   topic: "wisdom",    text: "Truth is powerful, and it prevails." },
+  { faith: "Wisdom", ref: "Abraham Lincoln",     theme: "forest",  topic: "perseverance", text: "I am a slow walker, but I never walk back." },
+  { faith: "Wisdom", ref: "African proverb",     theme: "moss",    topic: "love",      text: "If you want to go fast, go alone. If you want to go far, go together." },
+  { faith: "Wisdom", ref: "Japanese proverb",    theme: "terra",   topic: "perseverance", text: "Fall seven times, stand up eight." },
+  { faith: "Wisdom", ref: "Chinese proverb",     theme: "sage",    topic: "purpose",   text: "The best time to plant a tree was twenty years ago. The second best time is now." },
+  { faith: "Wisdom", ref: "Persian proverb",     theme: "calm",    topic: "hope",      text: "This too shall pass." },
+  { faith: "Wisdom", ref: "Cherokee proverb",    theme: "hope",    topic: "peace",     text: "Don't let yesterday use up too much of today." },
+  { faith: "Wisdom", ref: "Irish blessing",      theme: "sage",    topic: "hope",      text: "May the road rise up to meet you, and the wind be always at your back." },
+  { faith: "Wisdom", ref: "Zulu proverb",        theme: "clay",    topic: "love",      text: "I am because we are." },
+  { faith: "Wisdom", ref: "Swedish proverb",     theme: "harvest", topic: "love",      text: "Shared joy is a double joy; shared sorrow is half a sorrow." },
+  { faith: "Wisdom", ref: "Turkish proverb",     theme: "dusk",    topic: "change",    text: "No matter how far down the wrong road you have gone, turn back." },
 ];
 
 // Display names for each source/faith (the `faith` key → human label).
