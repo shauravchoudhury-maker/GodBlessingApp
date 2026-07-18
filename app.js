@@ -1150,6 +1150,8 @@ function initExplainer() {
   $("ex-audio").onclick = runExplainerAudio;
   $("ex-video").onclick = runExplainerVideo;
   if ($("ex-pack")) $("ex-pack").onclick = runYouTubePack;
+  if ($("ex-batch-narrate")) $("ex-batch-narrate").onclick = runBatchNarrate;
+  if ($("ex-batch-count")) { $("ex-batch-count").onchange = updateBatchNarrateEstimate; updateBatchNarrateEstimate(); }
   updateExplainerStats();
 }
 // Batch YouTube pack: a whole run of ready-to-upload content in one zip —
@@ -1191,6 +1193,56 @@ async function runYouTubePack() {
   } catch (e) {
     $("ex-status").textContent = "Pack error: " + (e && e.message ? e.message : e);
   } finally { if (btn) btn.disabled = false; }
+}
+
+// Unique sermon-backed verses — the source list for batch narration.
+function batchNarrateVerses() {
+  const seen = new Set();
+  return SERMONS.map((s) => VERSE_DB.find((v) => v.ref === s.verseRef)).filter((v) => v && !seen.has(v.ref) && seen.add(v.ref));
+}
+function updateBatchNarrateEstimate() {
+  if (!$("ex-batch-est") || !$("ex-batch-count")) return;
+  const n = parseInt($("ex-batch-count").value, 10);
+  const verses = batchNarrateVerses().slice(0, n);
+  const chars = verses.reduce((a, v) => a + explainerScript(v).script.length, 0);
+  const mins = verses.reduce((a, v) => a + explainerScript(v).minutes, 0);
+  $("ex-batch-est").textContent = `${verses.length} episodes · ~${Math.round(mins)} min total · ~${chars.toLocaleString()} characters of ElevenLabs narration.`;
+}
+async function runBatchNarrate() {
+  if (exBusy || !exReady()) return;
+  const n = parseInt($("ex-batch-count").value, 10);
+  const voiceId = exVoiceId();
+  const voiceName = $("ex-voice").value;
+  const verses = batchNarrateVerses().slice(0, n);
+  exBusy = true;
+  ["ex-batch-narrate", "ex-audio", "ex-video", "ex-pack"].forEach((id) => { if ($(id)) $(id).disabled = true; });
+  const files = []; const cal = ["episode,date,reference,title,mp3"]; const start = new Date();
+  const finish = (partial) => {
+    if (files.length) {
+      files.push({ name: "episodes.csv", bytes: new TextEncoder().encode(cal.join("\n")) });
+      downloadBlob(createZipBlob(files, new Date()), `eververse-narrations-${voiceName}${partial ? "-partial" : ""}.zip`);
+    }
+  };
+  try {
+    for (let i = 0; i < verses.length; i++) {
+      const v = verses[i]; const y = explainerYouTube(v);
+      $("ex-status").textContent = `Narrating ${i + 1} / ${verses.length}: ${v.ref}… (keep this tab open)`;
+      const buf = await fetchTTS(explainerScript(v).script, { voiceId });
+      const nn = String(i + 1).padStart(2, "0");
+      const name = `${nn}-${v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 40)}.mp3`;
+      files.push({ name, bytes: new Uint8Array(buf) });
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      cal.push(`${i + 1},${d.toISOString().slice(0, 10)},"${v.ref}","${y.title.replace(/"/g, "'")}",${name}`);
+    }
+    finish(false);
+    $("ex-status").textContent = `✓ ${files.length - 1} MP3s narrated in the ${voiceName} voice — upload to Spotify for Podcasters (and pair with the YouTube pack).`;
+  } catch (e) {
+    finish(true);
+    $("ex-status").textContent = `Stopped after ${files.length ? files.length - 1 : 0} of ${verses.length}: ${e && e.message ? e.message : e} — zipped what completed. (Your ElevenLabs credits may be exhausted.)`;
+  } finally {
+    exBusy = false;
+    ["ex-batch-narrate", "ex-audio", "ex-video", "ex-pack"].forEach((id) => { if ($(id)) $(id).disabled = false; });
+  }
 }
 
 function updateExplainerStats() {
