@@ -1295,6 +1295,68 @@ async function runExplainerVideo() {
 }
 
 /* ================================================================== */
+/*  Cards & Merch                                                      */
+/* ================================================================== */
+function initCards() {
+  if (!$("ecard-occasion")) return;
+  ECARD_OCCASIONS.forEach((o) => $("ecard-occasion").add(new Option(o.label, o.id)));
+  $("ecard-occasion").onchange = renderEcardPreview;
+  $("ecard-format").onchange = renderEcardPreview;
+  ["ecard-to", "ecard-from"].forEach((id) => { $(id).oninput = debounceEcard; });
+  $("ecard-download").onclick = downloadEcard;
+  $("ecard-share").onclick = shareEcard;
+  $("merch-pack").onclick = generateMerchPack;
+}
+let _ecardTimer = null;
+function debounceEcard() { clearTimeout(_ecardTimer); _ecardTimer = setTimeout(renderEcardPreview, 250); }
+function ecardDims() { return $("ecard-format").value === "square" ? { w: 1080, h: 1080 } : { w: 1050, h: 1470 }; }
+function ecardOpts() { return { to: ($("ecard-to").value || "").trim(), from: ($("ecard-from").value || "").trim() }; }
+function renderEcardPreview() {
+  if (!$("ecard-canvas") || !daily.verse) return;
+  if ($("cards-verse-ref")) $("cards-verse-ref").textContent = daily.verse.ref + " · " + faithLabel(daily.verse.faith);
+  const d = ecardDims();
+  drawEcard($("ecard-canvas"), daily.verse, $("ecard-occasion").value, d.w, d.h, ecardOpts());
+}
+async function downloadEcard() {
+  const d = ecardDims(); const c = document.createElement("canvas");
+  drawEcard(c, daily.verse, $("ecard-occasion").value, d.w * 2, d.h * 2, ecardOpts());
+  c.toBlob((blob) => downloadBlob(blob, top8Filename("ecard-" + $("ecard-occasion").value) + ".jpg"), "image/jpeg", 0.92);
+  $("ecard-status").textContent = "eCard downloaded — send it, or upload to Canva.";
+}
+async function shareEcard() {
+  const d = ecardDims(); const c = document.createElement("canvas");
+  drawEcard(c, daily.verse, $("ecard-occasion").value, d.w * 2, d.h * 2, ecardOpts());
+  c.toBlob(async (blob) => {
+    const file = new File([blob], "eververse-ecard.jpg", { type: "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "An EverVerse blessing ✦" }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    downloadBlob(blob, "eververse-ecard.jpg");
+  }, "image/jpeg", 0.92);
+}
+async function generateMerchPack() {
+  const btn = $("merch-pack"); btn.disabled = true;
+  $("merch-status").textContent = "Building print-ready pack…";
+  try {
+    const v = daily.verse; const files = [];
+    const artOpts = { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: bgForVerseApp(v), watermark: true, showRef: true };
+    const rv = (w, h) => { const c = document.createElement("canvas"); renderVerse(c, w, h, artOpts); return c; };
+    files.push({ name: "poster-portrait.jpg", bytes: await canvasToBytes(rv(2400, 3600), "image/jpeg", 0.9) });
+    files.push({ name: "print-square.jpg", bytes: await canvasToBytes(rv(2400, 2400), "image/jpeg", 0.9) });
+    files.push({ name: "wallpaper-phone.jpg", bytes: await canvasToBytes(rv(1080, 2340), "image/jpeg", 0.92) });
+    const dark = document.createElement("canvas"); drawPrintDesign(dark, v, 3000, 3600, { color: "#161616" });
+    files.push({ name: "apparel-dark.png", bytes: await canvasToBytes(dark, "image/png") });
+    const light = document.createElement("canvas"); drawPrintDesign(light, v, 3000, 3600, { color: "#ffffff" });
+    files.push({ name: "apparel-light.png", bytes: await canvasToBytes(light, "image/png") });
+    files.push({ name: "README.txt", bytes: new TextEncoder().encode(MERCH_README) });
+    downloadBlob(createZipBlob(files, new Date()), top8Filename("merch") + ".zip");
+    $("merch-status").textContent = "✓ Merch pack ready — upload to Printful / Redbubble / Canva.";
+  } catch (e) {
+    $("merch-status").textContent = "Merch error: " + (e && e.message ? e.message : e);
+  } finally { btn.disabled = false; }
+}
+
+/* ================================================================== */
 /*  Audiobooks                                                         */
 /* ================================================================== */
 let abChapters = [];
@@ -1437,13 +1499,14 @@ async function runAudiobookFull() {
 /*  Tabs + boot                                                        */
 /* ================================================================== */
 function initTabs() {
-  const panels = { daily: "tab-daily", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks" };
+  const panels = { daily: "tab-daily", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       const name = tab.dataset.tab;
       Object.entries(panels).forEach(([key, id]) => $(id).classList.toggle("hidden", key !== name));
+      if (name === "cards" && typeof renderEcardPreview === "function") renderEcardPreview();
     };
   });
 }
@@ -1465,6 +1528,7 @@ function init() {
   initVoiceOver();
   initAudiobooks();
   initExplainer();
+  initCards();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);
