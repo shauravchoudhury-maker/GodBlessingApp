@@ -342,6 +342,20 @@ function generateSermonVideo(sermon, opts) {
   }, opts || {}));
 }
 
+// Animate a pre-rendered card: gentle Ken-Burns + fade in/out. Zoom stays
+// modest and centred so edge elements (kicker, watermark) never clip.
+function drawCardFrame(ctx, W, H, card, p) {
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  const scale = 1.0 + 0.035 * easeInOut(p);
+  const drawW = W * scale, drawH = H * scale;
+  const dx = -(drawW - W) / 2;
+  const dy = -(drawH - H) / 2 + (drawH - H) * 0.14 * (p - 0.5);
+  const fade = Math.min(clamp01(p / 0.06), clamp01((1 - p) / 0.05));
+  ctx.globalAlpha = fade;
+  ctx.drawImage(card, 0, 0, card.width, card.height, dx, dy, drawW, drawH);
+  ctx.globalAlpha = 1;
+}
+
 async function generateVerseVideo(opts) {
   if (!videoSupported()) throw new Error("This browser can't record video (MediaRecorder/captureStream unavailable).");
   const W = opts.w || 720, H = opts.h || 1280;
@@ -351,31 +365,20 @@ async function generateVerseVideo(opts) {
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  const pal = THEME_PALETTES[opts.paletteKey] || THEME_PALETTES.warm;
-  const seed = (opts.ref || opts.text || "seed").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
 
-  // Pre-render an oversize background once (source for the Ken-Burns crop).
-  const bg = document.createElement("canvas");
-  bg.width = Math.round(W * 1.25); bg.height = Math.round(H * 1.25);
-  drawBackground(opts.bgKey || "gradient", bg.getContext("2d"), bg.width, bg.height, pal, seed >>> 0);
-
-  // Resolve the house style (falls through to EV_STYLE like the image renderer).
-  const style = (typeof EV_STYLE !== "undefined") ? EV_STYLE : null;
-  const layout = opts.layout || (style && style.layout) || "classic";
-  const font = opts.font || (style && style.font) || null;
-  const grainOn = (opts.grain != null) ? opts.grain : (style && style.grain != null ? style.grain : true);
-  const kicker = opts.kicker || (style && style.kicker) || "EVERVERSE";
-  const family = EV_VIDEO_FONTS[font] || EV_VIDEO_FONTS.serif;
-  const isEditorial = layout === "editorial";
-  const frameOpts = Object.assign({}, opts, { layout, font, kicker });
-
-  // Pre-compute text layout for the chosen layout.
-  const minDim = Math.min(W, H);
-  const maxW = isEditorial ? (W - W * 0.11 - W * 0.09) : (W - W * 0.1 * 2);
-  const maxH = H * (opts.showRef !== false ? 0.5 : 0.6);
-  ctx.direction = opts.rtl ? "rtl" : "ltr";
-  const fit = fitText(ctx, opts.text, maxW, maxH, family, minDim * (isEditorial ? 0.072 : 0.07), "600");
-  const grainPat = (grainOn && typeof makeGrainTile === "function") ? ctx.createPattern(makeGrainTile(seed), "repeat") : null;
+  // Render the EXACT designed card once (full image renderer → honors every
+  // layout, background, palette, grain, kicker, exactly like the preview),
+  // then Ken-Burns animate it. This guarantees the video matches the image.
+  const card = document.createElement("canvas");
+  if (typeof renderVerse === "function") {
+    renderVerse(card, W, H, Object.assign({
+      text: opts.text, ref: opts.ref, rtl: opts.rtl,
+      paletteKey: opts.paletteKey, bgKey: opts.bgKey,
+      watermark: opts.watermark !== false, showRef: opts.showRef !== false,
+    }, opts.layout ? { layout: opts.layout } : {}, opts.kicker ? { kicker: opts.kicker } : {}));
+  } else {
+    card.width = W; card.height = H;
+  }
 
   // Audio graph (optional).
   let audioCtx = null, streamDest = null;
@@ -408,7 +411,7 @@ async function generateVerseVideo(opts) {
     function tick() {
       const t = (performance.now() - start) / 1000;
       const p = Math.min(1, t / dur);
-      drawVideoFrame(ctx, W, H, bg, fit, pal, frameOpts, p, grainPat);
+      drawCardFrame(ctx, W, H, card, p);
       if (vtrack.requestFrame) vtrack.requestFrame();
       else if (videoStream.requestFrame) videoStream.requestFrame();
       if (opts.onProgress) opts.onProgress(p);

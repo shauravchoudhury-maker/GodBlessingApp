@@ -1149,8 +1149,50 @@ function initExplainer() {
   };
   $("ex-audio").onclick = runExplainerAudio;
   $("ex-video").onclick = runExplainerVideo;
+  if ($("ex-pack")) $("ex-pack").onclick = runYouTubePack;
   updateExplainerStats();
 }
+// Batch YouTube pack: a whole run of ready-to-upload content in one zip —
+// per item a script, a YouTube listing, and a thumbnail, plus a posting
+// calendar. Sermon-backed verses = the richest scripts, so that's the default.
+async function runYouTubePack() {
+  const btn = $("ex-pack"); if (btn) btn.disabled = true;
+  $("ex-status").textContent = "Building your YouTube pack…";
+  try {
+    const seen = new Set();
+    const verses = SERMONS.map((s) => VERSE_DB.find((v) => v.ref === s.verseRef))
+      .filter((v) => v && !seen.has(v.ref) && seen.add(v.ref));
+    const files = [];
+    const cal = ["day,date,reference,title,folder"];
+    const start = new Date();
+    for (let i = 0; i < verses.length; i++) {
+      const v = verses[i];
+      const n = String(i + 1).padStart(2, "0");
+      const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 40);
+      const folder = `${n}-${slug}`;
+      const y = explainerYouTube(v);
+      files.push({ name: `${folder}/script.txt`, bytes: new TextEncoder().encode(y.script) });
+      files.push({ name: `${folder}/youtube-listing.txt`, bytes: new TextEncoder().encode(`TITLE\n${y.title}\n\nDESCRIPTION\n${y.description}\n\nTAGS\n${y.tags}`) });
+      files.push({ name: `${folder}/thumbnail.jpg`, bytes: await canvasToBytes(explainerThumbnail(v), "image/jpeg", 0.9) });
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      cal.push(`${i + 1},${d.toISOString().slice(0, 10)},"${v.ref}","${y.title.replace(/"/g, "'")}",${folder}`);
+      if (i % 4 === 0) { $("ex-status").textContent = `Building pack… ${i + 1} / ${verses.length}`; await new Promise((r) => setTimeout(r)); }
+    }
+    files.push({ name: "content-calendar.csv", bytes: new TextEncoder().encode(cal.join("\n")) });
+    files.push({ name: "README.txt", bytes: new TextEncoder().encode(
+      "EverVerse — YouTube content pack\n\n" +
+      `${verses.length} sermon-backed explainers, one per folder.\n` +
+      "Each folder has: script.txt (read/narrate this), youtube-listing.txt (paste title/description/tags), thumbnail.jpg (1280x720).\n\n" +
+      "To publish one: record yourself reading script.txt (or use the studio 'Narrate/Render' buttons), upload to YouTube, paste the listing, set the thumbnail.\n" +
+      "content-calendar.csv suggests one per day starting today.\n\n" +
+      "Tip: the same script.txt works as a Spotify podcast episode — narrate to MP3 and upload to Spotify for Podcasters.") });
+    downloadBlob(createZipBlob(files, new Date()), "eververse-youtube-pack.zip");
+    $("ex-status").textContent = `✓ Pack ready — ${verses.length} videos' worth of scripts, listings & thumbnails + a calendar.`;
+  } catch (e) {
+    $("ex-status").textContent = "Pack error: " + (e && e.message ? e.message : e);
+  } finally { if (btn) btn.disabled = false; }
+}
+
 function updateExplainerStats() {
   if (!$("ex-stats") || !daily.verse) return;
   const r = explainerScript(daily.verse);
