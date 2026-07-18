@@ -1300,17 +1300,52 @@ async function runExplainerVideo() {
 function initCards() {
   if (!$("ecard-occasion")) return;
   ECARD_OCCASIONS.forEach((o) => $("ecard-occasion").add(new Option(o.label, o.id)));
+  if ($("ecard-design") && typeof ECARD_DESIGNS !== "undefined") ECARD_DESIGNS.forEach((d) => $("ecard-design").add(new Option(d.label, d.id)));
   $("ecard-occasion").onchange = renderEcardPreview;
+  if ($("ecard-design")) $("ecard-design").onchange = renderEcardPreview;
   $("ecard-format").onchange = renderEcardPreview;
   ["ecard-to", "ecard-from"].forEach((id) => { $(id).oninput = debounceEcard; });
   $("ecard-download").onclick = downloadEcard;
   $("ecard-share").onclick = shareEcard;
+  if ($("cardpack-run")) $("cardpack-run").onclick = generateCardPack;
   $("merch-pack").onclick = generateMerchPack;
 }
 let _ecardTimer = null;
 function debounceEcard() { clearTimeout(_ecardTimer); _ecardTimer = setTimeout(renderEcardPreview, 250); }
 function ecardDims() { return $("ecard-format").value === "square" ? { w: 1080, h: 1080 } : { w: 1050, h: 1470 }; }
-function ecardOpts() { return { to: ($("ecard-to").value || "").trim(), from: ($("ecard-from").value || "").trim() }; }
+function ecardOpts() { return { to: ($("ecard-to").value || "").trim(), from: ($("ecard-from").value || "").trim(), design: $("ecard-design") ? $("ecard-design").value : "classic" }; }
+function cardPackVerses(scope) {
+  if (scope === "faith") return VERSE_DB.filter((v) => v.faith === daily.verse.faith);
+  if (scope === "sermons") { const seen = new Set(); return SERMONS.map((s) => VERSE_DB.find((v) => v.ref === s.verseRef)).filter((v) => v && !seen.has(v.ref) && seen.add(v.ref)); }
+  const days = parseInt(scope, 10) || 7;
+  const faiths = [...new Set(VERSE_DB.map((v) => v.faith))]; const out = []; const today = new Date();
+  for (let i = 0; i < days; i++) { const d = new Date(today); d.setDate(today.getDate() + i); out.push(verseForSourceDate(faiths[dayOfYear(d) % faiths.length], d)); }
+  return out;
+}
+async function generateCardPack() {
+  const btn = $("cardpack-run"); btn.disabled = true;
+  $("cardpack-status").textContent = "Building card pack…";
+  try {
+    const scope = $("cardpack-scope").value, occ = $("ecard-occasion").value, design = ecardOpts().design;
+    const verses = cardPackVerses(scope).filter(Boolean);
+    const d = ecardDims(); const opts = ecardOpts();
+    const files = []; const cal = ["card,reference,faith,file"];
+    for (let i = 0; i < verses.length; i++) {
+      const v = verses[i]; const c = document.createElement("canvas");
+      drawEcard(c, v, occ, d.w, d.h, opts);
+      const nn = String(i + 1).padStart(2, "0");
+      const name = `${nn}-${v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 40)}.jpg`;
+      files.push({ name, bytes: await canvasToBytes(c, "image/jpeg", 0.9) });
+      cal.push(`${i + 1},"${v.ref}",${v.faith},${name}`);
+      if (i % 4 === 0) { $("cardpack-status").textContent = `Building… ${i + 1} / ${verses.length}`; await new Promise((r) => setTimeout(r)); }
+    }
+    files.push({ name: "cards.csv", bytes: new TextEncoder().encode(cal.join("\n")) });
+    downloadBlob(createZipBlob(files, new Date()), top8Filename("cardpack-" + design) + ".zip");
+    $("cardpack-status").textContent = `✓ ${verses.length} cards ready (${design} design) — post to Pinterest/social.`;
+  } catch (e) {
+    $("cardpack-status").textContent = "Card pack error: " + (e && e.message ? e.message : e);
+  } finally { btn.disabled = false; }
+}
 function renderEcardPreview() {
   if (!$("ecard-canvas") || !daily.verse) return;
   if ($("cards-verse-ref")) $("cards-verse-ref").textContent = daily.verse.ref + " · " + faithLabel(daily.verse.faith);

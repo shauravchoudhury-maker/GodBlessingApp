@@ -22,53 +22,171 @@ const ECARD_OCCASIONS = [
 ];
 function ecardOccasion(id) { return ECARD_OCCASIONS.find((o) => o.id === id) || ECARD_OCCASIONS[0]; }
 
-// Greeting eCard (default 5:7 portrait). Reuses the art engine + adds card framing.
+// Card design templates (Canva-style). Any works with any occasion + verse.
+const ECARD_DESIGNS = [
+  { id: "classic", label: "Classic (art)" },
+  { id: "postcard", label: "Postcard (split)" },
+  { id: "framed", label: "Framed stationery" },
+  { id: "minimal", label: "Minimal" },
+  { id: "bold", label: "Bold modern" },
+  { id: "vintage", label: "Vintage paper" },
+];
+
+const SERIF = 'Georgia, "Times New Roman", serif';
+const SANS = '"Helvetica Neue", "Segoe UI", Arial, sans-serif';
+function _ecFooter(ctx, W, H, color) {
+  const m = Math.min(W, H) * 0.021;
+  ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.direction = "ltr";
+  ctx.font = `600 ${m}px ${SANS}`; ctx.fillStyle = color;
+  ctx.fillText("✦ EverVerse · eververse.org", W / 2, H - H * 0.035); ctx.restore();
+}
+function _ecVerseBlock(ctx, v, W, cx, midY, maxW, maxH, size, weight, color, family, shadow) {
+  const fit = fitText(ctx, v.text, maxW, maxH, family, size, weight);
+  ctx.font = `${weight} ${fit.size}px ${family}`; ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (shadow) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = fit.size * 0.14; }
+  let y = midY - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const ln of fit.lines) { ctx.fillText(ln, cx, y); y += fit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  return y;
+}
+
+// Dispatcher.
 function drawEcard(canvas, v, occasionId, W, H, opts) {
   opts = opts || {};
   const occ = ecardOccasion(occasionId);
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
   const pal = (typeof THEME_PALETTES !== "undefined" && THEME_PALETTES[v.theme]) || THEME_PALETTES.warm;
-  const seed = (v.ref || "card").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
+  const seed = (v.ref || "card").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7) >>> 0;
   const minDim = Math.min(W, H);
+  const arg = { ctx, v, occ, W, H, pal, seed, opts, minDim };
+  const fn = {
+    classic: _ecClassic, postcard: _ecPostcard, framed: _ecFramed,
+    minimal: _ecMinimal, bold: _ecBold, vintage: _ecVintage,
+  }[opts.design] || _ecClassic;
+  fn(arg);
+}
 
-  drawBackground((typeof bgForVerseApp === "function" ? bgForVerseApp(v) : "aura"), ctx, W, H, pal, seed >>> 0);
+function _ecClassic({ ctx, v, occ, W, H, pal, seed, opts, minDim }) {
+  drawBackground((typeof bgForVerseApp === "function" ? bgForVerseApp(v) : "aura"), ctx, W, H, pal, seed);
   const vig = ctx.createRadialGradient(W / 2, H * 0.5, minDim * 0.2, W / 2, H * 0.5, Math.max(W, H) * 0.8);
   if (pal.light) { vig.addColorStop(0, "rgba(255,255,255,0.08)"); vig.addColorStop(1, "rgba(120,90,50,0.16)"); }
   else { vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.34)"); }
   ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
   if (typeof addGrain === "function") addGrain(ctx, W, H, seed, 0.06);
-
   ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
-  // Occasion greeting
   ctx.fillStyle = pal.text;
   if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = minDim * 0.02; }
-  ctx.font = `700 ${minDim * 0.072}px Georgia, "Times New Roman", serif`;
-  ctx.fillText(occ.greeting, W / 2, H * 0.15);
-  ctx.font = `italic 400 ${minDim * 0.034}px Georgia, serif`;
-  ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+  ctx.font = `700 ${minDim * 0.072}px ${SERIF}`; ctx.fillText(occ.greeting, W / 2, H * 0.15);
+  ctx.font = `italic 400 ${minDim * 0.034}px ${SERIF}`; ctx.fillStyle = hexToRgba(pal.accent, 0.95);
   ctx.fillText(opts.to ? ("For " + opts.to) : occ.sub, W / 2, H * 0.225);
   ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
-  // Rule
   ctx.strokeStyle = hexToRgba(pal.accent, 0.6); ctx.lineWidth = Math.max(1.5, W * 0.003);
   ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.08, H * 0.285); ctx.lineTo(W / 2 + minDim * 0.08, H * 0.285); ctx.stroke();
-  // Verse
-  const family = 'Georgia, "Times New Roman", serif';
-  const fit = fitText(ctx, v.text, W - W * 0.13 * 2, H * 0.34, family, minDim * 0.058, "500");
-  ctx.font = `500 ${fit.size}px ${family}`; ctx.fillStyle = pal.text;
-  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = fit.size * 0.14; }
-  let y = H * 0.52 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
-  for (const ln of fit.lines) { ctx.fillText(ln, W / 2, y); y += fit.lineHeight; }
-  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
-  // Reference
-  ctx.font = `italic 600 ${minDim * 0.03}px ${family}`; ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+  const y = _ecVerseBlock(ctx, v, W, W / 2, H * 0.52, W - W * 0.13 * 2, H * 0.34, minDim * 0.058, "500", pal.text, SERIF, !pal.light);
+  ctx.font = `italic 600 ${minDim * 0.03}px ${SERIF}`; ctx.fillStyle = hexToRgba(pal.accent, 0.95);
   ctx.fillText("— " + v.ref, W / 2, y + minDim * 0.03);
-  // Sign-off
-  if (opts.from) { ctx.font = `italic 400 ${minDim * 0.03}px Georgia, serif`; ctx.fillStyle = pal.text; ctx.fillText("with love, " + opts.from, W / 2, H * 0.83); }
-  // Brand footer
-  ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`; ctx.fillStyle = hexToRgba(pal.text, 0.72);
-  ctx.textBaseline = "bottom";
-  ctx.fillText("✦ EverVerse · eververse.org", W / 2, H - H * 0.038);
+  if (opts.from) { ctx.font = `italic 400 ${minDim * 0.03}px ${SERIF}`; ctx.fillStyle = pal.text; ctx.fillText("with love, " + opts.from, W / 2, H * 0.83); }
+  _ecFooter(ctx, W, H, hexToRgba(pal.text, 0.72));
+}
+
+function _ecPostcard({ ctx, v, occ, W, H, pal, seed, opts, minDim }) {
+  const splitY = H * 0.6;
+  // Top: art with the verse
+  drawBackground((typeof bgForVerseApp === "function" ? bgForVerseApp(v) : "aura"), ctx, W, H, pal, seed);
+  ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.fillRect(0, 0, W, splitY);
+  if (typeof addGrain === "function") addGrain(ctx, W, H, seed, 0.05);
+  const y = _ecVerseBlock(ctx, v, W, W / 2, splitY * 0.5, W - W * 0.12 * 2, splitY * 0.6, minDim * 0.055, "500", "#fff", SERIF, true);
+  ctx.textAlign = "center"; ctx.font = `italic 600 ${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = hexToRgba(pal.accent, 0.98);
+  ctx.fillText("— " + v.ref, W / 2, Math.min(y + minDim * 0.03, splitY - minDim * 0.03));
+  // Bottom: cream band with the greeting
+  ctx.fillStyle = "#f6f0e4"; ctx.fillRect(0, splitY, W, H - splitY);
+  ctx.fillStyle = hexToRgba(pal.accent, 1); ctx.fillRect(0, splitY, W, Math.max(3, H * 0.006));
+  const ink = "#3a3226";
+  ctx.textBaseline = "middle"; ctx.fillStyle = ink;
+  ctx.font = `700 ${minDim * 0.06}px ${SERIF}`; ctx.fillText(occ.greeting, W / 2, splitY + (H - splitY) * 0.32);
+  ctx.font = `italic 400 ${minDim * 0.032}px ${SERIF}`; ctx.fillStyle = shade(pal.accent, -40);
+  ctx.fillText(opts.to ? ("For " + opts.to) : occ.sub, W / 2, splitY + (H - splitY) * 0.55);
+  if (opts.from) { ctx.font = `italic 400 ${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = ink; ctx.fillText("with love, " + opts.from, W / 2, splitY + (H - splitY) * 0.72); }
+  _ecFooter(ctx, W, H, hexToRgba("#3a3226", 0.65));
+}
+
+function _ecFramed({ ctx, v, occ, W, H, pal, seed, opts, minDim }) {
+  ctx.fillStyle = "#f7f2e8"; ctx.fillRect(0, 0, W, H);
+  if (typeof addGrain === "function") addGrain(ctx, W, H, seed, 0.05);
+  const ink = shade(pal.stops[1], -20), acc = pal.accent;
+  // double frame
+  ctx.strokeStyle = acc; ctx.lineWidth = Math.max(2, W * 0.006);
+  ctx.strokeRect(W * 0.07, H * 0.06, W * 0.86, H * 0.88);
+  ctx.lineWidth = Math.max(1, W * 0.002);
+  ctx.strokeRect(W * 0.09, H * 0.075, W * 0.82, H * 0.85);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+  ctx.fillStyle = acc; ctx.font = `${minDim * 0.05}px ${SERIF}`; ctx.fillText("✦", W / 2, H * 0.17);
+  ctx.fillStyle = ink; ctx.font = `700 ${minDim * 0.06}px ${SERIF}`; ctx.fillText(occ.greeting, W / 2, H * 0.25);
+  ctx.font = `italic 400 ${minDim * 0.03}px ${SERIF}`; ctx.fillStyle = shade(acc, -30);
+  ctx.fillText(opts.to ? ("For " + opts.to) : occ.sub, W / 2, H * 0.31);
+  const y = _ecVerseBlock(ctx, v, W, W / 2, H * 0.53, W - W * 0.2 * 2, H * 0.3, minDim * 0.052, "500", ink, SERIF, false);
+  ctx.font = `italic 600 ${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = shade(acc, -30);
+  ctx.fillText("— " + v.ref, W / 2, y + minDim * 0.03);
+  if (opts.from) { ctx.font = `italic 400 ${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = ink; ctx.fillText("with love, " + opts.from, W / 2, H * 0.86); }
+  _ecFooter(ctx, W, H, hexToRgba("#4a4030", 0.6));
+}
+
+function _ecMinimal({ ctx, v, occ, W, H, pal, seed, opts, minDim }) {
+  ctx.fillStyle = "#faf7f1"; ctx.fillRect(0, 0, W, H);
+  const acc = pal.accent, ink = "#2b2622";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+  ctx.font = `600 ${minDim * 0.026}px ${SANS}`; ctx.fillStyle = shade(acc, -20);
+  try { ctx.letterSpacing = (minDim * 0.012) + "px"; } catch (e) {}
+  ctx.fillText((opts.to ? ("FOR " + opts.to) : occ.greeting).toUpperCase(), W / 2, H * 0.2);
+  try { ctx.letterSpacing = "0px"; } catch (e) {}
+  ctx.strokeStyle = hexToRgba(acc, 0.55); ctx.lineWidth = Math.max(1, W * 0.0016);
+  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.04, H * 0.27); ctx.lineTo(W / 2 + minDim * 0.04, H * 0.27); ctx.stroke();
+  const y = _ecVerseBlock(ctx, v, W, W / 2, H * 0.5, W - W * 0.16 * 2, H * 0.4, minDim * 0.05, "400", ink, SERIF, false);
+  ctx.font = `italic 500 ${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = shade(acc, -20);
+  ctx.fillText("— " + v.ref, W / 2, y + minDim * 0.04);
+  _ecFooter(ctx, W, H, hexToRgba("#2b2622", 0.5));
+}
+
+function _ecBold({ ctx, v, occ, W, H, pal, seed, opts, minDim }) {
+  drawBackground("aura", ctx, W, H, pal, seed);
+  ctx.fillStyle = pal.light ? "rgba(60,40,20,0.25)" : "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+  if (typeof addGrain === "function") addGrain(ctx, W, H, seed, 0.07);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+  ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = minDim * 0.02;
+  const gfit = fitText(ctx, (opts.to ? occ.greeting + ", " + opts.to : occ.greeting).toUpperCase(), W - W * 0.1 * 2, H * 0.22, SANS, minDim * 0.088, "800");
+  ctx.font = `800 ${gfit.size}px ${SANS}`;
+  let gy = H * 0.2 - (gfit.lines.length * gfit.lineHeight) / 2 + gfit.lineHeight / 2;
+  for (const ln of gfit.lines) { ctx.fillText(ln, W / 2, gy); gy += gfit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  ctx.fillStyle = hexToRgba(pal.accent, 1); ctx.fillRect(W / 2 - minDim * 0.06, H * 0.36, minDim * 0.12, Math.max(3, W * 0.007));
+  const y = _ecVerseBlock(ctx, v, W, W / 2, H * 0.58, W - W * 0.11 * 2, H * 0.34, minDim * 0.056, "600", "#fff", SANS, true);
+  ctx.font = `700 ${minDim * 0.026}px ${SANS}`; ctx.fillStyle = hexToRgba(pal.accent, 0.98);
+  try { ctx.letterSpacing = (minDim * 0.008) + "px"; } catch (e) {}
+  ctx.fillText(v.ref.toUpperCase(), W / 2, y + minDim * 0.035);
+  try { ctx.letterSpacing = "0px"; } catch (e) {}
+  _ecFooter(ctx, W, H, hexToRgba("#ffffff", 0.72));
+}
+
+function _ecVintage({ ctx, v, occ, W, H, pal, seed, opts, minDim }) {
+  ctx.fillStyle = "#efe6d2"; ctx.fillRect(0, 0, W, H);
+  const vg = ctx.createRadialGradient(W / 2, H / 2, minDim * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(90,60,25,0.35)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  if (typeof addGrain === "function") addGrain(ctx, W, H, seed, 0.12);
+  const ink = "#4a3826", acc = "#8a5a2c";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.direction = "ltr";
+  ctx.fillStyle = acc; ctx.font = `${minDim * 0.05}px ${SERIF}`; ctx.fillText("✦", W / 2, H * 0.16);
+  ctx.fillStyle = ink; ctx.font = `italic 700 ${minDim * 0.062}px ${SERIF}`; ctx.fillText(occ.greeting, W / 2, H * 0.25);
+  // ornamental divider
+  ctx.strokeStyle = acc; ctx.lineWidth = Math.max(1, W * 0.002);
+  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.1, H * 0.31); ctx.lineTo(W / 2 - minDim * 0.02, H * 0.31); ctx.moveTo(W / 2 + minDim * 0.02, H * 0.31); ctx.lineTo(W / 2 + minDim * 0.1, H * 0.31); ctx.stroke();
+  ctx.font = `${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = acc; ctx.fillText("✦", W / 2, H * 0.31);
+  const y = _ecVerseBlock(ctx, v, W, W / 2, H * 0.54, W - W * 0.16 * 2, H * 0.32, minDim * 0.05, "400", ink, SERIF, false);
+  ctx.font = `italic 600 ${minDim * 0.03}px ${SERIF}`; ctx.fillStyle = acc;
+  ctx.fillText("— " + v.ref, W / 2, y + minDim * 0.035);
+  if (opts.from) { ctx.font = `italic 400 ${minDim * 0.028}px ${SERIF}`; ctx.fillStyle = ink; ctx.fillText("with love, " + opts.from, W / 2, H * 0.85); }
+  _ecFooter(ctx, W, H, hexToRgba("#4a3826", 0.6));
 }
 
 // Transparent print design for apparel / stickers / totes / mugs — text + mark
