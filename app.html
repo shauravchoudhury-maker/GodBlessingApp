@@ -530,6 +530,7 @@
       <p class="hint">Turn the verse selected in the <b>Daily</b> tab into a shareable greeting card for any occasion — send it, or upload it to Canva. Uses: <b id="cards-verse-ref">—</b></p>
       <div class="video-grid">
         <div class="controls">
+          <div class="field"><label for="ecard-design">Design</label><select id="ecard-design"></select></div>
           <div class="field"><label for="ecard-occasion">Occasion</label><select id="ecard-occasion"></select></div>
           <div class="field"><label for="ecard-to">To (optional)</label><input id="ecard-to" type="text" placeholder="a name" /></div>
           <div class="field"><label for="ecard-from">From (optional)</label><input id="ecard-from" type="text" placeholder="your name" /></div>
@@ -545,7 +546,24 @@
     </section>
 
     <section class="panel wide">
-      <div class="panel-head"><span class="step-num">2</span><h2>🛍 Print-ready merch pack</h2></div>
+      <div class="panel-head"><span class="step-num">2</span><h2>🗂 Card pack — a card for every day</h2></div>
+      <p class="hint">Generate a whole batch of eCards in one zip — one per verse across a scope you choose, in the design &amp; occasion selected above. Post them to Pinterest/social to spread the word.</p>
+      <div class="sched-toolbar">
+        <label>Scope
+          <select id="cardpack-scope">
+            <option value="7">Next 7 days (daily rotation)</option>
+            <option value="30">Next 30 days</option>
+            <option value="faith">All of the current tradition</option>
+            <option value="sermons">All sermon-backed verses</option>
+          </select>
+        </label>
+        <button class="btn accent" id="cardpack-run">🗂 Generate card pack (.zip)</button>
+        <span class="kit-status" id="cardpack-status"></span>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">3</span><h2>🛍 Print-ready merch pack</h2></div>
       <p class="hint">One zip of print-ready artwork from the selected verse — posters, phone wallpaper, and transparent apparel/sticker designs (light &amp; dark ink) — ready to upload to <b>Printful, Printify, Redbubble, Society6</b> or <b>Canva Print</b>. You hold no stock; the print-on-demand service makes and ships each order.</p>
       <div class="btn-row">
         <button class="btn accent" id="merch-pack">🛍 Download merch pack (.zip)</button>
