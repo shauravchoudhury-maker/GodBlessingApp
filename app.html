@@ -55,6 +55,7 @@
       <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
       <button class="tab" data-tab="schedule"><span class="tab-ico">🗓</span><span class="tab-lbl">Schedule</span></button>
       <button class="tab" data-tab="audiobooks"><span class="tab-ico">🎧</span><span class="tab-lbl">Audiobooks</span></button>
+      <button class="tab" data-tab="cards"><span class="tab-ico">🎁</span><span class="tab-lbl">Cards</span></button>
     </nav>
   </header>
 
@@ -522,6 +523,38 @@
     </section>
   </main>
 
+  <!-- ============ CARDS & MERCH ============ -->
+  <main class="app hidden" id="tab-cards">
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">1</span><h2>🎁 Greeting eCard</h2></div>
+      <p class="hint">Turn the verse selected in the <b>Daily</b> tab into a shareable greeting card for any occasion — send it, or upload it to Canva. Uses: <b id="cards-verse-ref">—</b></p>
+      <div class="video-grid">
+        <div class="controls">
+          <div class="field"><label for="ecard-occasion">Occasion</label><select id="ecard-occasion"></select></div>
+          <div class="field"><label for="ecard-to">To (optional)</label><input id="ecard-to" type="text" placeholder="a name" /></div>
+          <div class="field"><label for="ecard-from">From (optional)</label><input id="ecard-from" type="text" placeholder="your name" /></div>
+          <div class="field"><label for="ecard-format">Shape</label><select id="ecard-format"><option value="portrait">Card 5:7 (portrait)</option><option value="square">Square 1:1</option></select></div>
+          <div class="btn-row">
+            <button class="btn accent" id="ecard-download">⬇ Download eCard</button>
+            <button class="btn" id="ecard-share">📤 Share</button>
+          </div>
+          <div class="kit-status" id="ecard-status"></div>
+        </div>
+        <div class="preview-wrap"><canvas id="ecard-canvas" style="max-width:100%;height:auto;border-radius:12px;"></canvas></div>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">2</span><h2>🛍 Print-ready merch pack</h2></div>
+      <p class="hint">One zip of print-ready artwork from the selected verse — posters, phone wallpaper, and transparent apparel/sticker designs (light &amp; dark ink) — ready to upload to <b>Printful, Printify, Redbubble, Society6</b> or <b>Canva Print</b>. You hold no stock; the print-on-demand service makes and ships each order.</p>
+      <div class="btn-row">
+        <button class="btn accent" id="merch-pack">🛍 Download merch pack (.zip)</button>
+        <span class="kit-status" id="merch-status"></span>
+      </div>
+      <p class="hint" style="margin-top:10px;">💡 Add your ebook / audiobook link to each product's description. Once your book URLs are live, ask EverVerse to print a QR code on the designs.</p>
+    </section>
+  </main>
+
   <footer class="app-footer">
     <p>Translations via the free MyMemory API. Backgrounds are original generated art (royalty-free). Scripture uses public-domain / widely-accepted English renderings — Bible, Bhagavad Gita, Guru Granth Sahib, Dhammapada &amp; Tripitaka — offered with respect to each tradition. Music entries are suggestions — add tracks from each platform's licensed library. 🌿</p>
   </footer>
@@ -538,6 +571,7 @@
   <script src="video.js"></script>
   <script src="audiobooks.js"></script>
   <script src="explainer.js"></script>
+  <script src="ecards.js"></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>
