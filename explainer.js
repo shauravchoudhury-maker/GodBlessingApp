@@ -145,6 +145,14 @@ function explainerScript(v) {
   return { script, words, minutes: words / 150, hasSermon: !!sermon };
 }
 
+// A 1280x720 YouTube thumbnail for the verse (bold, on-brand).
+function explainerThumbnail(v) {
+  const c = document.createElement("canvas");
+  const bg = (typeof bgForVerseApp === "function") ? bgForVerseApp(v) : "aura";
+  renderVerse(c, 1280, 720, { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: bg, watermark: true, showRef: true, layout: "poster" });
+  return c;
+}
+
 // YouTube listing metadata (title / description / tags).
 function explainerYouTube(v) {
   const { script, words, minutes } = explainerScript(v);
