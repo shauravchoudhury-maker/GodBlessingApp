@@ -7,8 +7,8 @@ const TTS_PROXY_URL = "https://eververse-tts.shauravchoudhury.workers.dev";
 
 // ElevenLabs voice IDs — change to any voice from your ElevenLabs library.
 const TTS_VOICES = {
-  female: "EXAVITQu4vr4xnSDxMaL", // "Sarah" — warm female (example)
-  male:   "JBFqnCBsd6RMkjVDRZzb", // "George" — warm male (example)
+  female: "uIZsnBL0YK1S5j69bAih", // EverVerse female narration voice
+  male:   "PGoKnSD4gKn2aS99wOR2", // EverVerse male / pastor narration voice
 };
 
 const TTS_READY = typeof TTS_PROXY_URL === "string" && TTS_PROXY_URL.indexOf("PASTE") === -1;
