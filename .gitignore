@@ -6,3 +6,6 @@ desktop.ini
 
 # Local scratch / build artifacts (none required to run the app)
 *.tmp
+
+# Local Claude Code / editor tooling config (machine-specific)
+.claude/
