@@ -369,26 +369,37 @@ function drawTextBanner(canvas, title, subtitle, paletteKey, W, H) {
   return canvas;
 }
 
+// Cinematic gift-book PDF: full-bleed art pages (letterbox + vignette grade)
+// facing warm cream pages with the meaning in elegant type. Front matter +
+// colophon. Built to feel like a book you'd buy off a shelf.
 async function createPictureBookPdfBlob(book, onProgress) {
-  const PW = 432, PH = 648, ML = 54, MR = 54, MT = 58, MB = 54;
-  const usableW = PW - ML - MR;
+  const PW = 432, PH = 648, ML = 54;
+  const usableW = PW - ML * 2;
   const meas = document.createElement("canvas").getContext("2d");
   const esc = (s) => asciiClean(s).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
   const fontCss = (size, font) => `${font === "F3" ? "italic " : ""}${font === "F2" ? "700" : "400"} ${size}px "Times New Roman", Georgia, serif`;
-  const imgs = []; const pages = []; let pg = null; let y = 0;
-  function startPage(plate) { pg = { ops: "", imgs: {}, plate: !!plate }; pages.push(pg); y = PH - MT; }
-  function ensure(h) { if (y - h < MB) startPage(); }
-  function gap(h) { ensure(h); y -= h; }
-  function line(str, size, font, x, yy) { pg.ops += `BT /${font} ${size} Tf ${x.toFixed(2)} ${yy.toFixed(2)} Td (${esc(str)}) Tj ET\n`; }
+  const imgs = []; const pages = []; let pg = null; let y = 0; let folio = 0;
+
+  const CREAM = [0.965, 0.94, 0.88];
+  const INK = [0.16, 0.13, 0.10];
+  const rgb01 = (hex) => { hex = (hex || "#8a6a3c").replace("#", ""); if (hex.length === 3) hex = hex.split("").map((c) => c + c).join(""); return [parseInt(hex.slice(0, 2), 16) / 255, parseInt(hex.slice(2, 4), 16) / 255, parseInt(hex.slice(4, 6), 16) / 255]; };
+  const pal = (typeof THEME_PALETTES !== "undefined" && THEME_PALETTES[book.palette]) || { accent: "#8a6a3c" };
+  const ACCENT = rgb01(pal.accent);
+
+  function startPage(plate) { pg = { ops: "", imgs: {}, plate: !!plate }; pages.push(pg); y = PH - PH * 0.15; }
+  function setColor(c) { pg.ops += `${c[0].toFixed(3)} ${c[1].toFixed(3)} ${c[2].toFixed(3)} rg\n`; }
+  function rect(c, x, yy, w, h) { setColor(c); pg.ops += `${x.toFixed(2)} ${yy.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f\n`; }
+  function fillPage(c) { rect(c, 0, 0, PW, PH); }
+  function line(str, size, font, x, yy, color) { if (color) setColor(color); pg.ops += `BT /${font} ${size} Tf ${x.toFixed(2)} ${yy.toFixed(2)} Td (${esc(str)}) Tj ET\n`; }
   function wrap(t, size, font, w) {
     meas.font = fontCss(size, font); const words = asciiClean(t).split(/\s+/).filter(Boolean); const L = []; let c = "";
     for (const wd of words) { const test = c ? c + " " + wd : wd; if (meas.measureText(test).width > w && c) { L.push(c); c = wd; } else c = test; }
     if (c) L.push(c); return L;
   }
-  function centerX(str, size, font) { meas.font = fontCss(size, font); return (PW - meas.measureText(asciiClean(str)).width) / 2; }
+  function textW(str, size, font) { meas.font = fontCss(size, font); return meas.measureText(asciiClean(str)).width; }
   function para(text, size, font, leading, opts) {
-    opts = opts || {}; const w = opts.w || usableW;
-    wrap(text, size, font, w).forEach((ln) => { ensure(leading); y -= leading; line(ln, size, font, opts.center ? centerX(ln, size, font) : ML, y); });
+    opts = opts || {}; const w = opts.w || usableW; const x0 = opts.x != null ? opts.x : ML;
+    wrap(text, size, font, w).forEach((ln) => { y -= leading; const x = opts.center ? (PW - textW(ln, size, font)) / 2 : x0; line(ln, size, font, x, y, opts.color || INK); });
   }
   function placeImage(canvas, x, yy, w, h) {
     const bytes = dataUrlToBytes(canvas.toDataURL("image/jpeg", 0.82));
@@ -397,54 +408,102 @@ async function createPictureBookPdfBlob(book, onProgress) {
     pg.ops += `q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${yy.toFixed(2)} cm /Im${idx} Do Q\n`;
   }
 
+  // A full-bleed "movie still" of the verse: renderer + cinematic grade.
+  function cinematicVerse(v) {
+    const W = 1100, H = 1650;
+    const c = document.createElement("canvas");
+    renderVerse(c, W, H, {
+      text: v.text, ref: v.ref, paletteKey: v.theme,
+      bgKey: (typeof bgForVerseApp === "function" ? bgForVerseApp(v) : "aura"),
+      watermark: false, showRef: true, layout: "editorial", font: "serif", grain: true,
+      kicker: (typeof faithLabel === "function" ? faithLabel(v.faith).toUpperCase() : "EVERVERSE"),
+    });
+    const ctx = c.getContext("2d");
+    const g = ctx.createRadialGradient(W / 2, H * 0.5, H * 0.22, W / 2, H * 0.5, H * 0.82);
+    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.42)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const bar = H * 0.05; ctx.fillStyle = "rgba(6,6,10,0.96)"; ctx.fillRect(0, 0, W, bar); ctx.fillRect(0, H - bar, W, bar);
+    return c;
+  }
+  // A cream page footer: page number (centred) + brand.
+  function footer() {
+    folio++;
+    line(String(folio), 9, "F1", (PW - textW(String(folio), 9, "F1")) / 2, 26, INK);
+    line("EVERVERSE", 8, "F2", ML, 26, ACCENT);
+  }
+
+  /* ---- Front matter ---- */
   // Cover (full-bleed)
   startPage(true);
-  { const c = document.createElement("canvas"); drawAudiobookCover(c, book, 1000); placeImage(c, 0, 0, PW, PH); }
-
-  // Introduction
+  { const c = document.createElement("canvas"); drawAudiobookCover(c, book, 1400); placeImage(c, 0, 0, PW, PH); }
+  // Half-title (cream)
+  startPage(true);
+  fillPage(CREAM);
+  y = PH * 0.5;
+  para(book.title, 22, "F2", 28, { center: true, color: INK });
+  y -= 6; rect(ACCENT, PW / 2 - PW * 0.06, y, PW * 0.12, 1.2);
+  // Title page (cream)
+  startPage(true);
+  fillPage(CREAM);
+  y = PH * 0.4;
+  para(book.title, 26, "F2", 32, { center: true, color: INK }); y -= 6;
+  para(book.subtitle, 13, "F3", 19, { center: true, color: ACCENT });
+  y = PH * 0.14; para("EVERVERSE", 11, "F2", 16, { center: true, color: ACCENT });
+  para("eververse.org", 9, "F1", 13, { center: true, color: INK });
+  // Foreword (cream)
   startPage();
-  para(book.title, 20, "F2", 26, { center: true }); gap(4);
-  para(book.subtitle, 12, "F3", 17, { center: true }); gap(22);
-  para(book.intro, 12, "F1", 17);
+  fillPage(CREAM);
+  y = PH - PH * 0.18;
+  line("BEFORE WE BEGIN", 9, "F2", ML * 1.6, y, ACCENT); rect(ACCENT, ML * 1.6, y - 8, PW * 0.1, 1.2);
+  y -= 40;
+  para(book.intro, 12.5, "F1", 20, { x: ML * 1.6, w: PW - ML * 3.2, color: INK });
+  footer();
 
-  // Verses — one illustrated page each
+  /* ---- Verse spreads: full-bleed art page + facing cream meaning page ---- */
   const verses = versesForFaith(book.faith);
   for (let i = 0; i < verses.length; i++) {
     const v = verses[i];
-    startPage();
-    const c = document.createElement("canvas");
-    renderVerse(c, 760, 760, { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: (typeof bgForVerseApp === "function" ? bgForVerseApp(v) : "gradient"), watermark: true, showRef: true });
-    const top = (PH - MT) - usableW;              // square art, full content width
-    placeImage(c, ML, top, usableW, usableW);
-    y = top - 22;
-    line("IN SIMPLE WORDS", 9.5, "F2", ML, y); y -= 16;
-    para(meaningFor(v), 12, "F1", 17);
-    if (onProgress && i % 6 === 0) { onProgress(i, verses.length); await new Promise((r) => setTimeout(r)); }
+    startPage(true); placeImage(cinematicVerse(v), 0, 0, PW, PH);
+    startPage(); fillPage(CREAM);
+    const M = PW * 0.14;
+    y = PH - PH * 0.22;
+    line("IN PLAIN WORDS", 9, "F2", M, y, ACCENT); rect(ACCENT, M, y - 8, PW * 0.11, 1.2);
+    y -= 42;
+    para(meaningFor(v), 13.5, "F1", 22, { x: M, w: PW - 2 * M, color: INK });
+    y -= 16; para("— " + v.ref, 11.5, "F3", 16, { x: M, color: ACCENT });
+    y -= 22; rect(ACCENT, PW / 2 - PW * 0.05, y, PW * 0.1, 1);
+    footer();
+    if (onProgress && i % 5 === 0) { onProgress(i, verses.length); await new Promise((r) => setTimeout(r)); }
   }
 
-  // Reflections
+  /* ---- Reflections ---- */
   const serms = sermonsForFaith(book.faith);
   if (serms.length) {
     startPage(true);
-    { const c = document.createElement("canvas"); drawTextBanner(c, "Reflections", book.subtitle, book.palette, 1000, 1000); placeImage(c, 0, 0, PW, PH); }
+    { const c = document.createElement("canvas"); drawTextBanner(c, "Reflections", book.subtitle, book.palette, 1000, 1500); placeImage(c, 0, 0, PW, PH); }
     serms.forEach((s) => {
-      startPage();
-      const c = document.createElement("canvas"); drawTextBanner(c, s.title, "On " + s.verseRef, book.palette, 1000, 560);
-      const bh = usableW * 0.56, top = (PH - MT) - bh;
-      placeImage(c, ML, top, usableW, bh); y = top - 20;
-      para(s.verseText, 11.5, "F3", 16.5); gap(6);
-      (s.body || []).forEach((p) => { para(p, 11.5, "F1", 16.5); gap(5); });
-      para("To carry with you: " + s.takeaway, 11.5, "F2", 16.5);
+      startPage(); fillPage(CREAM);
+      const M = PW * 0.13;
+      y = PH - PH * 0.16;
+      line("A REFLECTION", 9, "F2", M, y, ACCENT); y -= 24;
+      para(s.title, 17, "F2", 22, { x: M, w: PW - 2 * M, color: INK });
+      y -= 4; para("On " + s.verseRef, 10, "F3", 14, { x: M, color: ACCENT }); y -= 10;
+      para(s.verseText, 12, "F3", 17, { x: M, w: PW - 2 * M, color: INK }); y -= 8;
+      (s.body || []).forEach((p) => { para(p, 11.5, "F1", 16.5, { x: M, w: PW - 2 * M, color: INK }); y -= 6; });
+      para("To carry with you: " + s.takeaway, 11.5, "F2", 16.5, { x: M, w: PW - 2 * M, color: INK });
+      footer();
     });
   }
 
-  // Closing plate
+  /* ---- Colophon (cream) ---- */
   startPage(true);
-  { const c = document.createElement("canvas"); drawTextBanner(c, book.closing.replace(/This has been a production.*$/i, "").trim().split(". ")[0], "eververse.org", book.palette, 1000, 1000); placeImage(c, 0, 0, PW, PH); }
-
-  // Page numbers (skip full-bleed plate pages)
-  meas.font = fontCss(9, "F1");
-  pages.forEach((p, idx) => { if (idx === 0 || p.plate) return; const lbl = String(idx + 1); p.ops += `BT /F1 9 Tf ${((PW - meas.measureText(lbl).width) / 2).toFixed(2)} ${(MB - 30).toFixed(2)} Td (${lbl}) Tj ET\n`; });
+  fillPage(CREAM);
+  y = PH * 0.55;
+  para(book.closing.replace(/This has been a production.*$/i, "").trim(), 12.5, "F3", 19, { center: true, color: INK });
+  y -= 24; para("EVERVERSE", 12, "F2", 16, { center: true, color: ACCENT });
+  para("A daily blessing for every soul — eververse.org", 9.5, "F1", 14, { center: true, color: INK });
+  y -= 18; para("(c) EverVerse. Scripture renderings are widely used public-domain English translations;", 7.5, "F1", 11, { center: true, color: INK });
+  para("plain-language meanings are original to EverVerse.", 7.5, "F1", 11, { center: true, color: INK });
 
   return assemblePdfImages(pages, imgs, PW, PH);
 }
