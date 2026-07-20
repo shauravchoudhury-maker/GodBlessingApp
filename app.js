@@ -1417,13 +1417,36 @@ async function generatePrintablePack() {
       status.textContent = `Rendering… ${i + 1} / ${PRINT_RATIOS.length}`;
       await new Promise((res) => setTimeout(res));
     }
+    // Listing images — the pictures a buyer actually clicks on.
+    status.textContent = "Building listing images…";
+    const shots = await buildListingImages(v, artOpts);
+    shots.forEach((f) => files.push(f));
+
     files.push({ name: "PRINT-README.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
     downloadBlob(createZipBlob(files, new Date()), top8Filename("printable-" + slug.slice(0, 24)) + ".zip");
-    status.textContent = `✓ ${PRINT_RATIOS.length} print sizes ready — list as an instant-download on Etsy.`;
+    status.textContent = `✓ ${PRINT_RATIOS.length} print sizes + ${shots.length} listing images — ready to upload to Etsy.`;
   } catch (e) {
     status.textContent = "Printable pack error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
 }
+// Square 2000px listing images: framed room mockups + size chart + info card.
+async function buildListingImages(v, artOpts) {
+  const S = 2000, out = [];
+  for (const sc of MOCKUP_SCENES) {
+    const c = document.createElement("canvas");
+    drawMockup(c, v, sc.id, S, S, artOpts, { w: 4, h: 5 });
+    out.push({ name: `listing-images/mockup-${sc.id}.jpg`, bytes: await canvasToBytes(c, "image/jpeg", 0.9) });
+    await new Promise((r) => setTimeout(r));
+  }
+  const chart = document.createElement("canvas");
+  drawSizeChart(chart, v, S, S, PRINT_RATIOS);
+  out.push({ name: "listing-images/what-you-get.jpg", bytes: await canvasToBytes(chart, "image/jpeg", 0.9) });
+  const info = document.createElement("canvas");
+  drawInfoCard(info, v, S, S);
+  out.push({ name: "listing-images/instant-download.jpg", bytes: await canvasToBytes(info, "image/jpeg", 0.9) });
+  return out;
+}
+
 function printableReadme(v, chartLines) {
   const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
   const fl = faith.toLowerCase();
@@ -1441,6 +1464,15 @@ the accepted standard for wall art).
 Files & the frame sizes they fit
 --------------------------------
 ${chartLines.join("\n")}
+
+listing-images/  ← upload THESE as the listing photos (not the print files)
+------------------------------------------------------------------------
+- mockup-oak-warm.jpg      the art framed on a warm wall  → use as the MAIN photo
+- mockup-black-grey.jpg    black frame on soft grey
+- mockup-shelf-plant.jpg   framed on a shelf, styled
+- what-you-get.jpg         the size chart (ratios + frame sizes)
+- instant-download.jpg     sets expectations, cuts "is this physical?" messages
+All are 2000x2000 — Etsy's recommended square listing size.
 
 How to print
 ------------
