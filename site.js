@@ -530,6 +530,9 @@ function init() {
   const routeHash = () => { const h = (location.hash || "").replace("#", ""); if (["posts","trending","sermons","verses"].indexOf(h) !== -1) go(h); };
   routeHash();
   window.addEventListener("hashchange", routeHash);
-  if ("serviceWorker" in navigator) window.addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => {
+    if (typeof initAutoUpdate === "function") initAutoUpdate("sw.js");
+    else navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
 }
 document.addEventListener("DOMContentLoaded", init);
