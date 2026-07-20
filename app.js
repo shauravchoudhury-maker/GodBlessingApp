@@ -1308,6 +1308,7 @@ function initCards() {
   $("ecard-download").onclick = downloadEcard;
   $("ecard-share").onclick = shareEcard;
   if ($("cardpack-run")) $("cardpack-run").onclick = generateCardPack;
+  if ($("printpack-run")) $("printpack-run").onclick = generatePrintablePack;
   $("merch-pack").onclick = generateMerchPack;
 }
 let _ecardTimer = null;
@@ -1349,6 +1350,7 @@ async function generateCardPack() {
 function renderEcardPreview() {
   if (!$("ecard-canvas") || !daily.verse) return;
   if ($("cards-verse-ref")) $("cards-verse-ref").textContent = daily.verse.ref + " · " + faithLabel(daily.verse.faith);
+  if ($("printpack-ref")) $("printpack-ref").textContent = daily.verse.ref + " · " + faithLabel(daily.verse.faith);
   const d = ecardDims();
   drawEcard($("ecard-canvas"), daily.verse, $("ecard-occasion").value, d.w, d.h, ecardOpts());
 }
@@ -1389,6 +1391,82 @@ async function generateMerchPack() {
   } catch (e) {
     $("merch-status").textContent = "Merch error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
+}
+
+// Printable wall art pack — the highest-margin product: one verse exported at
+// every standard frame ratio (~300 DPI) + a print guide & starter Etsy listing.
+async function generatePrintablePack() {
+  const btn = $("printpack-run"); if (!btn) return;
+  btn.disabled = true;
+  const status = $("printpack-status");
+  status.textContent = "Rendering print sizes…";
+  try {
+    const v = daily.verse;
+    const artOpts = { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: bgForVerseApp(v), watermark: true, showRef: true };
+    const LONG = 4800; // long edge in px → ~300 DPI at 16", ~200 DPI at 24"
+    const files = []; const chart = [];
+    const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
+    for (let i = 0; i < PRINT_RATIOS.length; i++) {
+      const r = PRINT_RATIOS[i];
+      const h = LONG, w = Math.round(LONG * (r.w / r.h));
+      const c = document.createElement("canvas");
+      renderVerse(c, w, h, artOpts);
+      const name = `EverVerse-${slug}-${r.id}.jpg`;
+      files.push({ name, bytes: await canvasToBytes(c, "image/jpeg", 0.92) });
+      chart.push(`- ${r.id.replace("_", " ")}  (${w}x${h}px)  → fits ${r.fits}`);
+      status.textContent = `Rendering… ${i + 1} / ${PRINT_RATIOS.length}`;
+      await new Promise((res) => setTimeout(res));
+    }
+    files.push({ name: "PRINT-README.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
+    downloadBlob(createZipBlob(files, new Date()), top8Filename("printable-" + slug.slice(0, 24)) + ".zip");
+    status.textContent = `✓ ${PRINT_RATIOS.length} print sizes ready — list as an instant-download on Etsy.`;
+  } catch (e) {
+    status.textContent = "Printable pack error: " + (e && e.message ? e.message : e);
+  } finally { btn.disabled = false; }
+}
+function printableReadme(v, chartLines) {
+  const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
+  const fl = faith.toLowerCase();
+  return `EverVerse — printable wall art pack
+==================================
+"${v.ref}" — ${faith}
+
+This is a DIGITAL / INSTANT-DOWNLOAD product. No physical item ships.
+The buyer downloads these files and prints them at home, at a local print
+shop, or through an online printer. Every file is one aspect ratio at ~300
+DPI on the long edge; each ratio covers a whole family of standard frame
+sizes, so the same file prints small or large (big prints land near 200 DPI,
+the accepted standard for wall art).
+
+Files & the frame sizes they fit
+--------------------------------
+${chartLines.join("\n")}
+
+How to print
+------------
+- At home: quality matte or photo paper; choose the exact frame size or
+  "fit to page"; borderless if your printer supports it.
+- Print shop / online: upload the file whose ratio matches your frame
+  (e.g. the 2x3 file for an 8x12, 16x24 or 24x36 frame).
+- Colours vary slightly by printer & paper — this is normal for prints.
+
+Sell it as an Etsy listing (starter copy — edit freely)
+------------------------------------------------------
+TITLE:
+${v.ref} Printable Wall Art | ${faith} Quote Print | Faith Home Decor | Instant Download
+
+TAGS (Etsy allows 13):
+printable wall art, ${fl} art, scripture print, faith decor, verse wall art,
+spiritual gift, instant download, quote print, prayer room decor,
+inspirational art, digital print, ${fl} gift, meditation decor
+
+DESCRIPTION:
+Bring "${v.ref}" into any room. This instant-download set includes 6 print
+ratios so you can print at home or a shop at the size you need — no physical
+item is shipped. Frame families included: 2:3, 3:4, 4:5, 11x14, 5:7 and ISO A.
+For personal use; please don't resell the file itself.
+
+(Ask EverVerse for the full SEO listing generator to auto-write these per design.)`;
 }
 
 /* ================================================================== */
