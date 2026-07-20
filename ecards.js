@@ -226,6 +226,8 @@ Files
 - wallpaper-phone.jpg  (1080x2340)                → phone wallpaper freebie / lead magnet
 - apparel-dark.png     (transparent, dark ink)    → light T-shirts, totes, mugs, stickers
 - apparel-light.png    (transparent, white ink)   → dark T-shirts, hoodies, mugs
+Need just the printable wall art at every frame size? Use the
+"Printable wall art pack" button — it exports all standard ratios at once.
 
 Where to upload
 ---------------
@@ -242,3 +244,16 @@ Linking your books
 Add your ebook / audiobook link (Amazon, Gumroad, Spotify) to the product
 description, and/or print a small QR code on the design once the book is live.
 (Ask EverVerse to add an on-design QR when your product URLs are ready.)`;
+
+// ── Printable wall art: standard Etsy aspect-ratio bundle ─────────────
+// Each ratio, rendered here at ~300 DPI on the long edge, covers a whole
+// family of standard frame sizes. The buyer downloads once and prints the
+// file whose ratio matches their frame — at home or a print shop, any size.
+const PRINT_RATIOS = [
+  { id: "2x3",   w: 2,  h: 3,          fits: "4x6, 8x12, 12x18, 16x24, 20x30, 24x36 in" },
+  { id: "3x4",   w: 3,  h: 4,          fits: "6x8, 9x12, 12x16, 18x24 in" },
+  { id: "4x5",   w: 4,  h: 5,          fits: "8x10, 16x20, 24x30 in" },
+  { id: "11x14", w: 11, h: 14,         fits: "11x14, 22x28 in (popular US frames)" },
+  { id: "5x7",   w: 5,  h: 7,          fits: "5x7, 10x14 in (small prints & cards)" },
+  { id: "ISO_A", w: 1,  h: 1.4142136,  fits: "A5, A4, A3, A2, A1 (international)" },
+];
