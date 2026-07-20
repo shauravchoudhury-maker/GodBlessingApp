@@ -1657,11 +1657,13 @@ function initTabs() {
 }
 
 function registerServiceWorker() {
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
-    });
-  }
+  if (!("serviceWorker" in navigator)) return;
+  window.addEventListener("load", () => {
+    // initAutoUpdate registers the worker AND watches for new deploys, so the
+    // studio picks up new features without a manual hard-refresh.
+    if (typeof initAutoUpdate === "function") initAutoUpdate("sw.js");
+    else navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
 }
 
 function init() {
