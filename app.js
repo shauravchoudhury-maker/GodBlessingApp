@@ -1425,7 +1425,7 @@ async function generatePrintablePack() {
     // watermark toggle all follow the daily selection.
     const artOpts = chosenArtOpts();
     const LONG = 4800; // long edge in px → ~300 DPI at 16", ~200 DPI at 24"
-    const files = []; const chart = [];
+    const files = []; const printFiles = []; const chart = [];
     const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
     for (let i = 0; i < PRINT_RATIOS.length; i++) {
       const r = PRINT_RATIOS[i];
@@ -1433,11 +1433,18 @@ async function generatePrintablePack() {
       const c = document.createElement("canvas");
       renderVerse(c, w, h, artOpts);
       const name = `EverVerse-${slug}-${r.id}.jpg`;
-      files.push({ name, bytes: await canvasToBytes(c, "image/jpeg", 0.92) });
+      printFiles.push({ name, bytes: await canvasToBytes(c, "image/jpeg", 0.92) });
       chart.push(`- ${r.id.replace("_", " ")}  (${w}x${h}px)  → fits ${r.fits}`);
       status.textContent = `Rendering… ${i + 1} / ${PRINT_RATIOS.length}`;
       await new Promise((res) => setTimeout(res));
     }
+    // The 6 print files + a buyer print guide, pre-bundled into ONE zip — this
+    // is exactly what you drop into Etsy's single digital-file slot (Etsy caps
+    // a listing at 5 files, and we have 6 ratios, so one zip is the clean fix).
+    printFiles.push({ name: "How to print.txt", bytes: new TextEncoder().encode(printGuideForBuyer(v, chart)) });
+    const innerZip = createZipBlob(printFiles, new Date());
+    files.push({ name: "print-files.zip", bytes: new Uint8Array(await innerZip.arrayBuffer()) });
+
     // Listing images — the pictures a buyer actually clicks on. Same chosen
     // design, but always branded (these are your listing photos, so the ✦ mark
     // deters image theft — the delivered print files honor your own toggle).
@@ -1445,9 +1452,11 @@ async function generatePrintablePack() {
     const shots = await buildListingImages(v, chosenArtOpts({ watermark: true }));
     shots.forEach((f) => files.push(f));
 
-    files.push({ name: "PRINT-README.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
+    // ASCII-only filename: our zip writer doesn't set the UTF-8 name flag, so a
+    // non-ASCII char here would show as mojibake in Windows Explorer.
+    files.push({ name: "READ-ME-how-to-list-on-Etsy.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
     downloadBlob(createZipBlob(files, new Date()), top8Filename("printable-" + slug.slice(0, 24)) + ".zip");
-    status.textContent = `✓ ${PRINT_RATIOS.length} print sizes + ${shots.length} listing images — ready to upload to Etsy.`;
+    status.textContent = `✓ print-files.zip (${PRINT_RATIOS.length} sizes) + ${shots.length} listing images — drag straight into Etsy.`;
   } catch (e) {
     status.textContent = "Printable pack error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
@@ -1470,43 +1479,73 @@ async function buildListingImages(v, artOpts) {
   return out;
 }
 
-function printableReadme(v, chartLines) {
+// Buyer-facing guide — goes INSIDE print-files.zip, next to the 6 prints.
+function printGuideForBuyer(v, chartLines) {
   const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
-  const fl = faith.toLowerCase();
-  return `EverVerse — printable wall art pack
-==================================
+  return `Thank you — your EverVerse printable
+====================================
 "${v.ref}" — ${faith}
 
-This is a DIGITAL / INSTANT-DOWNLOAD product. No physical item ships.
-The buyer downloads these files and prints them at home, at a local print
-shop, or through an online printer. Every file is one aspect ratio at ~300
-DPI on the long edge; each ratio covers a whole family of standard frame
-sizes, so the same file prints small or large (big prints land near 200 DPI,
-the accepted standard for wall art).
+This is a digital download. Inside this zip are 6 print files, one per
+aspect ratio, each ~300 DPI on the long edge. Pick the file that matches
+your frame's shape and print it at the size you want (large prints land
+near 200 DPI, the accepted standard for wall art).
 
-Files & the frame sizes they fit
---------------------------------
+The files & the frame sizes they fit
+------------------------------------
 ${chartLines.join("\n")}
-
-listing-images/  ← upload THESE as the listing photos (not the print files)
-------------------------------------------------------------------------
-- mockup-oak-warm.jpg      the art framed on a warm wall  → use as the MAIN photo
-- mockup-black-grey.jpg    black frame on soft grey
-- mockup-shelf-plant.jpg   framed on a shelf, styled
-- what-you-get.jpg         the size chart (ratios + frame sizes)
-- instant-download.jpg     sets expectations, cuts "is this physical?" messages
-All are 2000x2000 — Etsy's recommended square listing size.
 
 How to print
 ------------
-- At home: quality matte or photo paper; choose the exact frame size or
-  "fit to page"; borderless if your printer supports it.
-- Print shop / online: upload the file whose ratio matches your frame
-  (e.g. the 2x3 file for an 8x12, 16x24 or 24x36 frame).
+- At home: use quality matte or photo paper; in the print dialog choose the
+  exact frame size or "fit to page"; borderless if your printer supports it.
+- Print shop / online (Walgreens, Boots, Prodigi, etc.): upload the file
+  whose ratio matches your frame — e.g. the 2x3 file for an 8x12, 16x24 or
+  24x36 frame; the 11x14 file for an 11x14 or 22x28 frame.
 - Colours vary slightly by printer & paper — this is normal for prints.
 
-Sell it as an Etsy listing (starter copy — edit freely)
-------------------------------------------------------
+For personal use. Please don't resell or redistribute the files.
+Made with EverVerse · eververse.org`;
+}
+
+// Seller-facing guide — the root README that tells YOU how to list it.
+function printableReadme(v, chartLines) {
+  const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
+  const fl = faith.toLowerCase();
+  return `EverVerse — Etsy listing pack for "${v.ref}" (${faith})
+================================================================
+Everything to publish ONE digital / instant-download Etsy listing.
+No physical item ships — Etsy delivers the file automatically.
+
+What's in this pack
+-------------------
+print-files.zip     ← upload as the DIGITAL FILE (the 1 thing buyers get).
+                       Holds all 6 print ratios + a buyer print guide.
+                       One zip = one file slot (Etsy caps a listing at 5).
+listing-images/     ← upload as the PHOTOS (2000x2000 each):
+  mockup-oak-warm.jpg     framed on a warm wall  → set as the MAIN photo
+  mockup-black-grey.jpg   black frame on soft grey
+  mockup-shelf-plant.jpg  framed on a shelf, styled
+  what-you-get.jpg        the size chart
+  instant-download.jpg    heads off "is this physical?" messages
+This file            ← just for you; don't upload it.
+
+The print ratios inside print-files.zip
+----------------------------------------
+${chartLines.join("\n")}
+
+Step-by-step on Etsy
+--------------------
+1. Shop Manager > Listings > Add a listing.
+2. Photos: upload the 5 files from listing-images/ (oak-warm first).
+3. About: Made by you / A finished product / DIGITAL.
+4. Category: Art & Collectibles > Prints > Digital Prints.
+5. Title / Tags / Description: paste the starter copy below.
+6. Digital files: upload print-files.zip (one file, done).
+7. Price ~$6. Publish.
+
+Starter listing copy (edit freely)
+----------------------------------
 TITLE:
 ${v.ref} Printable Wall Art | ${faith} Quote Print | Faith Home Decor | Instant Download
 
@@ -1521,7 +1560,9 @@ ratios so you can print at home or a shop at the size you need — no physical
 item is shipped. Frame families included: 2:3, 3:4, 4:5, 11x14, 5:7 and ISO A.
 For personal use; please don't resell the file itself.
 
-(Ask EverVerse for the full SEO listing generator to auto-write these per design.)`;
+Tip: drive traffic by pinning mockup-oak-warm.jpg on Pinterest, linked to
+the listing. (Ask EverVerse for the batch SEO listing generator + Pinterest
+pin pack to scale this.)`;
 }
 
 /* ================================================================== */
