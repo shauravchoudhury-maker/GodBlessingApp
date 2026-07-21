@@ -293,6 +293,22 @@ const VERSE_DB = [
   { faith: "Wisdom", ref: "Zulu proverb",        theme: "clay",    topic: "love",      text: "I am because we are." },
   { faith: "Wisdom", ref: "Swedish proverb",     theme: "harvest", topic: "love",      text: "Shared joy is a double joy; shared sorrow is half a sorrow." },
   { faith: "Wisdom", ref: "Turkish proverb",     theme: "dusk",    topic: "change",    text: "No matter how far down the wrong road you have gone, turn back." },
+
+  // Wit that lifts — public-domain humorists (all died 100+ yrs ago) + original EverVerse smiles.
+  { faith: "Wisdom", ref: "Mark Twain",        theme: "blush",   topic: "hope",         text: "Wrinkles should merely indicate where smiles have been." },
+  { faith: "Wisdom", ref: "Oscar Wilde",       theme: "dusk",    topic: "hope",         text: "We are all in the gutter, but some of us are looking at the stars." },
+  { faith: "Wisdom", ref: "Elbert Hubbard",    theme: "gold",    topic: "peace",        text: "Do not take life too seriously. You will never get out of it alive." },
+  { faith: "Wisdom", ref: "Josh Billings",     theme: "harvest", topic: "perseverance", text: "Be like a postage stamp — stick to one thing until you get there." },
+  { faith: "Wisdom", ref: "Benjamin Franklin", theme: "bold",    topic: "purpose",      text: "Well done is better than well said." },
+  { faith: "Wisdom", ref: "Nicolas Chamfort",  theme: "gold",    topic: "hope",         text: "The most wasted of all days is one without laughter." },
+  { faith: "Wisdom", ref: "Aesop",             theme: "sage",    topic: "love",         text: "No act of kindness, no matter how small, is ever wasted." },
+  { faith: "Wisdom", ref: "On worry",            theme: "sand",    topic: "peace",   text: "Worry is interest paid on trouble that may never arrive — keep your peace for the good days." },
+  { faith: "Wisdom", ref: "On the comeback",     theme: "gold",    topic: "hope",    text: "The comeback always makes a better story than the setback. Grab the popcorn — this one's yours." },
+  { faith: "Wisdom", ref: "On small wins",       theme: "clay",    topic: "courage", text: "You got up and you're trying anyway. Somewhere that counts as heroic — and it should." },
+  { faith: "Wisdom", ref: "On overthinking",     theme: "calm",    topic: "peace",   text: "Your mind has forty tabs open and one is playing worry on a loop. Breathe — you're allowed to close a few." },
+  { faith: "Wisdom", ref: "On being human",      theme: "blush",   topic: "love",    text: "You are mostly water and entirely doing your best. Both are small miracles — go gently on the miracle." },
+  { faith: "Wisdom", ref: "On today's forecast", theme: "sage",    topic: "hope",    text: "Today's forecast: scattered doubts, clearing by afternoon, with a strong chance of you handling it." },
+  { faith: "Wisdom", ref: "On becoming",         theme: "harvest", topic: "purpose", text: "You are not a mess. You are a masterpiece with a few dramatic brushstrokes still drying." },
 ];
 
 // Display names for each source/faith (the `faith` key → human label).

@@ -178,6 +178,21 @@ const MEANINGS = {
   "Zulu proverb": "You are not a separate thing. Who you are was built by everyone who held you — and you build others in turn.",
   "Swedish proverb": "Say it out loud — the good and the hard. Joy grows when shared, and grief gets lighter.",
   "Turkish proverb": "It doesn't matter how much you've invested in the wrong path. Turning around isn't losing — it's the fastest way home.",
+  // Wit that lifts
+  "Mark Twain": "Aim for a life so full of laughter that even your wrinkles end up telling happy stories.",
+  "Oscar Wilde": "You can be knee-deep in a hard season and still fix your eyes on something bright. Keep looking up.",
+  "Elbert Hubbard": "None of us gets out of here unscathed, so loosen your grip and let some of life be light and funny.",
+  "Josh Billings": "Pick one thing and cling to it like a stamp to a letter — persistence, not talent, is what gets you there.",
+  "Benjamin Franklin": "Talk is cheap. One thing actually done says more than a hundred things nicely promised.",
+  "Nicolas Chamfort": "A day with no laughter in it is the real waste. Find one thing to smile about today.",
+  "Aesop": "No kindness is ever too small to matter. Every gentle thing you do lands somewhere and stays.",
+  "On worry": "Fretting about what might go wrong just spends your peace early. Save it for the good things that are coming.",
+  "On the comeback": "Setbacks make the best origin stories. Whatever knocked you down is only chapter one — keep reading.",
+  "On small wins": "Getting up and trying on a hard day is not nothing — it's quietly brave. Give yourself the credit.",
+  "On overthinking": "When your head is loud and crowded, you don't have to solve every thought. Breathe, and let a few of them go.",
+  "On being human": "You're doing your best in a fragile, miraculous body. Treat yourself with the wonder you'd give any miracle.",
+  "On today's forecast": "The doubts clouding your morning tend to burn off by afternoon. Odds are good you'll handle today just fine.",
+  "On becoming": "The parts of you that feel unfinished aren't flaws — they're paint still drying on something beautiful.",
 };
 
 // Warm fallback by topic so every verse shows a meaning while the batch grows.
