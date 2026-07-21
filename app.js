@@ -1424,25 +1424,43 @@ async function generatePrintablePack() {
     // preview): palette, background, layout, font, grain, kicker and the
     // watermark toggle all follow the daily selection.
     const artOpts = chosenArtOpts();
-    const LONG = 4800; // long edge in px → ~300 DPI at 16", ~200 DPI at 24"
-    const files = []; const printFiles = []; const chart = [];
-    const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
-    for (let i = 0; i < PRINT_RATIOS.length; i++) {
-      const r = PRINT_RATIOS[i];
-      const h = LONG, w = Math.round(LONG * (r.w / r.h));
-      const c = document.createElement("canvas");
-      renderVerse(c, w, h, artOpts);
-      const name = `EverVerse-${slug}-${r.id}.jpg`;
-      printFiles.push({ name, bytes: await canvasToBytes(c, "image/jpeg", 0.92) });
-      chart.push(`- ${r.id.replace("_", " ")}  (${w}x${h}px)  → fits ${r.fits}`);
-      status.textContent = `Rendering… ${i + 1} / ${PRINT_RATIOS.length}`;
-      await new Promise((res) => setTimeout(res));
+    const files = []; const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
+    // Render the 6 ratios, then keep the bundle under Etsy's 20 MB per-file
+    // limit by MEASURING the real output and stepping down quality/size if
+    // needed — so it fits regardless of the design or the browser's encoder
+    // (some encode much fatter JPEGs at the same quality setting).
+    const TARGET = 18 * 1024 * 1024;   // headroom under Etsy's 20 MB cap
+    const TIERS = [
+      { long: 4000, q: 0.90 },         // ~300 DPI at 13" — the default
+      { long: 4000, q: 0.80 },
+      { long: 3400, q: 0.82 },
+      { long: 3000, q: 0.75 },         // last resort — still ~300 DPI at 10"
+    ];
+    let printFiles = [], chart = [], total = 0, used = TIERS[0];
+    for (let t = 0; t < TIERS.length; t++) {
+      const tier = TIERS[t]; printFiles = []; chart = []; total = 0;
+      for (let i = 0; i < PRINT_RATIOS.length; i++) {
+        const r = PRINT_RATIOS[i];
+        const h = tier.long, w = Math.round(tier.long * (r.w / r.h));
+        const c = document.createElement("canvas");
+        renderVerse(c, w, h, artOpts);
+        const bytes = await canvasToBytes(c, "image/jpeg", tier.q);
+        c.width = c.height = 0; // free memory before the next big canvas
+        printFiles.push({ name: `EverVerse-${slug}-${r.id}.jpg`, bytes });
+        total += bytes.length;
+        chart.push(`- ${r.id.replace("_", " ")}  (${w}x${h}px)  → fits ${r.fits}`);
+        status.textContent = `Rendering… ${i + 1}/${PRINT_RATIOS.length}${t ? ` (optimising, pass ${t + 1})` : ""}`;
+        await new Promise((res) => setTimeout(res));
+      }
+      used = tier;
+      if (total <= TARGET || t === TIERS.length - 1) break;
     }
     // The 6 print files + a buyer print guide, pre-bundled into ONE zip — this
     // is exactly what you drop into Etsy's single digital-file slot (Etsy caps
     // a listing at 5 files, and we have 6 ratios, so one zip is the clean fix).
     printFiles.push({ name: "How to print.txt", bytes: new TextEncoder().encode(printGuideForBuyer(v, chart)) });
     const innerZip = createZipBlob(printFiles, new Date());
+    const innerMB = innerZip.size / 1024 / 1024;
     files.push({ name: "print-files.zip", bytes: new Uint8Array(await innerZip.arrayBuffer()) });
 
     // Listing images — the pictures a buyer actually clicks on. Same chosen
@@ -1456,7 +1474,7 @@ async function generatePrintablePack() {
     // non-ASCII char here would show as mojibake in Windows Explorer.
     files.push({ name: "READ-ME-how-to-list-on-Etsy.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
     downloadBlob(createZipBlob(files, new Date()), top8Filename("printable-" + slug.slice(0, 24)) + ".zip");
-    status.textContent = `✓ print-files.zip (${PRINT_RATIOS.length} sizes) + ${shots.length} listing images — drag straight into Etsy.`;
+    status.textContent = `✓ print-files.zip (${innerMB.toFixed(1)}MB, ${PRINT_RATIOS.length} sizes${used.long < 4000 ? ", size-optimised" : ""}) + ${shots.length} listing images — drag straight into Etsy.`;
   } catch (e) {
     status.textContent = "Printable pack error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
