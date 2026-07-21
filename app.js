@@ -1376,7 +1376,7 @@ async function generateMerchPack() {
   $("merch-status").textContent = "Building print-ready pack…";
   try {
     const v = daily.verse; const files = [];
-    const artOpts = { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: bgForVerseApp(v), watermark: true, showRef: true };
+    const artOpts = chosenArtOpts(); // poster/print/wallpaper follow the chosen Daily design
     const rv = (w, h) => { const c = document.createElement("canvas"); renderVerse(c, w, h, artOpts); return c; };
     files.push({ name: "poster-portrait.jpg", bytes: await canvasToBytes(rv(2400, 3600), "image/jpeg", 0.9) });
     files.push({ name: "print-square.jpg", bytes: await canvasToBytes(rv(2400, 2400), "image/jpeg", 0.9) });
@@ -1393,6 +1393,24 @@ async function generateMerchPack() {
   } finally { btn.disabled = false; }
 }
 
+// The exact design chosen in the Daily tab, so Etsy exports match the on-screen
+// post rather than the verse's raw defaults. Palette, background, kicker, ref,
+// text and watermark come from the daily selection; layout/font/grain are left
+// out on purpose so renderVerse falls through to EV_STYLE (also user-chosen).
+function chosenArtOpts(over) {
+  const v = daily.verse;
+  return Object.assign({
+    text: (daily.trans && daily.trans.text) || v.text,
+    ref: v.ref,
+    rtl: !!(daily.trans && daily.trans.rtl),
+    paletteKey: daily.paletteKey || v.theme,
+    bgKey: daily.bgKey,
+    kicker: (typeof EV_STYLE !== "undefined" && EV_STYLE.kicker) || undefined,
+    watermark: daily.watermark,
+    showRef: true,
+  }, over || {});
+}
+
 // Printable wall art pack — the highest-margin product: one verse exported at
 // every standard frame ratio (~300 DPI) + a print guide & starter Etsy listing.
 async function generatePrintablePack() {
@@ -1402,7 +1420,10 @@ async function generatePrintablePack() {
   status.textContent = "Rendering print sizes…";
   try {
     const v = daily.verse;
-    const artOpts = { text: v.text, ref: v.ref, paletteKey: v.theme, bgKey: bgForVerseApp(v), watermark: true, showRef: true };
+    // Print files mirror the design chosen in the Daily tab (WYSIWYG with the
+    // preview): palette, background, layout, font, grain, kicker and the
+    // watermark toggle all follow the daily selection.
+    const artOpts = chosenArtOpts();
     const LONG = 4800; // long edge in px → ~300 DPI at 16", ~200 DPI at 24"
     const files = []; const chart = [];
     const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
@@ -1417,9 +1438,11 @@ async function generatePrintablePack() {
       status.textContent = `Rendering… ${i + 1} / ${PRINT_RATIOS.length}`;
       await new Promise((res) => setTimeout(res));
     }
-    // Listing images — the pictures a buyer actually clicks on.
+    // Listing images — the pictures a buyer actually clicks on. Same chosen
+    // design, but always branded (these are your listing photos, so the ✦ mark
+    // deters image theft — the delivered print files honor your own toggle).
     status.textContent = "Building listing images…";
-    const shots = await buildListingImages(v, artOpts);
+    const shots = await buildListingImages(v, chosenArtOpts({ watermark: true }));
     shots.forEach((f) => files.push(f));
 
     files.push({ name: "PRINT-README.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
