@@ -269,3 +269,48 @@ function drawInfoCard(canvas, v, W, H) {
   ctx.fillText("EverVerse · eververse.org", W / 2, H * 0.945);
   return canvas;
 }
+
+// ── Pinterest pin (2:3 vertical, 1000x1500) ──────────────────────────
+// The curated art fills the pin; a soft bottom scrim carries a clear
+// "buyable printable" call-to-action so it reads as a product pin.
+// artOptsFor: (v) => renderVerse options (e.g. collectionArtOpts).
+function drawPin(canvas, v, head, artOpts, W, H) {
+  W = W || 1000; H = H || 1500;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const SANS = '"Helvetica Neue",Arial,sans-serif';
+  const SERIF = '"Georgia","Times New Roman",serif';
+
+  // Full-bleed art — no ref/watermark; the CTA band carries the branding.
+  const art = document.createElement("canvas");
+  renderVerse(art, W, H, Object.assign({}, artOpts, { watermark: false, showRef: false }));
+  ctx.drawImage(art, 0, 0, W, H);
+
+  // Bottom scrim so the call-to-action always reads.
+  const g = ctx.createLinearGradient(0, H * 0.60, 0, H);
+  g.addColorStop(0, "rgba(15,12,10,0)");
+  g.addColorStop(0.55, "rgba(15,12,10,0.45)");
+  g.addColorStop(1, "rgba(15,12,10,0.80)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H * 0.60, W, H * 0.40);
+
+  ctx.textAlign = "center";
+  // Title hook
+  ctx.fillStyle = "rgba(255,255,255,0.97)";
+  ctx.font = `600 ${W * 0.058}px ${SERIF}`;
+  ctx.fillText(head, W / 2, H * 0.865);
+  // Reference
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.font = `italic ${W * 0.030}px ${SERIF}`;
+  ctx.fillText("— " + v.ref, W / 2, H * 0.900);
+  // Call to action (tracked)
+  try { ctx.letterSpacing = (W * 0.004) + "px"; } catch (e) {}
+  ctx.fillStyle = "rgba(255,255,255,0.94)";
+  ctx.font = `600 ${W * 0.027}px ${SANS}`;
+  ctx.fillText("PRINTABLE WALL ART · INSTANT DOWNLOAD", W / 2, H * 0.945);
+  try { ctx.letterSpacing = "0px"; } catch (e) {}
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
+  ctx.font = `${W * 0.023}px ${SANS}`;
+  ctx.fillText("6 sizes · print any size · eververse.org", W / 2, H * 0.974);
+  return canvas;
+}

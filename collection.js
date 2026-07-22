@@ -150,3 +150,36 @@ function collectionArtOpts(e, v, over) {
     watermark: false, showRef: true,
   }, over || {});
 }
+
+// ── Pinterest SEO copy per listing ──────────────────────────────────
+const _PIN_STYLE_HASH = {
+  "Boho Neutral": "#bohodecor", "Minimalist Modern": "#minimalistdecor",
+  "Soft & Serene": "#pasteldecor", "Botanical Calm": "#botanicalart",
+  "Warm & Golden": "#bohodecor", "Dark Elegant": "#moderndecor",
+};
+function _pinFaithHash(v) {
+  return v.faith === "Bible" ? ["#bibleverse", "#scripturewallart", "#christiangift"]
+    : v.faith === "Gita" ? ["#bhagavadgita", "#yogadecor", "#spiritualart"]
+    : ["#inspirationalquote", "#quoteoftheday", "#affirmations"];
+}
+// Pin title — keyword-rich, <= 100 chars (Pinterest shows ~100).
+function pinTitle(e, v) {
+  const niche = _colNiche(e, v);
+  let t = `${e.head} — ${v.ref} Printable Wall Art | ${e.style} ${niche} Print`;
+  if (t.length > 100) t = `${e.head} — ${v.ref} Printable Wall Art | ${niche} Print`;
+  if (t.length > 100) t = `${e.head} — ${v.ref} | ${niche} Printable Wall Art`;
+  return t.slice(0, 100);
+}
+// Pin description — keyword-rich + a few relevant hashtags (<= 500 chars).
+function pinDescription(e, v) {
+  const room = e.room.toLowerCase();
+  const gift = v.faith === "Bible" ? "Christian gift" : "spiritual gift";
+  const hashes = [..._pinFaithHash(v), _PIN_STYLE_HASH[e.style] || "#wallart", "#printablewallart", "#instantdownload"];
+  const uniq = hashes.filter((h, i) => hashes.indexOf(h) === i).slice(0, 7);
+  return `${e.head} — "${v.text}" (${v.ref}). ${e.style} printable wall art for your ${room}: instant download in 6 sizes, print at home or a shop from 5x7 up to 24x36in. A meaningful ${gift} or gallery-wall piece. Tap to shop on Etsy → \n\n${uniq.join(" ")}`.slice(0, 500);
+}
+function pinCopy(e) {
+  const v = VERSE_DB.find((x) => x.ref === e.ref);
+  if (!v) return null;
+  return { v, title: pinTitle(e, v), description: pinDescription(e, v) };
+}

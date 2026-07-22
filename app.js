@@ -1310,6 +1310,7 @@ function initCards() {
   if ($("cardpack-run")) $("cardpack-run").onclick = generateCardPack;
   if ($("printpack-run")) $("printpack-run").onclick = generatePrintablePack;
   if ($("collection-run")) $("collection-run").onclick = generateEtsyCollection;
+  if ($("pinpack-run")) $("pinpack-run").onclick = generatePinPack;
   $("merch-pack").onclick = generateMerchPack;
 }
 let _ecardTimer = null;
@@ -1521,6 +1522,74 @@ async function generateEtsyCollection() {
   } catch (err) {
     status.textContent = "Collection error at listing " + (done.length + 1) + ": " + (err && err.message ? err.message : err);
   } finally { btn.disabled = false; }
+}
+// Pinterest pin pack — a light zip of vertical 2:3 pins (one per curated
+// listing) + Pinterest SEO copy. Pinterest is the traffic engine that feeds
+// the Etsy listings, so each pin is a clear, shoppable product pin.
+async function generatePinPack() {
+  const btn = $("pinpack-run"); if (!btn) return;
+  const status = $("pinpack-status");
+  const count = Math.min(parseInt(($("pinpack-count") || {}).value, 10) || ETSY_COLLECTION.length, ETSY_COLLECTION.length);
+  btn.disabled = true;
+  const files = []; const copy = ["EverVerse — Pinterest pins", "==========================", ""];
+  try {
+    for (let n = 0; n < count; n++) {
+      const e = ETSY_COLLECTION[n];
+      const P = pinCopy(e); if (!P) continue;
+      const v = P.v;
+      const nn = String(n + 1).padStart(2, "0");
+      const slug = e.head.replace(/[^\w]+/g, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 32);
+      status.textContent = `Building pin ${n + 1}/${count} — ${v.ref}…`;
+      await new Promise((r) => setTimeout(r));
+      const c = document.createElement("canvas");
+      drawPin(c, v, e.head, collectionArtOpts(e, v), 1000, 1500);
+      files.push({ name: `pins/${nn}-${slug}.jpg`, bytes: await canvasToBytes(c, "image/jpeg", 0.9) });
+      c.width = c.height = 0;
+      copy.push(`#${n + 1} — ${v.ref}  (pin: ${nn}-${slug}.jpg)`);
+      copy.push(`LINK TO: your Etsy listing #${n + 1} (${e.head})`);
+      copy.push(`TITLE: ${P.title}`);
+      copy.push(`DESCRIPTION:\n${P.description}`);
+      copy.push("");
+    }
+    files.push({ name: "PINS-COPY.txt", bytes: new TextEncoder().encode(copy.join("\n")) });
+    files.push({ name: "PIN-GUIDE.txt", bytes: new TextEncoder().encode(pinGuide(count)) });
+    downloadBlob(createZipBlob(files, new Date()), `EverVerse-Pinterest-pins-${count}.zip`);
+    status.textContent = `✓ ${count} pins + Pinterest copy ready — schedule 3–5/day, each linked to its Etsy listing.`;
+  } catch (err) {
+    status.textContent = "Pin pack error: " + (err && err.message ? err.message : err);
+  } finally { btn.disabled = false; }
+}
+function pinGuide(count) {
+  return `EverVerse — Pinterest pin pack
+==============================
+${count} vertical 2:3 pins (1000x1500) + PINS-COPY.txt with a title &
+description for each. Pinterest is a search engine and your #1 free
+traffic source to Etsy.
+
+Set-up (once)
+-------------
+1. Create a FREE Pinterest BUSINESS account (pinterest.com/business).
+2. Claim your site (eververse.org) and, later, your Etsy shop — this
+   unlocks analytics and richer pins.
+3. Make a few boards: "Bible Verse Wall Art", "Boho Scripture Prints",
+   "Inspirational Quotes", "Bhagavad Gita Art", etc.
+
+Posting (the routine that works)
+--------------------------------
+- Pin 3-5 per day, spread out — steady beats bursts. Pinterest rewards
+  consistency and fresh pins.
+- For each pin: upload the image from pins/, paste the TITLE and
+  DESCRIPTION from PINS-COPY.txt, and set the DESTINATION LINK to that
+  product's Etsy listing URL. THIS LINK IS WHAT DRIVES SALES.
+- Add it to the most relevant board. Re-pin your best performers to
+  other boards over time.
+- Pins have a long tail — many get their best traffic months later.
+  Keep pinning; don't judge by day one.
+
+Tip: make 2-3 different pins for your best verses later (different
+palette/layout) — more pins = more entries into search.
+
+Made with EverVerse · eververse.org`;
 }
 function collectionStartHere(doneLines) {
   return `EverVerse — Best-of Etsy collection
