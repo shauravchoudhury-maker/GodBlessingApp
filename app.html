@@ -579,7 +579,25 @@
     </section>
 
     <section class="panel wide">
-      <div class="panel-head"><span class="step-num">4</span><h2>🛍 Print-ready merch pack</h2></div>
+      <div class="panel-head"><span class="step-num">4</span><h2>🏆 Best-of Etsy collection — 30 ready-to-post listings</h2></div>
+      <p class="hint">A hand-curated set of proven best-seller verses, each paired with a deliberate palette &amp; layout (earthy neutrals + clean minimalist looks that sell on Etsy) and <b>world-class SEO copy</b>. Downloads one master zip with a numbered folder per listing — <b>print-files.zip + 5 listing photos + title/13 tags/description</b> — plus a START-HERE guide. Post them straight to Etsy tonight.</p>
+      <div class="sched-toolbar">
+        <label>How many
+          <select id="collection-count">
+            <option value="30" selected>All 30</option>
+            <option value="20">First 20</option>
+            <option value="10">First 10</option>
+            <option value="5">First 5 (test)</option>
+          </select>
+        </label>
+        <button class="btn accent" id="collection-run">🏆 Build Etsy collection (.zip)</button>
+        <span class="kit-status" id="collection-status"></span>
+      </div>
+      <p class="hint" style="margin-top:10px;">💡 This renders many high-res prints, so it can take a few minutes — leave the tab open. On a slower machine, do <b>First 10</b> three times. The master zip can be large; a fast desktop connection is best.</p>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">5</span><h2>🛍 Print-ready merch pack</h2></div>
       <p class="hint">One zip of print-ready artwork from the selected verse — posters, phone wallpaper, and transparent apparel/sticker designs (light &amp; dark ink) — ready to upload to <b>Printful, Printify, Redbubble, Society6</b> or <b>Canva Print</b>. You hold no stock; the print-on-demand service makes and ships each order.</p>
       <div class="btn-row">
         <button class="btn accent" id="merch-pack">🛍 Download merch pack (.zip)</button>
@@ -608,6 +626,7 @@
   <script src="updater.js"></script>
   <script src="ecards.js"></script>
   <script src="mockups.js"></script>
+  <script src="collection.js"></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>

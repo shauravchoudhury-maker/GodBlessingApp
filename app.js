@@ -1309,6 +1309,7 @@ function initCards() {
   $("ecard-share").onclick = shareEcard;
   if ($("cardpack-run")) $("cardpack-run").onclick = generateCardPack;
   if ($("printpack-run")) $("printpack-run").onclick = generatePrintablePack;
+  if ($("collection-run")) $("collection-run").onclick = generateEtsyCollection;
   $("merch-pack").onclick = generateMerchPack;
 }
 let _ecardTimer = null;
@@ -1413,6 +1414,43 @@ function chosenArtOpts(over) {
 
 // Printable wall art pack — the highest-margin product: one verse exported at
 // every standard frame ratio (~300 DPI) + a print guide & starter Etsy listing.
+// Render the 6 print ratios for a verse and bundle them (+ a buyer print guide)
+// into ONE print-files.zip, MEASURING the real output and stepping down
+// quality/size so the bundle stays under Etsy's 20 MB per-file cap regardless
+// of the design or the browser's JPEG encoder. Returns { bytes, chart, mb,
+// optimised }. Canvases are freed between renders to keep memory flat.
+async function buildPrintFilesZip(v, artOpts, slug, onStatus) {
+  const TARGET = 18 * 1024 * 1024;
+  const TIERS = [
+    { long: 4000, q: 0.90 },   // ~300 DPI at 13" — the default
+    { long: 4000, q: 0.80 },
+    { long: 3400, q: 0.82 },
+    { long: 3000, q: 0.75 },   // last resort — still ~300 DPI at 10"
+  ];
+  let printFiles = [], chart = [], total = 0, used = TIERS[0];
+  for (let t = 0; t < TIERS.length; t++) {
+    const tier = TIERS[t]; printFiles = []; chart = []; total = 0;
+    for (let i = 0; i < PRINT_RATIOS.length; i++) {
+      const r = PRINT_RATIOS[i];
+      const h = tier.long, w = Math.round(tier.long * (r.w / r.h));
+      const c = document.createElement("canvas");
+      renderVerse(c, w, h, artOpts);
+      const bytes = await canvasToBytes(c, "image/jpeg", tier.q);
+      c.width = c.height = 0;
+      printFiles.push({ name: `EverVerse-${slug}-${r.id}.jpg`, bytes });
+      total += bytes.length;
+      chart.push(`- ${r.id.replace("_", " ")}  (${w}x${h}px)  → fits ${r.fits}`);
+      if (onStatus) onStatus(i + 1, PRINT_RATIOS.length, t);
+      await new Promise((res) => setTimeout(res));
+    }
+    used = tier;
+    if (total <= TARGET || t === TIERS.length - 1) break;
+  }
+  printFiles.push({ name: "How to print.txt", bytes: new TextEncoder().encode(printGuideForBuyer(v, chart)) });
+  const innerZip = createZipBlob(printFiles, new Date());
+  return { bytes: new Uint8Array(await innerZip.arrayBuffer()), chart, mb: innerZip.size / 1024 / 1024, optimised: used.long < 4000 };
+}
+
 async function generatePrintablePack() {
   const btn = $("printpack-run"); if (!btn) return;
   btn.disabled = true;
@@ -1421,63 +1459,95 @@ async function generatePrintablePack() {
   try {
     const v = daily.verse;
     // Print files mirror the design chosen in the Daily tab (WYSIWYG with the
-    // preview): palette, background, layout, font, grain, kicker and the
-    // watermark toggle all follow the daily selection.
-    const artOpts = chosenArtOpts();
-    const files = []; const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
-    // Render the 6 ratios, then keep the bundle under Etsy's 20 MB per-file
-    // limit by MEASURING the real output and stepping down quality/size if
-    // needed — so it fits regardless of the design or the browser's encoder
-    // (some encode much fatter JPEGs at the same quality setting).
-    const TARGET = 18 * 1024 * 1024;   // headroom under Etsy's 20 MB cap
-    const TIERS = [
-      { long: 4000, q: 0.90 },         // ~300 DPI at 13" — the default
-      { long: 4000, q: 0.80 },
-      { long: 3400, q: 0.82 },
-      { long: 3000, q: 0.75 },         // last resort — still ~300 DPI at 10"
-    ];
-    let printFiles = [], chart = [], total = 0, used = TIERS[0];
-    for (let t = 0; t < TIERS.length; t++) {
-      const tier = TIERS[t]; printFiles = []; chart = []; total = 0;
-      for (let i = 0; i < PRINT_RATIOS.length; i++) {
-        const r = PRINT_RATIOS[i];
-        const h = tier.long, w = Math.round(tier.long * (r.w / r.h));
-        const c = document.createElement("canvas");
-        renderVerse(c, w, h, artOpts);
-        const bytes = await canvasToBytes(c, "image/jpeg", tier.q);
-        c.width = c.height = 0; // free memory before the next big canvas
-        printFiles.push({ name: `EverVerse-${slug}-${r.id}.jpg`, bytes });
-        total += bytes.length;
-        chart.push(`- ${r.id.replace("_", " ")}  (${w}x${h}px)  → fits ${r.fits}`);
-        status.textContent = `Rendering… ${i + 1}/${PRINT_RATIOS.length}${t ? ` (optimising, pass ${t + 1})` : ""}`;
-        await new Promise((res) => setTimeout(res));
-      }
-      used = tier;
-      if (total <= TARGET || t === TIERS.length - 1) break;
-    }
-    // The 6 print files + a buyer print guide, pre-bundled into ONE zip — this
-    // is exactly what you drop into Etsy's single digital-file slot (Etsy caps
-    // a listing at 5 files, and we have 6 ratios, so one zip is the clean fix).
-    printFiles.push({ name: "How to print.txt", bytes: new TextEncoder().encode(printGuideForBuyer(v, chart)) });
-    const innerZip = createZipBlob(printFiles, new Date());
-    const innerMB = innerZip.size / 1024 / 1024;
-    files.push({ name: "print-files.zip", bytes: new Uint8Array(await innerZip.arrayBuffer()) });
+    // preview): palette, background, layout, font, grain, kicker and watermark.
+    const slug = v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 32);
+    const files = [];
+    const pf = await buildPrintFilesZip(v, chosenArtOpts(), slug, (i, n, t) => {
+      status.textContent = `Rendering… ${i}/${n}${t ? ` (optimising, pass ${t + 1})` : ""}`;
+    });
+    files.push({ name: "print-files.zip", bytes: pf.bytes });
 
-    // Listing images — the pictures a buyer actually clicks on. Same chosen
-    // design, but always branded (these are your listing photos, so the ✦ mark
-    // deters image theft — the delivered print files honor your own toggle).
+    // Listing images — the pictures a buyer clicks on. Always branded so the ✦
+    // mark on the listing photo deters image theft (print files stay clean).
     status.textContent = "Building listing images…";
     const shots = await buildListingImages(v, chosenArtOpts({ watermark: true }));
     shots.forEach((f) => files.push(f));
 
-    // ASCII-only filename: our zip writer doesn't set the UTF-8 name flag, so a
-    // non-ASCII char here would show as mojibake in Windows Explorer.
-    files.push({ name: "READ-ME-how-to-list-on-Etsy.txt", bytes: new TextEncoder().encode(printableReadme(v, chart)) });
+    // ASCII-only filename: our zip writer doesn't set the UTF-8 name flag.
+    files.push({ name: "READ-ME-how-to-list-on-Etsy.txt", bytes: new TextEncoder().encode(printableReadme(v, pf.chart)) });
     downloadBlob(createZipBlob(files, new Date()), top8Filename("printable-" + slug.slice(0, 24)) + ".zip");
-    status.textContent = `✓ print-files.zip (${innerMB.toFixed(1)}MB, ${PRINT_RATIOS.length} sizes${used.long < 4000 ? ", size-optimised" : ""}) + ${shots.length} listing images — drag straight into Etsy.`;
+    status.textContent = `✓ print-files.zip (${pf.mb.toFixed(1)}MB, ${PRINT_RATIOS.length} sizes${pf.optimised ? ", size-optimised" : ""}) + ${shots.length} listing images — drag straight into Etsy.`;
   } catch (e) {
     status.textContent = "Printable pack error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
+}
+
+// Best-of-30 Etsy collection — a curated master zip: one numbered folder per
+// listing (print-files.zip + listing-images/ + listing.txt) plus a master copy
+// sheet. Each listing renders in its own hand-picked design (ETSY_COLLECTION).
+async function generateEtsyCollection() {
+  const btn = $("collection-run"); if (!btn) return;
+  const status = $("collection-status");
+  const count = Math.min(parseInt(($("collection-count") || {}).value, 10) || ETSY_COLLECTION.length, ETSY_COLLECTION.length);
+  btn.disabled = true;
+  const files = []; const index = ["#,reference,faith,style,room,title"]; const done = [];
+  try {
+    for (let n = 0; n < count; n++) {
+      const e = ETSY_COLLECTION[n];
+      const L = collectionListing(e);
+      if (!L) { continue; }
+      const v = L.v;
+      const nn = String(n + 1).padStart(2, "0");
+      const slug = e.head.replace(/[^\w]+/g, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 32);
+      const folder = `${nn}-${slug}`;
+      status.textContent = `Building ${n + 1}/${count} — ${v.ref}…`;
+      await new Promise((r) => setTimeout(r));
+      // Clean print files in the curated design + branded listing mockups.
+      const pf = await buildPrintFilesZip(v, collectionArtOpts(e, v), slug, (i, tot, t) => {
+        status.textContent = `Building ${n + 1}/${count} — ${v.ref} — print ${i}/${tot}${t ? " (optimising)" : ""}`;
+      });
+      files.push({ name: `${folder}/print-files.zip`, bytes: pf.bytes });
+      const shots = await buildListingImages(v, collectionArtOpts(e, v, { watermark: true }));
+      shots.forEach((f) => files.push({ name: `${folder}/${f.name}`, bytes: f.bytes }));
+      const listingTxt = `TITLE\n-----\n${L.title}\n\nTAGS (paste one per box; Etsy allows 13)\n----\n${L.tags.join(", ")}\n\nDESCRIPTION\n-----------\n${L.description}\n\n---\nPHOTOS: upload the 5 files in listing-images/ (mockup-oak-warm first).\nDIGITAL FILE: upload print-files.zip.\nType: Digital / instant download. Suggested price: $6.\n`;
+      files.push({ name: `${folder}/listing.txt`, bytes: new TextEncoder().encode(listingTxt) });
+      index.push(`${n + 1},"${v.ref}",${v.faith},"${e.style}","${e.room}","${L.title.replace(/"/g, "'")}"`);
+      done.push(`${nn}  ${v.ref} — ${e.head}`);
+    }
+    files.push({ name: "ALL-LISTINGS.csv", bytes: new TextEncoder().encode(index.join("\n")) });
+    files.push({ name: "START-HERE.txt", bytes: new TextEncoder().encode(collectionStartHere(done)) });
+    downloadBlob(createZipBlob(files, new Date()), `EverVerse-Etsy-collection-${count}.zip`);
+    status.textContent = `✓ ${done.length} listings ready — each folder = one Etsy listing (photos + print-files.zip + copy).`;
+  } catch (err) {
+    status.textContent = "Collection error at listing " + (done.length + 1) + ": " + (err && err.message ? err.message : err);
+  } finally { btn.disabled = false; }
+}
+function collectionStartHere(doneLines) {
+  return `EverVerse — Best-of Etsy collection
+===================================
+${doneLines.length} ready-to-post printable wall art listings.
+
+Each numbered folder is ONE complete Etsy listing:
+  print-files.zip     → upload as the digital file (6 print sizes inside)
+  listing-images/     → upload as the photos (5 images; oak-warm first)
+  listing.txt         → the title, 13 tags & description to paste
+
+To post each one on Etsy
+------------------------
+1. Shop Manager > Listings > Add a listing.
+2. Photos: drag the 5 files from listing-images/.
+3. About: Made by you / A finished product / DIGITAL.
+4. Category: Art & Collectibles > Prints > Digital Prints.
+5. Paste Title, Tags, Description from listing.txt.
+6. Digital file: upload print-files.zip. Price ~$6. Publish.
+7. Pin the oak-warm mockup on Pinterest, linked to the listing.
+
+The 30 (in this file's order)
+-----------------------------
+${doneLines.join("\n")}
+
+ALL-LISTINGS.csv has every title in a spreadsheet for tracking.
+Made with EverVerse · eververse.org`;
 }
 // Square 2000px listing images: framed room mockups + size chart + info card.
 async function buildListingImages(v, artOpts) {
