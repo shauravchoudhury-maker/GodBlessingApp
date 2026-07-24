@@ -1228,6 +1228,9 @@ async function runDailyShort() {
         status.textContent = `Translating ${i + 1}/${parts.length}…`;
         const p = parts[i];
         if (!p) continue;
+        // The opening hook (parts[0]) uses a native-language version rather than
+        // a machine translation of the English line — it reads far sharper.
+        if (i === 0 && typeof shortHookLocalized === "function") { done.push(shortHookLocalized(b.hookSeed || v.ref, b.hookTopic || v.topic, lang)); continue; }
         if (typeof isShortAttribution === "function" && isShortAttribution(p)) { done.push(p); continue; }
         done.push(await translateLong(p, lang));
         await new Promise((r) => setTimeout(r, 250));
