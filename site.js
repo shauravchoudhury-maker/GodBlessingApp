@@ -49,6 +49,9 @@ function buildLangBlock(v, container) {
 
 /* ---- Translation + speech (self-contained; app.js isn't loaded here) ---- */
 async function translateText(text, to, from) {
+  // Curated human translations take precedence over machine translation.
+  const curated = (typeof curatedTranslation === "function") ? curatedTranslation(text, to) : null;
+  if (curated) return curated.text;
   from = from || "en";
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(from)}|${encodeURIComponent(to)}`;
   const res = await fetch(url); if (!res.ok) throw new Error("HTTP " + res.status);

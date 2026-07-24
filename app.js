@@ -234,6 +234,19 @@ async function checkMeaning() {
   const box = $("fidelity-box");
   if (daily.lang === "en") { box.innerHTML = ""; return; }
   const meta = LANGUAGES.find((l) => l.code === daily.lang);
+  // Curated wording needs no MT fidelity check — say so plainly instead.
+  if (typeof isCuratedVerse === "function" && isCuratedVerse(daily.verse.ref, daily.lang)) {
+    const cur = curatedTranslation(daily.verse.text, daily.lang) || {};
+    const review = cur.conf === "review";
+    box.innerHTML =
+      `<span class="fidelity-badge ${review ? "med" : "high"}">${review ? "Curated — please have a native speaker confirm" : "✓ Curated translation — verified wording"}</span>` +
+      `<div class="fidelity-row"><span class="lbl">Original:</span> ${escapeHtml(daily.verse.text)}</div>` +
+      `<div class="fidelity-row"><span class="lbl">${meta.name}:</span> ${escapeHtml(cur.text || "")}</div>` +
+      `<div class="fidelity-note">${review
+        ? "This is a respectful rendering of sacred text, not machine translation — but for Gurbani especially, a check by someone from the tradition is wise before publishing at scale."
+        : "Hand-written, not machine translation. Safe to post and to narrate."}</div>`;
+    return;
+  }
   box.innerHTML = `<span class="fidelity-note">Back-translating from ${meta.name} to English…</span>`;
   try {
     const back = await translateText(daily.trans.text, "en", daily.lang);
@@ -792,6 +805,11 @@ function studioSelectVerse() {
 
 async function translateText(text, to, from) {
   from = from || "en";
+  // Curated human translations win over machine translation. Sacred wording
+  // (Gita/Gurbani into Hindi, scripture into Spanish) is too easy for MT to
+  // get subtly wrong; anything not curated still falls through to MyMemory.
+  const curated = (typeof curatedTranslation === "function") ? curatedTranslation(text, to) : null;
+  if (curated) return curated.text;
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(from)}|${encodeURIComponent(to)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
