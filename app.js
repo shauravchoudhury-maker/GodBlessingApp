@@ -1185,7 +1185,13 @@ function exVoiceId() { return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[$
 
 /* ---- Daily 1-minute short (YouTube Shorts / TikTok / Reels) -------- */
 // Vertical, voiced, with the explanation on screen and a subtle music bed.
-function shortVoiceId() { return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[$("short-voice").value] : undefined; }
+// Pick the voice for the short: language-specific (e.g. a Hindi voice) when one
+// is configured for the chosen language, otherwise the default for the gender.
+function shortVoiceId(lang) {
+  const gender = $("short-voice").value;
+  if (typeof ttsVoiceFor === "function") return ttsVoiceFor(lang || ($("short-lang") ? $("short-lang").value : "en"), gender);
+  return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[gender] : undefined;
+}
 function shortSourceItem() {
   if ($("short-source").value === "sermon") {
     const s = (typeof SERMONS !== "undefined") ? SERMONS.find((x) => x.verseRef === daily.verse.ref) : null;
@@ -1235,7 +1241,7 @@ async function runDailyShort() {
     const blob = await generateVoiceOverVideo({
       narrationText: narration, captionText: caption, rtl,
       ref: v.ref, paletteKey: v.theme, theme: v.theme,
-      bgKey: bgForVerseApp(v), voiceId: shortVoiceId(),
+      bgKey: bgForVerseApp(v), voiceId: shortVoiceId(lang),
       watermark: true, withMusic: $("short-music").checked, musicLevel: 0.2,
       w: 1080, h: 1920,
       onProgress: (p) => { status.textContent = `Rendering… ${Math.round(p * 100)}%`; },
