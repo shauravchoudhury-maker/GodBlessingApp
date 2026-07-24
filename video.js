@@ -444,3 +444,54 @@ async function generateVerseVideo(opts) {
   if (audioCtx) { try { await audioCtx.close(); } catch (_) {} }
   return finished;
 }
+
+// ── Audio-only export (Spotify) ──────────────────────────────────────
+// Mix the MP3 narration with the optional ambient music bed offline and
+// return a 16-bit PCM WAV (ArrayBuffer). No MP3 encoder library is bundled,
+// so the mixed output is WAV; Spotify for Podcasters accepts WAV directly.
+async function renderShortAudioWav(narrationArrayBuffer, opts) {
+  opts = opts || {};
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const tmp = new AC();
+  const narr = await tmp.decodeAudioData(narrationArrayBuffer.slice(0));
+  try { tmp.close(); } catch (e) {}
+  const sr = narr.sampleRate || 44100;
+  const tail = opts.withMusic ? 1.6 : 0.4;         // let the music fade after the voice
+  const dur = narr.duration + tail;
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const off = new OAC(2, Math.ceil(dur * sr), sr);
+
+  const vgain = off.createGain(); vgain.gain.value = 0.95; vgain.connect(off.destination);
+  const nsrc = off.createBufferSource(); nsrc.buffer = narr; nsrc.connect(vgain); nsrc.start(0);
+
+  if (opts.withMusic && typeof buildAmbientMusic === "function") {
+    const bed = off.createGain(); bed.gain.value = (opts.musicLevel != null) ? opts.musicLevel : 0.18;
+    bed.connect(off.destination);
+    try { buildAmbientMusic(off, bed, opts.theme, dur); } catch (e) {}
+  }
+  const mixed = await off.startRendering();
+  return audioBufferToWav(mixed);
+}
+
+// 16-bit PCM WAV from an AudioBuffer.
+function audioBufferToWav(buf) {
+  const numCh = Math.min(2, buf.numberOfChannels || 1), sr = buf.sampleRate, n = buf.length;
+  const blockAlign = numCh * 2, dataLen = n * blockAlign;
+  const out = new ArrayBuffer(44 + dataLen);
+  const dv = new DataView(out);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, "RIFF"); dv.setUint32(4, 36 + dataLen, true); ws(8, "WAVE");
+  ws(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, numCh, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * blockAlign, true); dv.setUint16(32, blockAlign, true); dv.setUint16(34, 16, true);
+  ws(36, "data"); dv.setUint32(40, dataLen, true);
+  const chans = [];
+  for (let c = 0; c < numCh; c++) chans.push(buf.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < n; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, chans[c][i]));
+      dv.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7FFF, true); o += 2;
+    }
+  }
+  return out;
+}
