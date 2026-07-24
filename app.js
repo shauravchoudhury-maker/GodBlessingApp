@@ -1225,6 +1225,20 @@ function showTextDownloadLink(elId, filename, text, label) {
   el.appendChild(a);
 }
 
+function isMobileDevice() {
+  try {
+    if (window.matchMedia && matchMedia("(pointer: coarse)").matches && !matchMedia("(min-width: 1100px)").matches) return true;
+  } catch (e) {}
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+}
+// Reject if a promise doesn't settle in time, so a stuck render can't "zombie"
+// the UI. The underlying work may keep running, but the caller recovers.
+function withTimeout(promise, ms, message) {
+  let t;
+  const guard = new Promise((_, reject) => { t = setTimeout(() => reject(new Error(message || "Timed out")), ms); });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(t));
+}
+
 // Build the short's script and translate it (part by part) — shared by the
 // video and the audio exports so both narrate exactly the same thing.
 async function prepShortNarration(status) {
@@ -1261,7 +1275,12 @@ async function runDailyShort() {
   const status = $("short-status");
   try {
     const { b, v, lang, narration, caption, rtl } = await prepShortNarration(status);
-    status.textContent = "Narrating + rendering (records in real time — about a minute)…";
+    // Real-time video recording is heavy on phones — render lighter there
+    // (720x1280 + lower bitrate) so it's far more likely to complete.
+    const mobile = isMobileDevice();
+    status.textContent = mobile
+      ? "Narrating + rendering (records in real time — leave the screen ON and don't switch apps)…"
+      : "Narrating + rendering (records in real time — about a minute)…";
     // Honor the template chosen at the top of the Daily tab — palette,
     // background, typeface and film-grain — instead of the verse's defaults.
     // (Layout doesn't apply: a short shows the spoken caption, not a verse card.)
@@ -1269,20 +1288,24 @@ async function runDailyShort() {
     const bg = daily.bgKey || bgForVerseApp(v);
     const font = (typeof EV_STYLE !== "undefined") ? EV_STYLE.font : undefined;
     const grain = (typeof EV_STYLE !== "undefined") ? EV_STYLE.grain : undefined;
-    const blob = await generateVoiceOverVideo({
+    // Watchdog: never let the render hang forever ("zombie"). If it overruns
+    // the expected length by a wide margin, fail cleanly so the UI recovers.
+    const blob = await withTimeout(generateVoiceOverVideo({
       narrationText: narration, captionText: caption, rtl,
       ref: v.ref, paletteKey: pal, theme: pal,
       bgKey: bg, font, grain, voiceId: shortVoiceId(lang),
       watermark: daily.watermark !== false, withMusic: $("short-music").checked, musicLevel: 0.2,
-      w: 1080, h: 1920,
+      videoBitsPerSecond: mobile ? 3_000_000 : 6_000_000,
+      w: mobile ? 720 : 1080, h: mobile ? 1280 : 1920,
       onProgress: (p) => { status.textContent = `Rendering… ${Math.round(p * 100)}%`; },
-    });
+    }), (b.seconds + 45) * 1000, "Video render stalled on this device. Try the 🎧 audio export here, and render the MP4 on a desktop.");
     const ext = (typeof videoFileExt === "function") ? videoFileExt(blob) : "mp4";
+    if (!blob || blob.size < 2000) throw new Error("The recorded video was empty — this browser may not support in-page video capture. Use the audio export here, and render the MP4 on a desktop.");
     const name = top8Filename("short-" + v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 24)) + "." + ext;
     downloadBlob(blob, name);
     // Listing copy to paste on YouTube/TikTok.
     const L = shortListing(v, b.seconds);
-    showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical 1080x1920\n`, "⬇ Listing text (title · tags · description)");
+    showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical ${mobile ? "720x1280" : "1080x1920"}\n`, "⬇ Listing text (title · tags · description)");
     status.textContent = `✓ ${b.seconds}s short downloaded — upload to YouTube Shorts / TikTok. Tap below for the listing copy.`;
   } catch (e) {
     status.textContent = "Short error: " + (e && e.message ? e.message : e);
