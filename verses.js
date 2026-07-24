@@ -309,6 +309,52 @@ const VERSE_DB = [
   { faith: "Wisdom", ref: "On being human",      theme: "blush",   topic: "love",    text: "You are mostly water and entirely doing your best. Both are small miracles — go gently on the miracle." },
   { faith: "Wisdom", ref: "On today's forecast", theme: "sage",    topic: "hope",    text: "Today's forecast: scattered doubts, clearing by afternoon, with a strong chance of you handling it." },
   { faith: "Wisdom", ref: "On becoming",         theme: "harvest", topic: "purpose", text: "You are not a mess. You are a masterpiece with a few dramatic brushstrokes still drying." },
+
+  // ── Torah / Tanakh (JPS 1917, public domain) ──
+  { faith: "Torah", ref: "Genesis 1:1",       theme: "night",   topic: "purpose", text: "In the beginning God created the heaven and the earth." },
+  { faith: "Torah", ref: "Genesis 2:3",       theme: "dusk",    topic: "peace",   text: "And God blessed the seventh day, and hallowed it; because that in it He rested from all His work." },
+  { faith: "Torah", ref: "Genesis 12:2",      theme: "gold",    topic: "purpose", text: "And I will make of thee a great nation, and I will bless thee; and be thou a blessing." },
+  { faith: "Torah", ref: "Genesis 50:20",     theme: "terra",   topic: "hope",    text: "Ye meant evil against me; but God meant it for good." },
+  { faith: "Torah", ref: "Exodus 3:14",       theme: "bold",    topic: "faith",   text: "And God said unto Moses: I AM THAT I AM." },
+  { faith: "Torah", ref: "Exodus 20:8",       theme: "sand",    topic: "peace",   text: "Remember the sabbath day, to keep it holy." },
+  { faith: "Torah", ref: "Leviticus 19:18",   theme: "blush",   topic: "love",    text: "Thou shalt love thy neighbour as thyself." },
+  { faith: "Torah", ref: "Leviticus 19:2",    theme: "royal",   topic: "purpose", text: "Ye shall be holy; for I the Lord your God am holy." },
+  { faith: "Torah", ref: "Numbers 6:24-26",   theme: "gold",    topic: "hope",    text: "The Lord bless thee, and keep thee; the Lord make His face to shine upon thee, and be gracious unto thee; and give thee peace." },
+  { faith: "Torah", ref: "Deuteronomy 6:4",   theme: "royal",   topic: "faith",   text: "Hear, O Israel: the Lord our God, the Lord is one." },
+  { faith: "Torah", ref: "Deuteronomy 8:3",   theme: "sand",    topic: "wisdom",  text: "Man doth not live by bread only, but by every thing that proceedeth out of the mouth of the Lord." },
+  { faith: "Torah", ref: "Deuteronomy 30:19", theme: "forest",  topic: "purpose", text: "I have set before thee life and death, the blessing and the curse; therefore choose life, that thou mayest live." },
+  { faith: "Torah", ref: "Deuteronomy 31:8",  theme: "dusk",    topic: "courage", text: "And the Lord, He it is that doth go before thee; He will not fail thee, neither forsake thee; fear not, neither be dismayed." },
+  { faith: "Torah", ref: "Deuteronomy 33:27", theme: "night",   topic: "comfort", text: "The eternal God is a dwelling-place, and underneath are the everlasting arms." },
+
+  // ── Tao Te Ching (rendered from the classical text / public-domain sources) ──
+  { faith: "Tao", ref: "Tao Te Ching 8",  theme: "calm",    topic: "wisdom",       text: "The highest good is like water: it nourishes all things and does not strive, and it rests in the low places that people disdain." },
+  { faith: "Tao", ref: "Tao Te Ching 9",  theme: "sand",    topic: "peace",        text: "Fill a cup to the brim and it spills; sharpen a blade to its keenest and it soon dulls. Know when to stop." },
+  { faith: "Tao", ref: "Tao Te Ching 22", theme: "dusk",    topic: "peace",        text: "Yield and remain whole; bend and remain straight. Because the wise do not contend, no one can contend with them." },
+  { faith: "Tao", ref: "Tao Te Ching 24", theme: "clay",    topic: "peace",        text: "One who stands on tiptoe is not steady; one who takes long strides cannot keep the pace." },
+  { faith: "Tao", ref: "Tao Te Ching 33", theme: "dusk",    topic: "wisdom",       text: "One who knows others is wise; one who knows himself is enlightened. To master yourself is true power." },
+  { faith: "Tao", ref: "Tao Te Ching 43", theme: "calm",    topic: "strength",     text: "The softest thing in the world overcomes the hardest. In this is the value of acting without forcing." },
+  { faith: "Tao", ref: "Tao Te Ching 44", theme: "harvest", topic: "gratitude",    text: "Be content with what you have; rejoice in the way things are. When you realise nothing is lacking, the whole world belongs to you." },
+  { faith: "Tao", ref: "Tao Te Ching 63", theme: "sage",    topic: "perseverance", text: "Do the difficult while it is still easy; do the great while it is still small. The hardest tasks begin with what is easy." },
+  { faith: "Tao", ref: "Tao Te Ching 64", theme: "moss",    topic: "purpose",      text: "A tree that fills a man's embrace grows from a tiny shoot; a tower nine storeys high begins with a mound of earth." },
+  { faith: "Tao", ref: "Tao Te Ching 76", theme: "forest",  topic: "change",       text: "The living are soft and yielding; the dead are stiff and hard. The soft and yielding belong to life." },
+  { faith: "Tao", ref: "Tao Te Ching 78", theme: "night",   topic: "strength",     text: "Nothing in the world is softer than water, yet nothing is better at wearing down the hard and strong." },
+  { faith: "Tao", ref: "Tao Te Ching 81", theme: "gold",    topic: "love",         text: "The sage does not hoard. The more he does for others, the more he has; the more he gives, the greater his abundance." },
+
+  // ── More Bible (widely-accepted / public-domain renderings) ──
+  { faith: "Bible", ref: "John 10:10",          theme: "gold",    topic: "hope",         text: "I am come that they might have life, and that they might have it more abundantly." },
+  { faith: "Bible", ref: "Romans 12:1",         theme: "royal",   topic: "purpose",      text: "Present your bodies a living sacrifice, holy, acceptable unto God, which is your reasonable service." },
+  { faith: "Bible", ref: "2 Corinthians 4:18",  theme: "night",   topic: "faith",        text: "The things which are seen are temporal; but the things which are not seen are eternal." },
+  { faith: "Bible", ref: "Colossians 3:15",     theme: "calm",    topic: "peace",        text: "And let the peace of God rule in your hearts, and be ye thankful." },
+  { faith: "Bible", ref: "Hebrews 4:16",        theme: "dusk",    topic: "comfort",      text: "Let us therefore come boldly unto the throne of grace, that we may find grace to help in time of need." },
+  { faith: "Bible", ref: "1 Peter 5:10",        theme: "terra",   topic: "perseverance", text: "After that ye have suffered a while, may He make you perfect, stablish, strengthen, settle you." },
+  { faith: "Bible", ref: "Psalm 34:17",         theme: "calm",    topic: "comfort",      text: "The righteous cry, and the Lord heareth, and delivereth them out of all their troubles." },
+  { faith: "Bible", ref: "Psalm 145:18",        theme: "dusk",    topic: "comfort",      text: "The Lord is nigh unto all them that call upon Him, to all that call upon Him in truth." },
+  { faith: "Bible", ref: "Isaiah 43:19",        theme: "sage",    topic: "hope",         text: "Behold, I will do a new thing; I will even make a way in the wilderness, and rivers in the desert." },
+  { faith: "Bible", ref: "Galatians 2:20",      theme: "royal",   topic: "faith",        text: "I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me." },
+  { faith: "Bible", ref: "Ephesians 6:10",      theme: "bold",    topic: "strength",     text: "Be strong in the Lord, and in the power of His might." },
+  { faith: "Bible", ref: "1 John 3:1",          theme: "blush",   topic: "love",         text: "Behold, what manner of love the Father hath bestowed upon us, that we should be called the sons of God." },
+  { faith: "Bible", ref: "Psalm 51:10",         theme: "calm",    topic: "change",       text: "Create in me a clean heart, O God; and renew a right spirit within me." },
+  { faith: "Bible", ref: "Proverbs 16:9",       theme: "forest",  topic: "guidance",     text: "A man's heart deviseth his way: but the Lord directeth his steps." },
 ];
 
 // Display names for each source/faith (the `faith` key → human label).
@@ -318,6 +364,8 @@ const FAITH_LABELS = {
   Sikh: "Guru Granth Sahib",
   Dhammapada: "Dhammapada",
   Tripitaka: "Tripitaka",
+  Torah: "Torah",
+  Tao: "Tao Te Ching",
   Wisdom: "Timeless Wisdom",
 };
 function faithLabel(f) { return FAITH_LABELS[f] || f; }
