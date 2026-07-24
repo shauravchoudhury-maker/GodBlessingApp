@@ -11,6 +11,8 @@ const SOURCE_CONTEXT = {
   Sikh: "This comes from the Guru Granth Sahib — the living scripture of the Sikh tradition. It isn't written as rules; it's written as songs, meant to be sung. And its heartbeat is simple: one Light lives in every person, without exception.",
   Dhammapada: "This is from the Dhammapada, a collection of the Buddha's shortest and sharpest teachings. Each one is less an instruction than an observation — here's how the mind actually works. You're invited to test it, not just believe it.",
   Tripitaka: "This comes from the Tripitaka, the earliest gathered teachings of the Buddha, carried by memory long before they were ever written down. They were preserved word for word because generation after generation found that they worked.",
+  Torah: "This comes from the Torah — the heart of the Hebrew Bible, and one of the oldest living texts on earth. For thousands of years it has been read aloud, argued over and loved, line by line, by people trying to live well. It was never meant to sit on a shelf; it was meant to be wrestled with.",
+  Tao: "This is from the Tao Te Ching, written in China some two and a half thousand years ago and attributed to the sage Lao Tzu. It doesn't push or preach. It points — usually to nature, to water, to the quiet power of not forcing — and lets you notice the rest for yourself.",
   Wisdom: "These words have outlived empires. They were written long before anyone imagined our world of screens and notifications — and yet they read like they were written this morning, for exactly what you're carrying.",
 };
 
