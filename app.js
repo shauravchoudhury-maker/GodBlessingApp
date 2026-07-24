@@ -1210,36 +1210,42 @@ function updateShortEstimate() {
   const hasSermon = (typeof SERMONS !== "undefined") && SERMONS.some((x) => x.verseRef === daily.verse.ref);
   $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s · ${b.kind === "sermon" ? "sermon takeaway" : "verse + meaning"}${!hasSermon && $("short-source").value === "sermon" ? " (no sermon for this verse — using the verse)" : ""}`;
 }
+// Build the short's script and translate it (part by part) — shared by the
+// video and the audio exports so both narrate exactly the same thing.
+async function prepShortNarration(status) {
+  const b = buildShort();
+  const v = b.v;
+  const lang = $("short-lang").value;
+  let narration = b.script, caption = b.script, rtl = false;
+  if (lang !== "en") {
+    // Translate PART BY PART: the verse part then matches a curated translation
+    // exactly (Gita/Gurbani keep their real wording), and no single request
+    // trips the 500-char machine-translation cap.
+    const parts = b.parts || [b.script];
+    const done = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (status) status.textContent = `Translating ${i + 1}/${parts.length}…`;
+      const p = parts[i];
+      if (!p) continue;
+      // The opening hook uses a native-language version, not a translation.
+      if (i === 0 && typeof shortHookLocalized === "function") { done.push(shortHookLocalized(b.hookSeed || v.ref, b.hookTopic || v.topic, lang)); continue; }
+      if (typeof isShortAttribution === "function" && isShortAttribution(p)) { done.push(p); continue; }
+      done.push(await translateLong(p, lang));
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    narration = done.join(" ").replace(/\s+/g, " ").trim();
+    caption = narration;
+    const meta = LANGUAGES.find((l) => l.code === lang);
+    rtl = !!(meta && meta.rtl);
+  }
+  return { b, v, lang, narration, caption, rtl };
+}
+
 async function runDailyShort() {
   const btn = $("short-run"); btn.disabled = true;
   const status = $("short-status");
   try {
-    const b = buildShort();
-    const v = b.v;
-    const lang = $("short-lang").value;
-    let narration = b.script, caption = b.script, rtl = false;
-    if (lang !== "en") {
-      // Translate PART BY PART, not as one blob: the verse part then matches a
-      // curated translation exactly (so Gita/Gurbani keep their real wording),
-      // and no single request trips the 500-char machine-translation cap.
-      const parts = b.parts || [b.script];
-      const done = [];
-      for (let i = 0; i < parts.length; i++) {
-        status.textContent = `Translating ${i + 1}/${parts.length}…`;
-        const p = parts[i];
-        if (!p) continue;
-        // The opening hook (parts[0]) uses a native-language version rather than
-        // a machine translation of the English line — it reads far sharper.
-        if (i === 0 && typeof shortHookLocalized === "function") { done.push(shortHookLocalized(b.hookSeed || v.ref, b.hookTopic || v.topic, lang)); continue; }
-        if (typeof isShortAttribution === "function" && isShortAttribution(p)) { done.push(p); continue; }
-        done.push(await translateLong(p, lang));
-        await new Promise((r) => setTimeout(r, 250));
-      }
-      narration = done.join(" ").replace(/\s+/g, " ").trim();
-      caption = narration;
-      const meta = LANGUAGES.find((l) => l.code === lang);
-      rtl = !!(meta && meta.rtl);
-    }
+    const { b, v, lang, narration, caption, rtl } = await prepShortNarration(status);
     status.textContent = "Narrating + rendering (records in real time — about a minute)…";
     // Honor the template chosen at the top of the Daily tab — palette,
     // background, typeface and film-grain — instead of the verse's defaults.
@@ -1267,8 +1273,41 @@ async function runDailyShort() {
     status.textContent = "Short error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
 }
+// Audio export for Spotify: the same narration (+ optional music bed) as the
+// short, as a downloadable audio file. Voice-only comes straight from the TTS
+// as a true MP3; voice + music is mixed offline and written as WAV (Spotify for
+// Podcasters accepts WAV directly — in-browser MP3 encoding needs a library).
+async function runShortAudio() {
+  const btn = $("short-audio"); if (!btn) return;
+  btn.disabled = true;
+  const status = $("short-status");
+  try {
+    if (typeof TTS_READY === "undefined" || !TTS_READY) throw new Error("Connect your EverVerse voice (tts-config.js) first.");
+    const { b, v, lang, narration } = await prepShortNarration(status);
+    status.textContent = "Narrating…";
+    const mp3 = await fetchTTS(narration, { voiceId: shortVoiceId(lang) });
+    const withMusic = $("short-music").checked;
+    const base = top8Filename("short-audio-" + v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 24));
+    let blob, ext;
+    if (!withMusic) {
+      blob = new Blob([mp3], { type: "audio/mpeg" }); ext = "mp3"; // TTS is already MP3
+    } else {
+      status.textContent = "Mixing voice + music…";
+      const wav = await renderShortAudioWav(mp3, { withMusic: true, theme: daily.paletteKey || v.theme, musicLevel: 0.18 });
+      blob = new Blob([wav], { type: "audio/wav" }); ext = "wav";
+    }
+    downloadBlob(blob, base + "." + ext);
+    const L = shortListing(v, b.seconds);
+    const epTitle = L.title.replace(/#shorts/ig, "").trim();
+    downloadBlob(new Blob([`EPISODE TITLE\n-------------\n${epTitle}\n\nDESCRIPTION\n-----------\n${L.description}\n\nLength: ~${b.seconds}s  ·  audio ${ext.toUpperCase()}${withMusic ? " (voice + music)" : " (voice only)"}\n`], { type: "text/plain;charset=utf-8" }), base + "-episode.txt");
+    status.textContent = `✓ Audio (.${ext})${withMusic ? " voice+music" : " voice"} + episode copy — upload to Spotify for Podcasters.`;
+  } catch (e) {
+    status.textContent = "Audio error: " + (e && e.message ? e.message : e);
+  } finally { btn.disabled = false; }
+}
 function initShort() {
   if (!$("short-run")) return;
+  if ($("short-audio")) $("short-audio").onclick = runShortAudio;
   $("short-run").onclick = runDailyShort;
   $("short-source").onchange = updateShortEstimate;
   updateShortEstimate();
