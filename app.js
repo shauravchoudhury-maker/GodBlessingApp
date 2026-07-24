@@ -1210,6 +1210,21 @@ function updateShortEstimate() {
   const hasSermon = (typeof SERMONS !== "undefined") && SERMONS.some((x) => x.verseRef === daily.verse.ref);
   $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s · ${b.kind === "sermon" ? "sermon takeaway" : "verse + meaning"}${!hasSermon && $("short-source").value === "sermon" ? " (no sermon for this verse — using the verse)" : ""}`;
 }
+// Offer a text file as a TAPPABLE link instead of a second auto-download.
+// Mobile browsers allow only one download per tap, so firing the media file
+// and a .txt back-to-back drops one of them; a link is a separate gesture.
+function showTextDownloadLink(elId, filename, text, label) {
+  const el = $(elId); if (!el) return;
+  try { if (el._url) URL.revokeObjectURL(el._url); } catch (e) {}
+  const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+  el._url = url;
+  el.innerHTML = "";
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.textContent = label || ("⬇ " + filename);
+  a.className = "btn"; a.style.display = "inline-block"; a.style.marginTop = "8px";
+  el.appendChild(a);
+}
+
 // Build the short's script and translate it (part by part) — shared by the
 // video and the audio exports so both narrate exactly the same thing.
 async function prepShortNarration(status) {
@@ -1267,8 +1282,8 @@ async function runDailyShort() {
     downloadBlob(blob, name);
     // Listing copy to paste on YouTube/TikTok.
     const L = shortListing(v, b.seconds);
-    downloadBlob(new Blob([`TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical 1080x1920\n`], { type: "text/plain;charset=utf-8" }), name.replace(/\.\w+$/, "") + "-listing.txt");
-    status.textContent = `✓ ${b.seconds}s short + listing copy downloaded — upload to YouTube Shorts / TikTok.`;
+    showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical 1080x1920\n`, "⬇ Listing text (title · tags · description)");
+    status.textContent = `✓ ${b.seconds}s short downloaded — upload to YouTube Shorts / TikTok. Tap below for the listing copy.`;
   } catch (e) {
     status.textContent = "Short error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
@@ -1299,8 +1314,8 @@ async function runShortAudio() {
     downloadBlob(blob, base + "." + ext);
     const L = shortListing(v, b.seconds);
     const epTitle = L.title.replace(/#shorts/ig, "").trim();
-    downloadBlob(new Blob([`EPISODE TITLE\n-------------\n${epTitle}\n\nDESCRIPTION\n-----------\n${L.description}\n\nLength: ~${b.seconds}s  ·  audio ${ext.toUpperCase()}${withMusic ? " (voice + music)" : " (voice only)"}\n`], { type: "text/plain;charset=utf-8" }), base + "-episode.txt");
-    status.textContent = `✓ Audio (.${ext})${withMusic ? " voice+music" : " voice"} + episode copy — upload to Spotify for Podcasters.`;
+    showTextDownloadLink("short-dl", base + "-episode.txt", `EPISODE TITLE\n-------------\n${epTitle}\n\nDESCRIPTION\n-----------\n${L.description}\n\nLength: ~${b.seconds}s  ·  audio ${ext.toUpperCase()}${withMusic ? " (voice + music)" : " (voice only)"}\n`, "⬇ Episode text (title · description)");
+    status.textContent = `✓ Audio (.${ext})${withMusic ? " voice+music" : " voice"} downloaded — upload to Spotify. Tap below for the episode copy.`;
   } catch (e) {
     status.textContent = "Audio error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
