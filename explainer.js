@@ -172,3 +172,128 @@ function explainerYouTube(v) {
   ].filter(Boolean).join(", ");
   return { title, description, tags, script, words, minutes };
 }
+
+/* ================================================================== */
+/*  60-second short — YouTube Shorts / TikTok / Reels                  */
+/* ================================================================== */
+// ~150 words ≈ 60s at a calm 150 wpm. Structure that holds a scroller:
+// hook → the words → what they mean → one thing to do → blessing + follow.
+// Kept deliberately short: the caption engine puts these lines on screen,
+// so every sentence has to earn its place.
+
+const SHORT_HOOKS = [
+  "If today feels heavy, give me sixty seconds.",
+  "Before you scroll on — this one is worth a minute.",
+  "If nobody has told you this today, let this be it.",
+  "One line. Sixty seconds. It might be the one you needed.",
+  "Stay with me for a minute. This changes how the day lands.",
+];
+const SHORT_BRIDGES = [
+  "Here is what that actually means.",
+  "In plain words:",
+  "Read it again, slowly. Here is the heart of it.",
+  "What is it really saying?",
+];
+const SHORT_ACTIONS = {
+  hope: "So today, do one small thing that assumes it gets better. That is what hope looks like in practice.",
+  strength: "So today, do the next hard thing badly rather than perfectly. Starting is the strength.",
+  peace: "So today, put one worry down for ten minutes. Just ten. You can pick it back up if you must.",
+  love: "So today, send the message you keep meaning to send. Love that stays in your head helps nobody.",
+  courage: "So today, do the one brave thing you have been circling. Small counts.",
+  perseverance: "So today, take one more step than yesterday. That is the whole secret.",
+  purpose: "So today, spend twenty minutes on the thing that actually matters to you.",
+  wisdom: "So today, pause before you answer once. One pause changes the whole exchange.",
+  gratitude: "So today, name one good thing out loud before you sleep.",
+  comfort: "So today, be as kind to yourself as you would be to a friend having your day.",
+  guidance: "So today, take the next step you can actually see. The rest will show up.",
+  faith: "So today, trust the step in front of you before you can see the staircase.",
+  change: "So today, let one old thing go. You are allowed to begin again.",
+};
+const SHORT_CLOSES = [
+  "You are not carrying this alone. See you tomorrow.",
+  "Come back tomorrow — there is another one waiting for you.",
+  "Take that with you today. Follow for one every morning.",
+  "Save this for the day you need it. Follow for a daily blessing.",
+];
+
+// First n sentences of a longer block — lets the short borrow the strongest
+// beat of a full-length section without dragging the whole thing in.
+function firstSentences(text, n) {
+  if (!text) return "";
+  const s = text.match(/[^.!?]+[.!?]+/g) || [text];
+  return s.slice(0, n).join(" ").trim();
+}
+const SHORT_MIN_WORDS = 138;   // ~55s at 150 wpm
+const SHORT_MAX_WORDS = 168;   // ~67s
+
+// Build the spoken script + matching caption text for a verse.
+// The "misreading" beat is what keeps a scroller watching, so it is part of
+// the core rather than padding; a reflective question is added only if the
+// script would otherwise land short of a minute.
+function shortScript(v) {
+  const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
+  const meaning = (typeof meaningFor === "function") ? meaningFor(v) : "";
+  const parts = [
+    pickBy(SHORT_HOOKS, v.ref),
+    `${v.text} — ${v.ref}, ${faith}.`,
+    pickBy(SHORT_BRIDGES, v.ref + "b"),
+    meaning,
+    firstSentences(MISREADINGS[v.topic], 2),
+    SHORT_ACTIONS[v.topic] || SHORT_ACTIONS.hope,
+  ].filter(Boolean);
+  return finishShort(parts, pickBy(SHORT_CLOSES, v.ref + "c"), [
+    firstSentences(pickBy(QUESTIONS, v.ref), 1),
+    firstSentences(pickBy(DEEPER_FRAMES, v.ref + "d"), 2),
+  ]);
+}
+
+// Sermon version — leans on the hand-written takeaway.
+function shortScriptForSermon(s) {
+  const v = (typeof VERSE_DB !== "undefined") ? VERSE_DB.find((x) => x.ref === s.verseRef) : null;
+  const faith = (typeof faithLabel === "function" && s.faith) ? faithLabel(s.faith) : "";
+  const seed = s.id || s.verseRef;
+  const parts = [
+    pickBy(SHORT_HOOKS, seed),
+    v ? `${v.text} — ${s.verseRef}${faith ? ", " + faith : ""}.` : `${s.verseRef}.`,
+    pickBy(SHORT_BRIDGES, seed + "b"),
+    s.takeaway,
+    v ? firstSentences(MISREADINGS[v.topic], 2) : "",
+    v ? (SHORT_ACTIONS[v.topic] || SHORT_ACTIONS.hope) : "",
+  ].filter(Boolean);
+  return finishShort(parts, pickBy(SHORT_CLOSES, seed + "c"), [
+    firstSentences(pickBy(QUESTIONS, seed), 1),
+    v ? firstSentences(s.body && s.body[0] ? s.body[0] : "", 2) : "",
+  ]);
+}
+
+// Assemble to a ~60s target: pad with extras while short, drop middle
+// sentences while long, then always end on the closing line.
+function finishShort(parts, close, extras) {
+  const count = (a) => a.join(" ").split(/\s+/).filter(Boolean).length;
+  const body = parts.slice();
+  const pool = (extras || []).filter(Boolean);
+  while (count(body) + count([close]) < SHORT_MIN_WORDS && pool.length) {
+    body.splice(body.length - 1, 0, pool.shift());   // insert before the action
+  }
+  let all = body.concat([close]);
+  if (count(all) > SHORT_MAX_WORDS) {
+    const sents = all.join(" ").match(/[^.!?]+[.!?]+/g) || all;
+    while (sents.length > 4 && count(sents) > SHORT_MAX_WORDS) {
+      sents.splice(Math.max(1, Math.floor(sents.length / 2)), 1);
+    }
+    all = sents;
+  }
+  const script = all.join(" ").replace(/\s+/g, " ").trim();
+  const words = script.split(/\s+/).filter(Boolean).length;
+  return { script, words, seconds: Math.round((words / 150) * 60) };
+}
+
+// Ready-to-paste listing copy for a short.
+function shortListing(v, secs) {
+  const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
+  const title = `${v.ref} — ${String(v.text).split(/[,.;]/)[0].trim()} #shorts`;
+  const tags = [v.ref, faith, v.topic, "shorts", "dailyverse", "verseoftheday",
+    "faith", "motivation", "devotional", "eververse"].filter(Boolean);
+  const description = `${v.text}\n— ${v.ref} (${faith})\n\n${(typeof meaningFor === "function") ? meaningFor(v) : ""}\n\nA one-minute blessing every day from EverVerse — eververse.org\n\n${tags.map((t) => "#" + String(t).replace(/[^\w]+/g, "")).join(" ")}`;
+  return { title: title.slice(0, 100), description, tags: tags.join(", "), seconds: secs };
+}

@@ -262,6 +262,30 @@
         <div class="preview-wrap"><video id="ex-preview" controls playsinline></video></div>
       </div>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">7</span><h2>⚡ Daily 1-minute short — YouTube Shorts &amp; TikTok</h2></div>
+      <p class="hint">A <b>60-second vertical video</b> (1080×1920) of today's verse or its sermon: the explanation appears <b>on screen as it's spoken</b>, over your designed art, with a <b>subtle music bed</b> under the voice. One a day is the rhythm Shorts and TikTok reward. Downloads the video <b>plus ready-to-paste title, description &amp; tags</b>.</p>
+      <div class="sched-toolbar">
+        <label>Source
+          <select id="short-source">
+            <option value="verse" selected>Verse + plain meaning</option>
+            <option value="sermon">Sermon takeaway (if one exists)</option>
+          </select>
+        </label>
+        <label>Voice
+          <select id="short-voice"><option value="female">Warm female</option><option value="male">Warm male</option></select>
+        </label>
+        <label>Language
+          <select id="short-lang"><option value="en" selected>English</option><option value="hi">Hindi</option><option value="es">Spanish</option></select>
+        </label>
+        <label class="checkbox"><input type="checkbox" id="short-music" checked /> Subtle music</label>
+        <button class="btn accent" id="short-run">⚡ Render 1-minute short (.mp4)</button>
+      </div>
+      <div class="kit-status" id="short-est"></div>
+      <div class="kit-status" id="short-status"></div>
+      <p class="hint" style="margin-top:10px;">💡 Records in real time, so a 60s short takes about a minute — leave the tab open. Hindi &amp; Spanish use your curated translations for the verse line. Pair it with the day's image for the best reach.</p>
+    </section>
   </main>
 
   <!-- ============================ READ HUB ============================ -->

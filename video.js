@@ -281,6 +281,15 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   const streamDest = audioCtx.createMediaStreamDestination();
   const src = audioCtx.createBufferSource(); src.buffer = audioBuf; src.connect(streamDest);
 
+  // Optional subtle music bed UNDER the narration. buildAmbientMusic peaks at
+  // 0.5, so route it through a low gain first — the voice must stay in front.
+  if (opts.withMusic && typeof buildAmbientMusic === "function") {
+    const bed = audioCtx.createGain();
+    bed.gain.value = (opts.musicLevel != null) ? opts.musicLevel : 0.22;
+    bed.connect(streamDest);
+    try { buildAmbientMusic(audioCtx, bed, opts.theme || opts.paletteKey, dur); } catch (e) {}
+  }
+
   const videoStream = canvas.captureStream(0);
   const vtrack = videoStream.getVideoTracks()[0];
   const stream = new MediaStream([vtrack, ...streamDest.stream.getAudioTracks()]);
