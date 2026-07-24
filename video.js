@@ -220,7 +220,7 @@ function buildCaptionPages(text) {
   return pages.length ? pages : [text];
 }
 
-function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat) {
+function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat, emph) {
   const minDim = Math.min(W, H);
   const scale = 1.0 + 0.1 * easeInOut(p);
   const drawW = W * scale, drawH = H * scale;
@@ -233,8 +233,14 @@ function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat) {
 
   ctx.direction = opts.rtl ? "rtl" : "ltr";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  const fit = fitText(ctx, caption || "", W - W * 0.14 * 2, H * 0.5, 'Georgia, "Times New Roman", serif', minDim * 0.066, "600");
-  ctx.font = `600 ${fit.size}px Georgia, serif`;
+  // The opening line (the hook) is rendered larger and heavier so it grabs the
+  // eye in the first second — the moment that decides whether they keep watching.
+  const weight = emph ? "700" : "600";
+  const startSize = minDim * (emph ? 0.082 : 0.066);
+  const fit = fitText(ctx, caption || "", W - W * 0.12 * 2, H * (emph ? 0.56 : 0.5), 'Georgia, "Times New Roman", serif', startSize, weight);
+  ctx.font = `${weight} ${fit.size}px Georgia, serif`;
+  // Emphasise the hook with size + weight only — keep the high-contrast main
+  // text colour so it stays legible on light and dark backgrounds alike.
   ctx.fillStyle = pal.text;
   ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = fit.size * 0.16; ctx.shadowOffsetY = fit.size * 0.04;
   let y = H * 0.46 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
@@ -308,7 +314,9 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
       let cap = sched.length ? sched[sched.length - 1].text : "";
       for (const s of sched) { if (t >= s.start && t < s.end) { cap = s.text; break; } }
       if (t < (sched[0] ? sched[0].start : 0)) cap = sched[0] ? sched[0].text : "";
-      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, cap, grainPat);
+      // Emphasise the opening caption(s) — the hook lives in the first ~2.6s.
+      const emph = opts.emphasizeHook !== false && t < (sched[1] ? Math.min(sched[1].start, 2.6) : 2.6);
+      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, cap, grainPat, emph);
       if (vtrack.requestFrame) vtrack.requestFrame();
       if (opts.onProgress) opts.onProgress(p);
       if (t >= dur + 0.2) { resolve(); return; }

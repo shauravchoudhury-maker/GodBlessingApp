@@ -271,6 +271,60 @@ function shortHook(seed, topic) {
   const pool = (SHORT_HOOKS_BY_TOPIC[topic] || []).concat(SHORT_HOOKS);
   return pickBy(pool, seed);
 }
+
+// Native hooks per language — written, not machine-translated, so a Hindi or
+// Spanish short opens just as sharply as the English one.
+const SHORT_HOOKS_L10N = {
+  hi: {
+    general: [
+      "रुको मत — ये एक मिनट तुम्हारा दिन बदल सकता है।",
+      "अगर आज किसी ने ये नहीं कहा, तो यहीं से सुन लो।",
+      "इसे सेव कर लो — एक दिन इसकी ज़रूरत ज़रूर पड़ेगी।",
+      "बस एक मिनट दो, कुछ ऐसा मिलेगा जिसे थामे रह सको।",
+      "आज सौ बातें सुनी होंगी — ये वाली अलग है, रुको।",
+      "स्क्रॉल मत करो। अगला एक मिनट सब कुछ शांत कर देगा।",
+      "ये तुम्हारे लिए है। बस एक मिनट।",
+      "अगर आज मन भारी है, तो साठ सेकंड मेरे साथ रहो।",
+    ],
+    topic: {
+      hope: ["अगर हिम्मत टूट रही है — बस एक मिनट रुको।"],
+      strength: ["एक थकान ऐसी होती है जो नींद से नहीं जाती। अगर वो तुम हो, तो रुको।"],
+      peace: ["अगर मन आज कहीं टिक नहीं रहा, तो इसे साथ में शांत करें।"],
+      love: ["किसी को याद दिलाना है कि तुम अनमोल हो — ये वही पल है।"],
+      courage: ["उस काम के लिए जिसे शुरू करने से तुम डरते रहे।"],
+      comfort: ["अगर आज दिल थोड़ा टूटा है, तो यहाँ आ जाओ।"],
+      perseverance: ["अगर तुम हार मानने ही वाले हो — पहले साठ सेकंड दो।"],
+    },
+  },
+  es: {
+    general: [
+      "No sigas deslizando. Este es el minuto que cambia tu día.",
+      "Si nadie te lo ha dicho hoy — que sea esto.",
+      "Guárdalo. Llegará un día en que lo necesitarás.",
+      "Dame un minuto y te daré algo a lo que aferrarte.",
+      "Has visto cien frases hoy. Quédate por la que es distinta.",
+      "Esto es para ti. Un minuto, nada más.",
+      "Deja de deslizar. Los próximos sesenta segundos lo calman todo.",
+      "Si hoy sientes el pecho apretado, empieza aquí.",
+    ],
+    topic: {
+      hope: ["Si te estás quedando sin razones para seguir — un minuto."],
+      strength: ["Hay un cansancio que el sueño no cura. Si ese eres tú, quédate."],
+      peace: ["Si tu mente no para hoy, calmémosla juntos."],
+      love: ["Alguien necesita recordarte que eres amado. Que sea esto."],
+      courage: ["Para eso que has tenido demasiado miedo de empezar."],
+      comfort: ["Si hoy se te rompió un poco el corazón, ven aquí."],
+      perseverance: ["Si estás a punto de rendirte — dame sesenta segundos primero."],
+    },
+  },
+};
+// Language-aware hook: native pool for hi/es, else the English blend.
+function shortHookLocalized(seed, topic, lang) {
+  const L = SHORT_HOOKS_L10N[lang];
+  if (!L) return shortHook(seed, topic);
+  const pool = ((L.topic && L.topic[topic]) || []).concat(L.general);
+  return pickBy(pool, seed);
+}
 const SHORT_BRIDGES = [
   "Here is what that actually means.",
   "In plain words:",
@@ -330,7 +384,7 @@ function shortScript(v) {
   return finishShort(parts, pickBy(SHORT_CLOSES, v.ref + "c"), [
     firstSentences(pickBy(QUESTIONS, v.ref), 1),
     firstSentences(pickBy(DEEPER_FRAMES, v.ref + "d"), 2),
-  ]);
+  ], { hookSeed: v.ref, hookTopic: v.topic });
 }
 
 // Sermon version — leans on the hand-written takeaway.
@@ -350,12 +404,12 @@ function shortScriptForSermon(s) {
   return finishShort(parts, pickBy(SHORT_CLOSES, seed + "c"), [
     firstSentences(pickBy(QUESTIONS, seed), 1),
     v ? firstSentences(s.body && s.body[0] ? s.body[0] : "", 2) : "",
-  ]);
+  ], { hookSeed: seed, hookTopic: v ? v.topic : "hope" });
 }
 
 // Assemble to a ~60s target: pad with extras while short, drop middle
 // sentences while long, then always end on the closing line.
-function finishShort(parts, close, extras) {
+function finishShort(parts, close, extras, meta) {
   const count = (a) => a.join(" ").split(/\s+/).filter(Boolean).length;
   const body = parts.slice();
   const pool = (extras || []).filter(Boolean);
@@ -374,7 +428,8 @@ function finishShort(parts, close, extras) {
   const words = script.split(/\s+/).filter(Boolean).length;
   // `parts` is what callers translate piece by piece — each stays under the
   // machine-translation length cap, and the verse part can hit a curated entry.
-  return { script, words, seconds: Math.round((words / 150) * 60), parts: all };
+  // hookSeed/hookTopic let a caller swap in a native-language hook for parts[0].
+  return Object.assign({ script, words, seconds: Math.round((words / 150) * 60), parts: all }, meta || {});
 }
 // Attribution lines ("— Psalm 46:10, Bible.") are left in the original script.
 function isShortAttribution(part) { return /^\s*—/.test(part || ""); }
