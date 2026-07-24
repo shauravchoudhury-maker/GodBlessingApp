@@ -302,7 +302,7 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   const vtrack = videoStream.getVideoTracks()[0];
   const stream = new MediaStream([vtrack, ...streamDest.stream.getAudioTracks()]);
   const mime = pickVideoMime();
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: opts.videoBitsPerSecond || 6_000_000 } : undefined);
   const chunks = [];
   rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
   const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: mimeContainer(mime) })); });
@@ -418,7 +418,7 @@ async function generateVerseVideo(opts) {
   const stream = new MediaStream(allTracks);
 
   const mime = pickVideoMime();
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: opts.videoBitsPerSecond || 6_000_000 } : undefined);
   const chunks = [];
   rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
   const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: mimeContainer(mime) })); });
