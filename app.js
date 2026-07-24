@@ -156,6 +156,7 @@ function setActiveVerse() {
   $("daily-palette").value = v.theme;
 
   updateExplainerStats();
+  if (typeof updateShortEstimate === "function") updateShortEstimate();
 
   const track = trackFor(v);
   $("music-mood").textContent = track.mood;
@@ -1150,6 +1151,70 @@ function initSchedule() {
 /* ================================================================== */
 let exBusy = false;
 function exVoiceId() { return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[$("ex-voice").value] : undefined; }
+
+/* ---- Daily 1-minute short (YouTube Shorts / TikTok / Reels) -------- */
+// Vertical, voiced, with the explanation on screen and a subtle music bed.
+function shortVoiceId() { return (typeof TTS_VOICES !== "undefined") ? TTS_VOICES[$("short-voice").value] : undefined; }
+function shortSourceItem() {
+  if ($("short-source").value === "sermon") {
+    const s = (typeof SERMONS !== "undefined") ? SERMONS.find((x) => x.verseRef === daily.verse.ref) : null;
+    if (s) return { kind: "sermon", s, v: daily.verse };
+  }
+  return { kind: "verse", v: daily.verse };
+}
+function buildShort() {
+  const it = shortSourceItem();
+  const out = it.kind === "sermon" ? shortScriptForSermon(it.s) : shortScript(it.v);
+  return Object.assign({ kind: it.kind, v: it.v }, out);
+}
+function updateShortEstimate() {
+  if (!$("short-est") || !daily.verse) return;
+  const b = buildShort();
+  const hasSermon = (typeof SERMONS !== "undefined") && SERMONS.some((x) => x.verseRef === daily.verse.ref);
+  $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s · ${b.kind === "sermon" ? "sermon takeaway" : "verse + meaning"}${!hasSermon && $("short-source").value === "sermon" ? " (no sermon for this verse — using the verse)" : ""}`;
+}
+async function runDailyShort() {
+  const btn = $("short-run"); btn.disabled = true;
+  const status = $("short-status");
+  try {
+    const b = buildShort();
+    const v = b.v;
+    const lang = $("short-lang").value;
+    let narration = b.script, caption = b.script, rtl = false;
+    if (lang !== "en") {
+      status.textContent = "Translating script…";
+      // Curated wording wins for the verse line; the rest falls back to MT.
+      narration = await translateText(b.script, lang);
+      caption = narration;
+      const meta = LANGUAGES.find((l) => l.code === lang);
+      rtl = !!(meta && meta.rtl);
+    }
+    status.textContent = "Narrating + rendering (records in real time — about a minute)…";
+    const blob = await generateVoiceOverVideo({
+      narrationText: narration, captionText: caption, rtl,
+      ref: v.ref, paletteKey: v.theme, theme: v.theme,
+      bgKey: bgForVerseApp(v), voiceId: shortVoiceId(),
+      watermark: true, withMusic: $("short-music").checked, musicLevel: 0.2,
+      w: 1080, h: 1920,
+      onProgress: (p) => { status.textContent = `Rendering… ${Math.round(p * 100)}%`; },
+    });
+    const ext = (typeof videoFileExt === "function") ? videoFileExt(blob) : "mp4";
+    const name = top8Filename("short-" + v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 24)) + "." + ext;
+    downloadBlob(blob, name);
+    // Listing copy to paste on YouTube/TikTok.
+    const L = shortListing(v, b.seconds);
+    downloadBlob(new Blob([`TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical 1080x1920\n`], { type: "text/plain;charset=utf-8" }), name.replace(/\.\w+$/, "") + "-listing.txt");
+    status.textContent = `✓ ${b.seconds}s short + listing copy downloaded — upload to YouTube Shorts / TikTok.`;
+  } catch (e) {
+    status.textContent = "Short error: " + (e && e.message ? e.message : e);
+  } finally { btn.disabled = false; }
+}
+function initShort() {
+  if (!$("short-run")) return;
+  $("short-run").onclick = runDailyShort;
+  $("short-source").onchange = updateShortEstimate;
+  updateShortEstimate();
+}
 function initExplainer() {
   if (!$("ex-script")) return;
   $("ex-token").value = getTtsToken();
@@ -1914,6 +1979,7 @@ function init() {
   initVoiceOver();
   initAudiobooks();
   initExplainer();
+  initShort();
   initCards();
   registerServiceWorker();
 }
