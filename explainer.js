@@ -235,7 +235,10 @@ function shortScript(v) {
   const meaning = (typeof meaningFor === "function") ? meaningFor(v) : "";
   const parts = [
     pickBy(SHORT_HOOKS, v.ref),
-    `${v.text} — ${v.ref}, ${faith}.`,
+    // The verse stands alone so a curated translation can match it exactly;
+    // the attribution is a separate part and is never machine-translated.
+    v.text,
+    `— ${v.ref}, ${faith}.`,
     pickBy(SHORT_BRIDGES, v.ref + "b"),
     meaning,
     firstSentences(MISREADINGS[v.topic], 2),
@@ -254,7 +257,8 @@ function shortScriptForSermon(s) {
   const seed = s.id || s.verseRef;
   const parts = [
     pickBy(SHORT_HOOKS, seed),
-    v ? `${v.text} — ${s.verseRef}${faith ? ", " + faith : ""}.` : `${s.verseRef}.`,
+    v ? v.text : "",
+    `— ${s.verseRef}${faith ? ", " + faith : ""}.`,
     pickBy(SHORT_BRIDGES, seed + "b"),
     s.takeaway,
     v ? firstSentences(MISREADINGS[v.topic], 2) : "",
@@ -285,8 +289,12 @@ function finishShort(parts, close, extras) {
   }
   const script = all.join(" ").replace(/\s+/g, " ").trim();
   const words = script.split(/\s+/).filter(Boolean).length;
-  return { script, words, seconds: Math.round((words / 150) * 60) };
+  // `parts` is what callers translate piece by piece — each stays under the
+  // machine-translation length cap, and the verse part can hit a curated entry.
+  return { script, words, seconds: Math.round((words / 150) * 60), parts: all };
 }
+// Attribution lines ("— Psalm 46:10, Bible.") are left in the original script.
+function isShortAttribution(part) { return /^\s*—/.test(part || ""); }
 
 // Ready-to-paste listing copy for a short.
 function shortListing(v, secs) {

@@ -816,8 +816,39 @@ async function translateText(text, to, from) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   const out = data?.responseData?.translatedText;
-  if (!out) throw new Error(data?.responseDetails || "unavailable");
+  // MyMemory reports failures inside a 200 response (and sometimes puts the
+  // error text where the translation should be), so check explicitly.
+  const detail = data?.responseDetails || "";
+  if (!out || /QUERY LENGTH|LIMIT EXCEEDED|INVALID/i.test(String(out) + " " + detail)) {
+    throw new Error(detail || String(out) || "translation unavailable");
+  }
   return out;
+}
+
+// MyMemory caps a single query at 500 characters. Anything longer has to be
+// split on sentence boundaries and translated piece by piece, then rejoined —
+// otherwise the whole call fails ("QUERY LENGTH LIMIT EXCEEDED").
+const MT_CHUNK = 450;
+async function translateLong(text, to, from) {
+  if (!text) return text;
+  // A curated translation for the whole string always wins.
+  const curated = (typeof curatedTranslation === "function") ? curatedTranslation(text, to) : null;
+  if (curated) return curated.text;
+  if (text.length <= MT_CHUNK) return translateText(text, to, from);
+  const sents = (text.match(/[^.!?]+[.!?]*/g) || [text]).map((s) => s.trim()).filter(Boolean);
+  const chunks = []; let cur = "";
+  for (const s of sents) {
+    if (cur && (cur + " " + s).length > MT_CHUNK) { chunks.push(cur); cur = s; }
+    else cur = cur ? cur + " " + s : s;
+    while (cur.length > MT_CHUNK) { chunks.push(cur.slice(0, MT_CHUNK)); cur = cur.slice(MT_CHUNK); }
+  }
+  if (cur.trim()) chunks.push(cur.trim());
+  const out = [];
+  for (let i = 0; i < chunks.length; i++) {
+    out.push(await translateText(chunks[i], to, from));
+    if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 350)); // free API — be polite
+  }
+  return out.join(" ");
 }
 async function doTranslate(code) {
   const lang = LANGUAGES.find((l) => l.code === code);
@@ -1182,9 +1213,20 @@ async function runDailyShort() {
     const lang = $("short-lang").value;
     let narration = b.script, caption = b.script, rtl = false;
     if (lang !== "en") {
-      status.textContent = "Translating script…";
-      // Curated wording wins for the verse line; the rest falls back to MT.
-      narration = await translateText(b.script, lang);
+      // Translate PART BY PART, not as one blob: the verse part then matches a
+      // curated translation exactly (so Gita/Gurbani keep their real wording),
+      // and no single request trips the 500-char machine-translation cap.
+      const parts = b.parts || [b.script];
+      const done = [];
+      for (let i = 0; i < parts.length; i++) {
+        status.textContent = `Translating ${i + 1}/${parts.length}…`;
+        const p = parts[i];
+        if (!p) continue;
+        if (typeof isShortAttribution === "function" && isShortAttribution(p)) { done.push(p); continue; }
+        done.push(await translateLong(p, lang));
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      narration = done.join(" ").replace(/\s+/g, " ").trim();
       caption = narration;
       const meta = LANGUAGES.find((l) => l.code === lang);
       rtl = !!(meta && meta.rtl);
