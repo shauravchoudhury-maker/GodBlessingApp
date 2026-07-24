@@ -1241,11 +1241,18 @@ async function runDailyShort() {
       rtl = !!(meta && meta.rtl);
     }
     status.textContent = "Narrating + rendering (records in real time — about a minute)…";
+    // Honor the template chosen at the top of the Daily tab — palette,
+    // background, typeface and film-grain — instead of the verse's defaults.
+    // (Layout doesn't apply: a short shows the spoken caption, not a verse card.)
+    const pal = daily.paletteKey || v.theme;
+    const bg = daily.bgKey || bgForVerseApp(v);
+    const font = (typeof EV_STYLE !== "undefined") ? EV_STYLE.font : undefined;
+    const grain = (typeof EV_STYLE !== "undefined") ? EV_STYLE.grain : undefined;
     const blob = await generateVoiceOverVideo({
       narrationText: narration, captionText: caption, rtl,
-      ref: v.ref, paletteKey: v.theme, theme: v.theme,
-      bgKey: bgForVerseApp(v), voiceId: shortVoiceId(lang),
-      watermark: true, withMusic: $("short-music").checked, musicLevel: 0.2,
+      ref: v.ref, paletteKey: pal, theme: pal,
+      bgKey: bg, font, grain, voiceId: shortVoiceId(lang),
+      watermark: daily.watermark !== false, withMusic: $("short-music").checked, musicLevel: 0.2,
       w: 1080, h: 1920,
       onProgress: (p) => { status.textContent = `Rendering… ${Math.round(p * 100)}%`; },
     });
