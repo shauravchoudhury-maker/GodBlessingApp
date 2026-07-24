@@ -1210,6 +1210,32 @@ function updateShortEstimate() {
   const hasSermon = (typeof SERMONS !== "undefined") && SERMONS.some((x) => x.verseRef === daily.verse.ref);
   $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s · ${b.kind === "sermon" ? "sermon takeaway" : "verse + meaning"}${!hasSermon && $("short-source").value === "sermon" ? " (no sermon for this verse — using the verse)" : ""}`;
 }
+// After a render, offer the finished media as a native Share button (send
+// straight to TikTok/YouTube/Files on a phone) plus a Download link. Both are
+// fresh user gestures, so they work even though the render was async.
+function showMediaActions(elId, blob, filename, opts) {
+  const el = $(elId); if (!el) return; opts = opts || {};
+  try { if (el._url) URL.revokeObjectURL(el._url); } catch (e) {}
+  const url = URL.createObjectURL(blob); el._url = url;
+  el.innerHTML = "";
+  let canShare = false;
+  try { canShare = !!(navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: blob.type })] })); } catch (e) {}
+  if (canShare) {
+    const sh = document.createElement("button");
+    sh.type = "button"; sh.className = "btn accent"; sh.textContent = "📤 Share";
+    sh.style.cssText = "margin-top:8px;margin-right:8px;display:inline-block;";
+    sh.onclick = async () => {
+      try { await navigator.share({ files: [new File([blob], filename, { type: blob.type })], title: opts.title || "EverVerse" }); }
+      catch (e) { /* user cancelled or share failed — the Download link is still there */ }
+    };
+    el.appendChild(sh);
+  }
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.textContent = "⬇ Download " + (opts.label || "file");
+  a.className = "btn"; a.style.cssText = "margin-top:8px;display:inline-block;";
+  el.appendChild(a);
+}
+
 // Offer a text file as a TAPPABLE link instead of a second auto-download.
 // Mobile browsers allow only one download per tap, so firing the media file
 // and a .txt back-to-back drops one of them; a link is a separate gesture.
@@ -1302,11 +1328,14 @@ async function runDailyShort() {
     const ext = (typeof videoFileExt === "function") ? videoFileExt(blob) : "mp4";
     if (!blob || blob.size < 2000) throw new Error("The recorded video was empty — this browser may not support in-page video capture. Use the audio export here, and render the MP4 on a desktop.");
     const name = top8Filename("short-" + v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 24)) + "." + ext;
-    downloadBlob(blob, name);
+    if (!mobile) downloadBlob(blob, name);   // desktop convenience; phones use the buttons
+    showMediaActions("short-actions", blob, name, { title: `${v.ref} — EverVerse`, label: "video" });
     // Listing copy to paste on YouTube/TikTok.
     const L = shortListing(v, b.seconds);
     showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical ${mobile ? "720x1280" : "1080x1920"}\n`, "⬇ Listing text (title · tags · description)");
-    status.textContent = `✓ ${b.seconds}s short downloaded — upload to YouTube Shorts / TikTok. Tap below for the listing copy.`;
+    status.textContent = mobile
+      ? `✓ ${b.seconds}s short ready — tap 📤 Share (→ TikTok/YouTube) or ⬇ Download below.`
+      : `✓ ${b.seconds}s short downloaded — or Share/Download below. Tap for the listing copy.`;
   } catch (e) {
     status.textContent = "Short error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
@@ -1334,11 +1363,15 @@ async function runShortAudio() {
       const wav = await renderShortAudioWav(mp3, { withMusic: true, theme: daily.paletteKey || v.theme, musicLevel: 0.18 });
       blob = new Blob([wav], { type: "audio/wav" }); ext = "wav";
     }
-    downloadBlob(blob, base + "." + ext);
+    const mobile = isMobileDevice();
+    if (!mobile) downloadBlob(blob, base + "." + ext);
+    showMediaActions("short-actions", blob, base + "." + ext, { title: `${v.ref} — EverVerse`, label: "audio" });
     const L = shortListing(v, b.seconds);
     const epTitle = L.title.replace(/#shorts/ig, "").trim();
     showTextDownloadLink("short-dl", base + "-episode.txt", `EPISODE TITLE\n-------------\n${epTitle}\n\nDESCRIPTION\n-----------\n${L.description}\n\nLength: ~${b.seconds}s  ·  audio ${ext.toUpperCase()}${withMusic ? " (voice + music)" : " (voice only)"}\n`, "⬇ Episode text (title · description)");
-    status.textContent = `✓ Audio (.${ext})${withMusic ? " voice+music" : " voice"} downloaded — upload to Spotify. Tap below for the episode copy.`;
+    status.textContent = mobile
+      ? `✓ Audio (.${ext}) ready — tap 📤 Share or ⬇ Download below, then upload to Spotify.`
+      : `✓ Audio (.${ext})${withMusic ? " voice+music" : " voice"} downloaded — or Share/Download below.`;
   } catch (e) {
     status.textContent = "Audio error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }
