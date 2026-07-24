@@ -237,8 +237,10 @@ function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat, emph
   // eye in the first second — the moment that decides whether they keep watching.
   const weight = emph ? "700" : "600";
   const startSize = minDim * (emph ? 0.082 : 0.066);
-  const fit = fitText(ctx, caption || "", W - W * 0.12 * 2, H * (emph ? 0.56 : 0.5), 'Georgia, "Times New Roman", serif', startSize, weight);
-  ctx.font = `${weight} ${fit.size}px Georgia, serif`;
+  // Honor the chosen typeface (serif/sans) when EV_FONTS is available.
+  const family = (typeof EV_FONTS !== "undefined" && opts.font && EV_FONTS[opts.font]) ? EV_FONTS[opts.font] : 'Georgia, "Times New Roman", serif';
+  const fit = fitText(ctx, caption || "", W - W * 0.12 * 2, H * (emph ? 0.56 : 0.5), family, startSize, weight);
+  ctx.font = `${weight} ${fit.size}px ${family}`;
   // Emphasise the hook with size + weight only — keep the high-contrast main
   // text colour so it stays legible on light and dark backgrounds alike.
   ctx.fillStyle = pal.text;
