@@ -181,13 +181,96 @@ function explainerYouTube(v) {
 // Kept deliberately short: the caption engine puts these lines on screen,
 // so every sentence has to earn its place.
 
+// Scroll-stopping openers. The first line — spoken AND on screen — decides
+// whether someone stays, so these lead with a pattern-interrupt or a direct
+// "this is for you" and promise value fast. Kept short (they eat into the 60s).
 const SHORT_HOOKS = [
-  "If today feels heavy, give me sixty seconds.",
-  "Before you scroll on — this one is worth a minute.",
-  "If nobody has told you this today, let this be it.",
-  "One line. Sixty seconds. It might be the one you needed.",
-  "Stay with me for a minute. This changes how the day lands.",
+  "Stop scrolling. This is the sixty seconds that resets your day.",
+  "If this showed up on your feed today, it isn't an accident.",
+  "You weren't meant to scroll past this one.",
+  "If nobody has told you this today — let this be it.",
+  "Save this. There is a day coming when you'll need it.",
+  "Give me one minute. I'll give you something to hold onto.",
+  "One verse. Sixty seconds. It might be the thing you remember today.",
+  "Before the day swallows you — thirty seconds, right here.",
+  "This is your sign to slow down for exactly one minute.",
+  "Read the first line. If it doesn't land, keep scrolling — but it will.",
+  "Everyone needs to hear this today. Maybe especially you.",
+  "The words are ancient. What they do to you is immediate.",
+  "You've seen a hundred quotes today. Stay for the one that's different.",
+  "If your chest feels tight today, start right here.",
+  "Do not scroll past this. Future-you is asking you to stay.",
 ];
+// Opener tuned to what the verse is actually about — pulled in alongside the
+// general pool so the hook feels written for this moment, not bolted on.
+const SHORT_HOOKS_BY_TOPIC = {
+  hope: [
+    "If you're running low on reasons to keep going — one minute.",
+    "For anyone who needs proof that this doesn't last forever.",
+  ],
+  strength: [
+    "There's a kind of tired sleep doesn't fix. If that's you, stay.",
+    "You don't have to be strong for the next sixty seconds. Just listen.",
+  ],
+  peace: [
+    "If your mind won't sit down today, let's quiet it together.",
+    "For the overthinkers at 2am — this one's for you.",
+  ],
+  love: [
+    "Someone needs to remind you that you are loved. Let it be this.",
+    "If you've felt like too much, or not enough — stay a minute.",
+  ],
+  courage: [
+    "For the thing you've been too scared to start.",
+    "If you're waiting to feel ready — watch this first.",
+  ],
+  perseverance: [
+    "If you're this close to quitting — give me sixty seconds first.",
+    "For anyone who fell down again today. Especially you.",
+  ],
+  purpose: [
+    "If you've been wondering whether any of it matters — stay.",
+    "For the day your life feels small. It isn't.",
+  ],
+  comfort: [
+    "If today broke your heart a little, come here.",
+    "For the 3am version of you. Save this one.",
+  ],
+  gratitude: [
+    "Sixty seconds to remember what's still good.",
+    "Before you list what's wrong — one thing that's right.",
+  ],
+  faith: [
+    "For the moment you can't see the next step — stay.",
+    "When you have to move before it makes sense — watch this.",
+  ],
+  guidance: [
+    "If you don't know which way to go — sixty seconds.",
+    "For the crossroads you've been standing at too long.",
+  ],
+  change: [
+    "If everything's shifting under you right now — stay.",
+    "For the season that's ending whether you're ready or not.",
+  ],
+  wisdom: [
+    "One old line that could change how you handle today.",
+    "The smartest thing you'll hear today is also the oldest.",
+  ],
+  joy: [
+    "Permission to feel good for sixty seconds. Take it.",
+    "This is your reminder that joy doesn't wait for later.",
+  ],
+  protection: [
+    "For the day you feel exposed and unsafe — stay a minute.",
+    "If fear has been loud lately, start here.",
+  ],
+};
+// Blend topic-specific openers with the general pool, then pick deterministically
+// so a given verse always leads with the same (best-fit) hook.
+function shortHook(seed, topic) {
+  const pool = (SHORT_HOOKS_BY_TOPIC[topic] || []).concat(SHORT_HOOKS);
+  return pickBy(pool, seed);
+}
 const SHORT_BRIDGES = [
   "Here is what that actually means.",
   "In plain words:",
@@ -234,7 +317,7 @@ function shortScript(v) {
   const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
   const meaning = (typeof meaningFor === "function") ? meaningFor(v) : "";
   const parts = [
-    pickBy(SHORT_HOOKS, v.ref),
+    shortHook(v.ref, v.topic),
     // The verse stands alone so a curated translation can match it exactly;
     // the attribution is a separate part and is never machine-translated.
     v.text,
@@ -256,7 +339,7 @@ function shortScriptForSermon(s) {
   const faith = (typeof faithLabel === "function" && s.faith) ? faithLabel(s.faith) : "";
   const seed = s.id || s.verseRef;
   const parts = [
-    pickBy(SHORT_HOOKS, seed),
+    shortHook(seed, v ? v.topic : (s.topic || "hope")),
     v ? v.text : "",
     `— ${s.verseRef}${faith ? ", " + faith : ""}.`,
     pickBy(SHORT_BRIDGES, seed + "b"),
