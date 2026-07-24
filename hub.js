@@ -140,8 +140,8 @@ async function translateSermon(code) {
   $$("reader-trans-status").textContent = `Translating to ${meta.name}… (this reads sentence by sentence)`;
   try {
     const body = [];
-    for (const p of currentSermon.body) { body.push(await translateText(p, code)); await evSleep(300); }
-    const takeaway = await translateText(currentSermon.takeaway, code);
+    for (const p of currentSermon.body) { body.push(await (typeof translateLong === "function" ? translateLong(p, code) : translateText(p, code))); await evSleep(300); }
+    const takeaway = await (typeof translateLong === "function" ? translateLong(currentSermon.takeaway, code) : translateText(currentSermon.takeaway, code));
     sermonTrans = { body, takeaway, rtl: !!meta.rtl };
     sermonLang = code;
     renderSermonBody();

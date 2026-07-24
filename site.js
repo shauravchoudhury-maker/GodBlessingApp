@@ -57,7 +57,30 @@ async function translateText(text, to, from) {
   const res = await fetch(url); if (!res.ok) throw new Error("HTTP " + res.status);
   const data = await res.json();
   const out = data && data.responseData && data.responseData.translatedText;
-  if (!out) throw new Error("unavailable"); return out;
+  const detail = (data && data.responseDetails) || "";
+  if (!out || /QUERY LENGTH|LIMIT EXCEEDED|INVALID/i.test(String(out) + " " + detail)) {
+    throw new Error(detail || "unavailable");
+  }
+  return out;
+}
+// MyMemory caps a query at 500 chars — split longer text (e.g. a sermon
+// paragraph) on sentence boundaries and translate it piece by piece.
+async function translateLong(text, to, from) {
+  if (!text || text.length <= 450) return translateText(text, to, from);
+  const sents = (text.match(/[^.!?]+[.!?]*/g) || [text]).map((s) => s.trim()).filter(Boolean);
+  const chunks = []; let cur = "";
+  for (const s of sents) {
+    if (cur && (cur + " " + s).length > 450) { chunks.push(cur); cur = s; }
+    else cur = cur ? cur + " " + s : s;
+    while (cur.length > 450) { chunks.push(cur.slice(0, 450)); cur = cur.slice(450); }
+  }
+  if (cur.trim()) chunks.push(cur.trim());
+  const out = [];
+  for (let i = 0; i < chunks.length; i++) {
+    out.push(await translateText(chunks[i], to, from));
+    if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 350));
+  }
+  return out.join(" ");
 }
 function speakText(text, lang) { EVVoice.speak(text, { lang: lang || "en" }); }
 function fillLangSelect(sel) { sel.innerHTML = ""; sel.add(new Option("English","en")); LANGUAGES.forEach((l)=>sel.add(new Option(l.name,l.code))); }
@@ -370,8 +393,8 @@ async function translateDetailSermon(code) {
   $("dt-status").textContent = `Translating to ${meta.name}… (sentence by sentence)`;
   try {
     const body = [];
-    for (const p of s.body) { body.push(await translateText(p, code)); await new Promise((r)=>setTimeout(r,300)); }
-    const takeaway = await translateText(s.takeaway, code);
+    for (const p of s.body) { body.push(await translateLong(p, code)); await new Promise((r)=>setTimeout(r,300)); }
+    const takeaway = await translateLong(s.takeaway, code);
     detailState.lang = code; detailState.trans = { body, takeaway, rtl:!!meta.rtl };
     renderSermonBodyInto();
     $("dt-status").textContent = `Showing in ${meta.name}. (Machine translation.)`;
