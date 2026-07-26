@@ -2119,7 +2119,7 @@ async function runAudiobookFull() {
 /*  Tabs + boot                                                        */
 /* ================================================================== */
 function initTabs() {
-  const panels = { daily: "tab-daily", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
+  const panels = { daily: "tab-daily", shorts: "tab-shorts", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
