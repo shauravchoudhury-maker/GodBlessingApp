@@ -280,6 +280,8 @@
           <select id="short-lang"><option value="en" selected>English</option><option value="hi">Hindi</option><option value="es">Spanish</option></select>
         </label>
         <label class="checkbox"><input type="checkbox" id="short-music" checked /> Subtle music</label>
+        <label>Series (optional)<input id="short-series" type="text" placeholder="e.g. Morning Prayer" list="short-series-list" style="width:150px;margin-left:6px;" /></label>
+        <datalist id="short-series-list"><option value="Morning Prayer"></option><option value="Morning Blessing"></option><option value="Evening Prayer"></option><option value="Evening Blessing"></option><option value="Daily Verse"></option></datalist>
         <button class="btn accent" id="short-run">⚡ Render 1-minute short (.mp4)</button>
         <button class="btn" id="short-audio">🎧 Render audio (Spotify)</button>
       </div>

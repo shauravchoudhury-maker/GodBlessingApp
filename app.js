@@ -1208,7 +1208,9 @@ function updateShortEstimate() {
   if (!$("short-est") || !daily.verse) return;
   const b = buildShort();
   const hasSermon = (typeof SERMONS !== "undefined") && SERMONS.some((x) => x.verseRef === daily.verse.ref);
-  $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s · ${b.kind === "sermon" ? "sermon takeaway" : "verse + meaning"}${!hasSermon && $("short-source").value === "sermon" ? " (no sermon for this verse — using the verse)" : ""}`;
+  const series = $("short-series") ? $("short-series").value : "";
+  const L = (typeof shortListing === "function") ? shortListing(daily.verse, b.seconds, { series }) : null;
+  $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s${!hasSermon && $("short-source").value === "sermon" ? " · (no sermon — using the verse)" : ""}${L ? ` · Title: ${L.title}` : ""}`;
 }
 // After a render, offer the finished media as a native Share button (send
 // straight to TikTok/YouTube/Files on a phone) plus a Download link. Both are
@@ -1331,7 +1333,7 @@ async function runDailyShort() {
     if (!mobile) downloadBlob(blob, name);   // desktop convenience; phones use the buttons
     showMediaActions("short-actions", blob, name, { title: `${v.ref} — EverVerse`, label: "video" });
     // Listing copy to paste on YouTube/TikTok.
-    const L = shortListing(v, b.seconds);
+    const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "" });
     showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical ${mobile ? "720x1280" : "1080x1920"}\n`, "⬇ Listing text (title · tags · description)");
     status.textContent = mobile
       ? `✓ ${b.seconds}s short ready — tap 📤 Share (→ TikTok/YouTube) or ⬇ Download below.`
@@ -1366,7 +1368,7 @@ async function runShortAudio() {
     const mobile = isMobileDevice();
     if (!mobile) downloadBlob(blob, base + "." + ext);
     showMediaActions("short-actions", blob, base + "." + ext, { title: `${v.ref} — EverVerse`, label: "audio" });
-    const L = shortListing(v, b.seconds);
+    const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "" });
     const epTitle = L.title.replace(/#shorts/ig, "").trim();
     showTextDownloadLink("short-dl", base + "-episode.txt", `EPISODE TITLE\n-------------\n${epTitle}\n\nDESCRIPTION\n-----------\n${L.description}\n\nLength: ~${b.seconds}s  ·  audio ${ext.toUpperCase()}${withMusic ? " (voice + music)" : " (voice only)"}\n`, "⬇ Episode text (title · description)");
     status.textContent = mobile
@@ -1381,6 +1383,7 @@ function initShort() {
   if ($("short-audio")) $("short-audio").onclick = runShortAudio;
   $("short-run").onclick = runDailyShort;
   $("short-source").onchange = updateShortEstimate;
+  if ($("short-series")) $("short-series").oninput = updateShortEstimate;
   updateShortEstimate();
 }
 function initExplainer() {
