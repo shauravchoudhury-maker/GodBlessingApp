@@ -437,11 +437,74 @@ function finishShort(parts, close, extras, meta) {
 function isShortAttribution(part) { return /^\s*—/.test(part || ""); }
 
 // Ready-to-paste listing copy for a short.
-function shortListing(v, secs) {
+// Titles/hashtags follow the channel's proven winners: a readable BENEFIT HOOK
+// first (not the verse reference or a hashtag soup), one 🙏, and 4–5 tight
+// high-intent hashtags — reference-first / 10-tag titles underperformed.
+const SHORT_TAGS_BY_TOPIC = {
+  hope: ["hope", "faith", "blessed"],
+  peace: ["peace", "calm", "faith"],
+  strength: ["strength", "faith", "motivation"],
+  love: ["love", "faith", "kindness"],
+  courage: ["courage", "faith", "motivation"],
+  perseverance: ["keepgoing", "faith", "motivation"],
+  purpose: ["purpose", "faith", "motivation"],
+  comfort: ["comfort", "faith", "blessed"],
+  gratitude: ["gratitude", "thankful", "blessed"],
+  faith: ["faith", "trust", "blessed"],
+  guidance: ["guidance", "faith", "trust"],
+  change: ["newbeginnings", "faith", "hope"],
+  wisdom: ["wisdom", "faith", "dailyverse"],
+  joy: ["joy", "faith", "blessed"],
+  protection: ["protection", "faith", "blessed"],
+};
+
+// Strip a trailing dangling word/punctuation so a trimmed hook doesn't end on
+// "and", "is", a comma, etc.
+function _tidyHook(h) {
+  let prev;
+  do { prev = h; h = h.replace(/[,;:—–-]+$/, "").replace(/\s+(and|the|to|for|of|a|an|in|on|with|but|or|that|is|are|as|by|will|shall|their|his|her|your|my|our|its|this|these|those|who|which)$/i, "").trim(); } while (h !== prev);
+  return h;
+}
+// A short, punchy hook from the verse itself (its own words read as a benefit,
+// e.g. "Be still, and know that I am God"). Long verses are cut at a natural
+// clause boundary, not mid-phrase.
+function shortHeadline(v, maxLen) {
+  const cap = maxLen || 58;
+  let t = String(v.text || "").replace(/\s+/g, " ").trim();
+  let hook = (t.match(/[^.!?]+/) || [t])[0].trim();
+  hook = hook.replace(/^(for|but|and|so|therefore|behold|verily|yea|hear, o israel:)\s*/i, "").trim();
+  if (hook.length > cap) {
+    const clause = hook.slice(0, cap);
+    const cut = Math.max(clause.lastIndexOf(","), clause.lastIndexOf(";"), clause.lastIndexOf("—"), clause.lastIndexOf("–"));
+    hook = (cut > 22) ? clause.slice(0, cut) : clause.replace(/\s+\S*$/, "");
+    hook = _tidyHook(hook);
+  }
+  if (!hook) hook = String(v.ref || "A blessing");
+  return hook.charAt(0).toUpperCase() + hook.slice(1);
+}
+function _cleanTag(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+
+// opts.series = optional recurring frame ("Morning Prayer", "Evening Blessing").
+function shortListing(v, secs, opts) {
+  opts = opts || {};
   const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
-  const title = `${v.ref} — ${String(v.text).split(/[,.;]/)[0].trim()} #shorts`;
-  const tags = [v.ref, faith, v.topic, "shorts", "dailyverse", "verseoftheday",
-    "faith", "motivation", "devotional", "eververse"].filter(Boolean);
-  const description = `${v.text}\n— ${v.ref} (${faith})\n\n${(typeof meaningFor === "function") ? meaningFor(v) : ""}\n\nA one-minute blessing every day from EverVerse — eververse.org\n\n${tags.map((t) => "#" + String(t).replace(/[^\w]+/g, "")).join(" ")}`;
-  return { title: title.slice(0, 100), description, tags: tags.join(", "), seconds: secs };
+  const series = (opts.series || "").trim();
+  const seriesPrefix = series ? series + " — " : "";
+  const topicTags = SHORT_TAGS_BY_TOPIC[v.topic] || ["faith", "blessed", "dailyverse"];
+  const titleTags = [...new Set([_cleanTag(series), ...topicTags, "eververse"].filter(Boolean))].slice(0, 5);
+  const emoji = "🙏";
+  const tagStr = titleTags.map((t) => "#" + t).join(" ");
+  // Reserve room for the series prefix, emoji and hashtags, then size the hook
+  // to fit YouTube's 100-char title — so the tags always survive.
+  const hookMax = Math.max(16, 100 - seriesPrefix.length - 3 - tagStr.length - 1);
+  let hook = shortHeadline(v, Math.min(58, hookMax));
+  if (hook.length > hookMax) hook = _tidyHook(hook.slice(0, hookMax).replace(/\s+\S*$/, ""));
+  let title = `${seriesPrefix}${hook} ${emoji} ${tagStr}`.trim();
+  if (title.length > 100) title = title.slice(0, 100).trim();
+  // Description: hook, verse + reference, meaning, CTA, then a fuller (still
+  // curated) tag set for search discovery.
+  const descTags = [...new Set([...titleTags, "dailyverse", "verseoftheday", "faith", "motivation", "devotional", "blessed", "amen", _cleanTag(faith)].filter(Boolean))].slice(0, 12);
+  const meaning = (typeof meaningFor === "function") ? meaningFor(v) : "";
+  const description = `${seriesPrefix}${hook} ${emoji}\n\n"${v.text}"\n— ${v.ref} (${faith})\n\n${meaning}\n\nA daily blessing from EverVerse — eververse.org\n\n${descTags.map((t) => "#" + t).join(" ")}`;
+  return { title: title.slice(0, 100), headline: hook, description, tags: descTags.join(", "), seconds: secs };
 }
