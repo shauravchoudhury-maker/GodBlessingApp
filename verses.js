@@ -391,6 +391,11 @@ const THEME_PALETTES = {
   moss:  { name: "Moss",        stops: ["#6b8f5a", "#2f4a2a"], text: "#f2f7ec", accent: "#cfe3b8" },
   clay:  { name: "Clay",        stops: ["#c98d76", "#7d4f42"], text: "#fdf1ec", accent: "#e8c3b2" },
   harvest:{ name: "Harvest",    stops: ["#e6c680", "#b8853a"], text: "#4a3416", accent: "#8a5f24", light: true },
+  // Trend pack (2026): cinematic dark, ink, chrome & soft peach.
+  mono:  { name: "Mono",        stops: ["#2b2b2f", "#0c0c0e"], text: "#f4f2ee", accent: "#d8c9a8" },
+  ink:   { name: "Ink",         stops: ["#28305a", "#0f1330"], text: "#eef1ff", accent: "#a9b6ff" },
+  chrome:{ name: "Chrome",      stops: ["#c7ccd6", "#6f7683"], text: "#12151c", accent: "#eef2f8", light: true },
+  peach: { name: "Peach",       stops: ["#ffd9c2", "#f2a488"], text: "#4a2b1c", accent: "#c7643f", light: true },
 };
 
 // Target languages for the free MyMemory API (used in the Studio translator).
