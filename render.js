@@ -30,6 +30,13 @@ function hexToRgba(hex, a) {
   const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
   return `rgba(${parseInt(n.slice(0,2),16)},${parseInt(n.slice(2,4),16)},${parseInt(n.slice(4,6),16)},${a})`;
 }
+// Dark or light ink for text sitting ON a filled colour (e.g. a highlight box).
+function evReadableOn(hex) {
+  const h = hex.replace("#", "");
+  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? "#141018" : "#ffffff";
+}
 
 // Typeface stacks (system fonts only — offline/CSP-safe).
 const EV_FONTS = {
@@ -90,6 +97,11 @@ function renderVerse(canvas, W, H, opts) {
   else if (layout === "quote") drawLayoutQuote(ctxArg);
   else if (layout === "glass") drawLayoutGlass(ctxArg);
   else if (layout === "banner") drawLayoutBanner(ctxArg);
+  else if (layout === "captions") drawLayoutCaptions(ctxArg);
+  else if (layout === "cinematic") drawLayoutCinematic(ctxArg);
+  else if (layout === "scripture") drawLayoutScripture(ctxArg);
+  else if (layout === "lowerthird") drawLayoutLowerThird(ctxArg);
+  else if (layout === "postcard") drawLayoutPostcard(ctxArg);
   else drawLayoutClassic(ctxArg);
 }
 
@@ -440,4 +452,188 @@ function drawLayoutMinimal({ ctx, W, H, pal, opts, font, minDim }) {
     evSetTracking(ctx, 0);
   }
   if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// CAPTIONS — big bold caption with one keyword highlighted in an accent box.
+// The single most-reached format on TikTok / Reels (the CapCut caption look).
+function drawLayoutCaptions({ ctx, W, H, pal, opts, font, minDim }) {
+  const raw = (opts.text || "").trim();
+  const family = EV_FONTS[font] || EV_FONTS.sans;
+  const maxWidth = W - W * 0.09 * 2;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const upper = raw.toUpperCase();
+  const fit = fitText(ctx, upper, maxWidth, H * 0.62, family, minDim * 0.092 * (opts.fontScale || 1), "800");
+  ctx.font = `800 ${fit.size}px ${family}`;
+  // keyword = the longest word, highlighted for emphasis
+  let key = "";
+  for (const w of raw.split(/\s+/)) { const c = w.replace(/[^A-Za-z0-9À-ɏ]/g, ""); if (c.length > key.length) key = c; }
+  const keyUp = key.toUpperCase();
+  const lh = fit.size * 1.12;
+  const blockH = fit.lines.length * lh;
+  let y = H * 0.46 - blockH / 2 + lh / 2;
+  const padX = fit.size * 0.16, boxR = fit.size * 0.16;
+  const spaceW = ctx.measureText(" ").width;
+  const keyText = evReadableOn(pal.accent);
+  for (const line of fit.lines) {
+    const toks = line.split(" ");
+    const ws = toks.map((t) => ctx.measureText(t).width);
+    let total = spaceW * (toks.length - 1); ws.forEach((w) => (total += w));
+    let x = W / 2 - total / 2;
+    ctx.textAlign = "left";
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i], w = ws[i];
+      const isKey = keyUp.length >= 3 && t.replace(/[^A-Z0-9À-ɏ]/g, "") === keyUp;
+      if (isKey) {
+        evRoundRect(ctx, x - padX * 0.5, y - fit.size * 0.58, w + padX, fit.size * 1.16, boxR);
+        ctx.fillStyle = hexToRgba(pal.accent, 0.95); ctx.fill();
+        ctx.fillStyle = keyText; ctx.fillText(t, x, y);
+      } else {
+        ctx.fillStyle = pal.text;
+        if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.4)"; ctx.shadowBlur = fit.size * 0.1; }
+        ctx.fillText(t, x, y);
+        ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+      }
+      x += w + spaceW;
+    }
+    y += lh;
+  }
+  ctx.textAlign = "center";
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.textBaseline = "alphabetic";
+    ctx.font = `700 ${minDim * 0.026}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.01);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.98);
+    ctx.fillText((opts.ref || "").toUpperCase(), W / 2, y + minDim * 0.02);
+    evSetTracking(ctx, 0);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// CINEMATIC — elegant letter-spaced serif with a soft luminous glow and hairline
+// rules. The "scripture at night" / stoic look that performs on dark palettes.
+function drawLayoutCinematic({ ctx, W, H, pal, opts, font, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.serif;
+  const maxWidth = W - W * 0.13 * 2;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const fit = fitText(ctx, opts.text || "", maxWidth, H * 0.46, family, minDim * 0.058 * (opts.fontScale || 1), "500");
+  const lh = fit.size * 1.34;
+  const blockH = fit.lines.length * lh;
+  const y0 = H * 0.47 - blockH / 2 + lh / 2;
+  ctx.font = `500 ${fit.size}px ${family}`;
+  evSetTracking(ctx, fit.size * 0.02);
+  // luminous glow pass
+  ctx.save();
+  ctx.shadowColor = hexToRgba(pal.accent, 0.55); ctx.shadowBlur = fit.size * 0.9;
+  ctx.fillStyle = hexToRgba(pal.text, 0.001);
+  let yg = y0; for (const l of fit.lines) { ctx.fillText(l, W / 2, yg); yg += lh; }
+  ctx.restore();
+  ctx.fillStyle = pal.text;
+  let y = y0; for (const l of fit.lines) { ctx.fillText(l, W / 2, y); y += lh; }
+  evSetTracking(ctx, 0);
+  const topY = y0 - lh / 2 - minDim * 0.05, botY = y0 + blockH - lh / 2 + minDim * 0.05;
+  ctx.strokeStyle = hexToRgba(pal.accent, 0.5); ctx.lineWidth = Math.max(1, minDim * 0.0016);
+  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.1, topY); ctx.lineTo(W / 2 + minDim * 0.1, topY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W / 2 - minDim * 0.1, botY); ctx.lineTo(W / 2 + minDim * 0.1, botY); ctx.stroke();
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.textBaseline = "alphabetic";
+    ctx.font = `600 ${minDim * 0.023}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.014);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.9);
+    ctx.fillText(opts.ref.toUpperCase(), W / 2, botY + minDim * 0.06);
+    evSetTracking(ctx, 0);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// SCRIPTURE — parchment-style verse card: ornament, serif body, dotted divider
+// and an italic reference. Pairs beautifully with the Parchment / Linen art.
+function drawLayoutScripture({ ctx, W, H, pal, opts, font, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.serif;
+  const maxWidth = W - W * 0.14 * 2;
+  ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.font = `${minDim * 0.05}px Georgia, "Times New Roman", serif`;
+  ctx.fillStyle = hexToRgba(pal.accent, 0.85);
+  ctx.fillText("❦", W / 2, H * 0.2);
+  ctx.textBaseline = "middle"; ctx.direction = opts.rtl ? "rtl" : "ltr";
+  const fit = fitText(ctx, opts.text || "", maxWidth, H * 0.44, family, minDim * 0.06 * (opts.fontScale || 1), "500");
+  ctx.font = `500 ${fit.size}px ${family}`;
+  ctx.fillStyle = pal.text;
+  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = fit.size * 0.1; }
+  let y = H * 0.46 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const l of fit.lines) { ctx.fillText(l, W / 2, y); y += fit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  ctx.fillStyle = hexToRgba(pal.accent, 0.8);
+  for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.arc(W / 2 + i * minDim * 0.03, y + minDim * 0.02, Math.max(1.5, minDim * 0.004), 0, Math.PI * 2); ctx.fill(); }
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.textBaseline = "alphabetic";
+    ctx.font = `italic 600 ${minDim * 0.032}px ${family}`;
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText(opts.ref, W / 2, y + minDim * 0.075);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// LOWER THIRD — reel-style caption in the lower third over a legibility scrim,
+// with an accent bar. Always readable over any background; ideal for video art.
+function drawLayoutLowerThird({ ctx, W, H, pal, opts, font, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.sans;
+  const scrim = ctx.createLinearGradient(0, H * 0.45, 0, H);
+  scrim.addColorStop(0, "rgba(0,0,0,0)");
+  scrim.addColorStop(1, pal.light ? "rgba(40,28,12,0.6)" : "rgba(0,0,0,0.7)");
+  ctx.fillStyle = scrim; ctx.fillRect(0, H * 0.45, W, H * 0.55);
+  const padL = W * 0.08, maxWidth = W - padL * 2 - minDim * 0.03;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  const fit = fitText(ctx, opts.text || "", maxWidth, H * 0.3, family, minDim * 0.066 * (opts.fontScale || 1), "700");
+  ctx.font = `700 ${fit.size}px ${family}`;
+  const lh = fit.size * 1.16;
+  const lastBaseline = H * 0.82;
+  const firstBaseline = lastBaseline - (fit.lines.length - 1) * lh;
+  const textX = padL + minDim * 0.03;
+  ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+  ctx.fillRect(padL, firstBaseline - fit.size, Math.max(3, minDim * 0.008), (fit.lines.length - 1) * lh + fit.size * 1.2);
+  if (opts.showRef !== false && opts.ref) {
+    ctx.font = `700 ${minDim * 0.024}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.012);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.98);
+    ctx.fillText(opts.ref.toUpperCase(), textX, firstBaseline - fit.size - minDim * 0.03);
+    evSetTracking(ctx, 0);
+  }
+  ctx.font = `700 ${fit.size}px ${family}`;
+  ctx.fillStyle = "#ffffff";
+  let y = firstBaseline; for (const l of fit.lines) { ctx.fillText(l, textX, y); y += lh; }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "bottom-right");
+}
+
+// POSTCARD — a framed gallery card: double border, small-caps kicker, centred
+// serif and an italic attribution. Premium, print-ready energy.
+function drawLayoutPostcard({ ctx, W, H, pal, opts, font, kicker, minDim }) {
+  const family = EV_FONTS[font] || EV_FONTS.serif;
+  const m = minDim * 0.06, m2 = m + minDim * 0.02;
+  ctx.strokeStyle = hexToRgba(pal.accent, 0.85); ctx.lineWidth = Math.max(1.5, minDim * 0.004);
+  ctx.strokeRect(m, m, W - 2 * m, H - 2 * m);
+  ctx.strokeStyle = hexToRgba(pal.text, 0.4); ctx.lineWidth = Math.max(1, minDim * 0.0016);
+  ctx.strokeRect(m2, m2, W - 2 * m2, H - 2 * m2);
+  ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.font = `700 ${minDim * 0.024}px ${EV_FONTS.sans}`;
+  evSetTracking(ctx, minDim * 0.016);
+  ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+  ctx.fillText((kicker || "EVERVERSE").toUpperCase(), W / 2, m2 + minDim * 0.075);
+  evSetTracking(ctx, 0);
+  ctx.textBaseline = "middle"; ctx.direction = opts.rtl ? "rtl" : "ltr";
+  const fit = fitText(ctx, opts.text || "", W - m2 * 2 - minDim * 0.06, H * 0.44, family, minDim * 0.058 * (opts.fontScale || 1), "600");
+  ctx.font = `600 ${fit.size}px ${family}`;
+  ctx.fillStyle = pal.text;
+  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = fit.size * 0.1; }
+  let y = H * 0.5 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  for (const l of fit.lines) { ctx.fillText(l, W / 2, y); y += fit.lineHeight; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  if (opts.showRef !== false && opts.ref) {
+    ctx.direction = "ltr"; ctx.textBaseline = "alphabetic";
+    ctx.font = `italic 600 ${minDim * 0.03}px ${family}`;
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText("— " + opts.ref, W / 2, H - m2 - minDim * 0.055);
+  }
 }

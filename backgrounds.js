@@ -464,6 +464,197 @@ function sceneEarthStrata(ctx, W, H, pal, seed) {
   ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
 }
 
+/* ---- Trend pack (2026): the looks reaching furthest on TikTok / Reels / Shorts ---- */
+
+// Risograph-style grainy single-hue wash — big soft ink fields, minimal detail.
+function sceneGrainWash(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], 14));
+  g.addColorStop(1, shade(pal.stops[1], -10));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 301);
+  const bx = W * (0.3 + rng() * 0.4), by = H * (0.25 + rng() * 0.4);
+  const bloom = ctx.createRadialGradient(bx, by, 0, bx, by, W * 0.6);
+  bloom.addColorStop(0, rgba(pal.accent, 0.28));
+  bloom.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = bloom; ctx.fillRect(0, 0, W, H);
+  // printed-ink speckle
+  ctx.globalCompositeOperation = "overlay";
+  const dots = Math.floor((W * H) / 1400);
+  for (let i = 0; i < dots; i++) {
+    ctx.fillStyle = rgba(rng() > 0.5 ? "#ffffff" : "#000000", 0.05 + rng() * 0.06);
+    ctx.fillRect(rng() * W, rng() * H, 1.4, 1.4);
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+// Aged parchment — warm mottled paper with fibres and darkened edges.
+function sceneParchment(ctx, W, H, pal, seed) {
+  const g = ctx.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
+  g.addColorStop(0, shade(pal.stops[0], pal.light ? 10 : 6));
+  g.addColorStop(1, shade(pal.stops[1], pal.light ? -6 : -14));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 311);
+  const stainCol = pal.light ? "#7a5a34" : "#000000";
+  ctx.globalCompositeOperation = "soft-light";
+  for (let i = 0; i < 28; i++) {
+    const x = rng() * W, y = rng() * H, r = W * (0.06 + rng() * 0.16);
+    const s = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const col = rng() > 0.5 ? pal.accent : stainCol;
+    s.addColorStop(0, rgba(col, 0.05 + rng() * 0.06));
+    s.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = s; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.strokeStyle = rgba(pal.light ? "#8a6a3c" : "#ffffff", 0.04);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 40; i++) {
+    const y = rng() * H;
+    ctx.beginPath(); ctx.moveTo(0, y);
+    for (let x = 0; x <= W; x += W / 20) ctx.lineTo(x, y + (rng() - 0.5) * 2);
+    ctx.stroke();
+  }
+  const v = ctx.createRadialGradient(W * 0.5, H * 0.5, Math.min(W, H) * 0.3, W * 0.5, H * 0.5, Math.max(W, H) * 0.72);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, pal.light ? "rgba(90,60,25,0.22)" : "rgba(0,0,0,0.34)");
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+// Deep-space nebula — layered colour clouds over a dark field, sprinkled stars.
+function sceneNebula(ctx, W, H, pal, seed) {
+  const g = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.45, Math.max(W, H) * 0.8);
+  g.addColorStop(0, shade(pal.stops[1], -6));
+  g.addColorStop(1, shade(pal.stops[1], -30));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 321);
+  const cols = [pal.accent, pal.stops[0], pal.stops[1], "#ffffff"];
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 7; i++) {
+    const x = rng() * W, y = rng() * H * 0.9, r = W * (0.18 + rng() * 0.34);
+    const m = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const c = cols[i % cols.length];
+    m.addColorStop(0, rgba(c, 0.14 + rng() * 0.1));
+    m.addColorStop(0.6, rgba(c, 0.05));
+    m.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = m; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  const n = Math.floor((W * H) / 6500);
+  for (let i = 0; i < n; i++) {
+    const x = rng() * W, y = rng() * H, r = rng() * (W * 0.0016) + 0.3;
+    ctx.globalAlpha = 0.25 + rng() * 0.7;
+    ctx.fillStyle = rng() > 0.9 ? pal.accent : "#ffffff";
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Bold duotone with a halftone dot gradient — editorial, high-contrast.
+function sceneDuotone(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, pal.stops[0]);
+  g.addColorStop(1, shade(pal.stops[1], -14));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const step = Math.max(14, W * 0.022);
+  for (let y = 0; y < H + step; y += step) {
+    for (let x = 0; x < W + step; x += step) {
+      const t = 1 - (x / W * 0.6 + y / H * 0.6);
+      if (t <= 0) continue;
+      const r = step * 0.42 * t;
+      if (r < 0.4) continue;
+      ctx.fillStyle = rgba(pal.accent, 0.12 * t + 0.04);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  const glow = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.45, W * 0.7);
+  glow.addColorStop(0, "rgba(255,255,255,0.08)"); glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+}
+
+// Golden-hour flare — warm sun bloom, haze streaks and lens orbs. Faith warmth.
+function sceneGoldenHour(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], 24));
+  g.addColorStop(0.6, pal.stops[0]);
+  g.addColorStop(1, shade(pal.stops[1], -8));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 341);
+  const sx = W * (0.3 + rng() * 0.4), sy = H * (0.3 + rng() * 0.16);
+  const bloom = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * 0.9);
+  bloom.addColorStop(0, rgba(pal.accent, 0.75));
+  bloom.addColorStop(0.15, rgba(pal.accent, 0.4));
+  bloom.addColorStop(0.5, rgba(pal.accent, 0.12));
+  bloom.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = bloom; ctx.fillRect(0, 0, W, H);
+  const core = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * 0.12);
+  core.addColorStop(0, "rgba(255,250,235,0.9)"); core.addColorStop(1, "rgba(255,250,235,0)");
+  ctx.fillStyle = core; ctx.beginPath(); ctx.arc(sx, sy, W * 0.12, 0, Math.PI * 2); ctx.fill();
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 5; i++) {
+    const y = sy + (rng() - 0.5) * H * 0.3;
+    const hz = ctx.createLinearGradient(0, y, W, y);
+    hz.addColorStop(0, rgba(pal.accent, 0)); hz.addColorStop(0.5, rgba("#fff4dc", 0.05 + rng() * 0.05)); hz.addColorStop(1, rgba(pal.accent, 0));
+    ctx.fillStyle = hz; ctx.fillRect(0, y - H * 0.01, W, H * 0.02);
+  }
+  for (let i = 1; i <= 4; i++) {
+    const t = i / 5, x = sx + (W * 0.5 - sx) * t * 1.4, y = sy + (H * 0.7 - sy) * t * 1.4;
+    ctx.fillStyle = rgba(pal.accent, 0.12);
+    ctx.beginPath(); ctx.arc(x, y, W * (0.01 + rng() * 0.02), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+// Liquid chrome — flowing metallic silk bands with a top sheen. 2026 trend.
+function sceneLiquid(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, shade(pal.stops[0], 8));
+  g.addColorStop(1, shade(pal.stops[1], -18));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 351);
+  ctx.globalCompositeOperation = "lighter";
+  const bands = 7;
+  for (let b = 0; b < bands; b++) {
+    const yBase = H * (b / (bands - 1));
+    const amp = H * (0.05 + rng() * 0.06);
+    const col = b % 2 ? pal.accent : "#ffffff";
+    const rib = ctx.createLinearGradient(0, yBase - amp, 0, yBase + amp);
+    rib.addColorStop(0, rgba(col, 0));
+    rib.addColorStop(0.5, rgba(col, 0.1 + rng() * 0.08));
+    rib.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = rib;
+    ctx.beginPath(); ctx.moveTo(0, yBase);
+    for (let x = 0; x <= W; x += W / 40) ctx.lineTo(x, yBase + Math.sin((x / W) * Math.PI * 2 + b + rng() * 0.5) * amp);
+    ctx.lineTo(W, yBase + amp * 2); ctx.lineTo(0, yBase + amp * 2); ctx.closePath(); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  const sheen = ctx.createLinearGradient(0, 0, 0, H * 0.4);
+  sheen.addColorStop(0, "rgba(255,255,255,0.1)"); sheen.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H * 0.4);
+}
+
+// Woven linen / canvas — premium neutral texture for scripture & minimal looks.
+function sceneLinen(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], pal.light ? 8 : 4));
+  g.addColorStop(1, shade(pal.stops[1], pal.light ? -4 : -12));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const light = "#ffffff", dark = pal.light ? "#7a5a34" : "#000000";
+  const step = Math.max(4, W * 0.006);
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += step) {
+    ctx.strokeStyle = rgba(x % (step * 2) < step ? light : dark, 0.035);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += step) {
+    ctx.strokeStyle = rgba(y % (step * 2) < step ? dark : light, 0.03);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  const v = ctx.createRadialGradient(W * 0.5, H * 0.5, Math.min(W, H) * 0.3, W * 0.5, H * 0.5, Math.max(W, H) * 0.7);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, pal.light ? "rgba(90,60,25,0.16)" : "rgba(0,0,0,0.28)");
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
 // Registry — order = display order in the picker.
 const BACKGROUNDS = [
   { key: "gradient", name: "Soft Glow",  draw: sceneGradient },
@@ -486,6 +677,14 @@ const BACKGROUNDS = [
   { key: "petals",   name: "Petals",        draw: scenePetals },
   { key: "canopy",   name: "Forest Light",  draw: sceneForestLight },
   { key: "strata",   name: "Earth Strata",  draw: sceneEarthStrata },
+  // Trend pack (2026) — the looks reaching furthest on TikTok / Reels / Shorts.
+  { key: "goldenhour", name: "Golden Hour",  draw: sceneGoldenHour },
+  { key: "nebula",   name: "Nebula",         draw: sceneNebula },
+  { key: "grainwash",name: "Grain Wash",     draw: sceneGrainWash },
+  { key: "duotone",  name: "Duotone",        draw: sceneDuotone },
+  { key: "liquid",   name: "Liquid Chrome",  draw: sceneLiquid },
+  { key: "parchment",name: "Parchment",      draw: sceneParchment },
+  { key: "linen",    name: "Linen",          draw: sceneLinen },
 ];
 
 function drawBackground(key, ctx, W, H, pal, seed) {
