@@ -255,6 +255,34 @@ const TOPIC_MEANING = {
   purpose: "You are here on purpose, for a purpose — your light matters.",
 };
 
+// ---- Teens (13–20) collection ----
+Object.assign(MEANINGS, {
+  "1 Timothy 4:12": "Your age is not a limit — how you live can lead. Start setting the example now.",
+  "Jeremiah 1:5": "You were known and wanted before day one; your worth isn't something you have to earn.",
+  "Psalm 56:3": "Fear can show up and you can still choose trust — the two can share the same breath.",
+  "1 Corinthians 15:33": "Who you surround yourself with shapes who you become — choose your circle on purpose.",
+  "Gita 2:47": "Pour yourself into the effort and release the outcome — do your part fully, let go of the score.",
+  "Gita 6:5": "Your mind can be your best teammate or your worst critic — today, be on your own side.",
+  "Gita 3:35": "A real version of you beats a flawless copy of someone else. Walk your own road.",
+  "Dhammapada 81": "Compliments and criticism will both blow through — you don't have to move every time they do.",
+  "Aristotle": "Everything wise starts with being honest about who you actually are.",
+  "Plato": "The hardest opponent — and the best win — is your own impulses.",
+  "Socrates": "A life you never question runs on autopilot. Pause and ask what you're really chasing.",
+  "Romans 12:2": "You don't have to copy the crowd — a renewed mind lets you choose who you actually are.",
+  "2 Timothy 1:7": "Fear isn't the voice to follow — you were made for power, love and a steady mind.",
+  "On comparison": "Feeds show everyone's best 1% — comparing your whole self to it is a rigged game.",
+  "On your worth": "You don't need an audience's approval to matter. You already do.",
+  "On starting": "Waiting to feel ready can last forever; starting small breaks the spell.",
+  "On failing": "One flop is data, not a verdict on who you are.",
+  "On the scroll": "That 'everyone's ahead of me' feeling is manufactured — your timeline is your own.",
+  "On discipline": "Small unglamorous choices today are a gift to the person you're becoming.",
+  "On fitting in": "Standing out feels risky, but it's often just you being genuinely yourself.",
+  "On hard days": "Your record against bad days is perfect — you're more durable than you feel.",
+  "On slow progress": "Growth is boring up close and obvious in the rear-view. Trust the stacking.",
+  "On self-talk": "Swap the inner critic for an inner coach — you listen to that voice all day.",
+  "On being brave": "Courage and fear coexist; bravery is acting while the fear is still there.",
+});
+
 function meaningFor(v) {
   return MEANINGS[v.ref] || TOPIC_MEANING[v.topic] ||
     "A reminder that you are seen, loved, and not alone today.";
