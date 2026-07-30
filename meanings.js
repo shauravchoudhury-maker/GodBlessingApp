@@ -281,6 +281,22 @@ Object.assign(MEANINGS, {
   "On slow progress": "Growth is boring up close and obvious in the rear-view. Trust the stacking.",
   "On self-talk": "Swap the inner critic for an inner coach — you listen to that voice all day.",
   "On being brave": "Courage and fear coexist; bravery is acting while the fear is still there.",
+  "Psalm 37:23-24": "Stumbling isn't falling — you're held, so a wobble won't be the end of you.",
+  "Isaiah 43:1": "You are known by name and claimed — you belong before you do anything to earn it.",
+  "Psalm 46:5": "Steadiness lives inside you; morning always comes — you won't be shaken loose.",
+  "Gita 6:19": "A settled mind is a superpower — steady inside, the noise outside can't rattle you.",
+  "Gita 9:22": "Give your heart to what's good and you're looked after — you don't carry it all alone.",
+  "Dhammapada 368": "Kindness is where restlessness finally quiets down — be gentle and find your calm.",
+  "Louisa May Alcott": "You don't need calm seas — you're learning to handle any storm that comes.",
+  "Leonardo da Vinci": "Curiosity never runs out — every new thing you learn makes you bigger, not tired.",
+  "On your potential": "You haven't missed your moment; you're early, not late — the best is ahead.",
+  "On growing up": "Nobody has the full map. Confidence comes from taking the next step, not having it all.",
+  "On your voice": "Your perspective is needed — shrinking yourself helps no one; speak up.",
+  "On bad days": "One rough day is a page, not the whole book — keep reading, it turns.",
+  "On being unfinished": "You can be unfinished and wonderful at once — growth and worth aren't opposites.",
+  "On not quitting": "The messy middle is where most people quit — outlast it and you've already won.",
+  "On your dreams": "That big dream isn't a mistake — you were built for it, so chase it.",
+  "On being young": "Right now isn't practice for later — this is the real thing, so show up fully.",
 });
 
 function meaningFor(v) {

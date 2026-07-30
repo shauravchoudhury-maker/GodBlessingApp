@@ -387,6 +387,24 @@ const VERSE_DB = [
   { faith: "Wisdom", ref: "On slow progress",theme: "moss",  topic: "perseverance", youth: true, text: "Small reps, stacked daily, quietly become someone you're proud of. Keep stacking." },
   { faith: "Wisdom", ref: "On self-talk",    theme: "peach", topic: "love",         youth: true, text: "Talk to yourself like someone you're rooting for, not someone you're grading." },
   { faith: "Wisdom", ref: "On being brave",  theme: "bold",  topic: "courage",      youth: true, text: "Brave isn't feeling no fear. It's showing up, speaking up, trying — scared, and doing it anyway." },
+
+  // ---- Teens (13–20): more uplift ----
+  { faith: "Bible", ref: "Psalm 37:23-24", theme: "forest", topic: "perseverance", youth: true, text: "The Lord makes firm the steps of the one who delights in him; though he may stumble, he will not fall, for the Lord upholds him with his hand." },
+  { faith: "Bible", ref: "Isaiah 43:1",    theme: "royal",  topic: "love",         youth: true, text: "Do not fear, for I have redeemed you; I have called you by name, you are mine." },
+  { faith: "Bible", ref: "Psalm 46:5",     theme: "calm",   topic: "strength",     youth: true, text: "God is within them, they will not fall; God will help them at break of day." },
+  { faith: "Gita",  ref: "Gita 6:19",      theme: "night",  topic: "peace",        youth: true, text: "As a lamp in a windless place does not flicker, so is the disciplined mind of one who is steady within." },
+  { faith: "Gita",  ref: "Gita 9:22",      theme: "gold",   topic: "faith",        youth: true, text: "To those who are ever devoted and who worship with love, I give what they lack and preserve what they have." },
+  { faith: "Dhammapada", ref: "Dhammapada 368", theme: "sage", topic: "love",      youth: true, text: "The one who lives in kindness, delighting in what is good, finds a place of peace where all restlessness is stilled." },
+  { faith: "Wisdom", ref: "Louisa May Alcott", theme: "calm", topic: "courage",    youth: true, text: "I am not afraid of storms, for I am learning how to sail my ship." },
+  { faith: "Wisdom", ref: "Leonardo da Vinci", theme: "sage", topic: "wisdom",     youth: true, text: "Learning never exhausts the mind." },
+  { faith: "Wisdom", ref: "On your potential", theme: "hope",  topic: "hope",       youth: true, text: "You are not too much, and you are not too late. You are just getting started." },
+  { faith: "Wisdom", ref: "On growing up",     theme: "clay",  topic: "guidance",   youth: true, text: "You don't have to have it all figured out. Nobody does. Just take the next small step." },
+  { faith: "Wisdom", ref: "On your voice",     theme: "royal", topic: "purpose",    youth: true, text: "The world needs the thing only you can say. Don't mute yourself to make other people comfortable." },
+  { faith: "Wisdom", ref: "On bad days",       theme: "dusk",  topic: "hope",       youth: true, text: "A bad day is not a bad life. The story isn't over — this is just a hard page." },
+  { faith: "Wisdom", ref: "On being unfinished", theme: "peach", topic: "love",     youth: true, text: "You are allowed to be a work in progress and a masterpiece at the same time." },
+  { faith: "Wisdom", ref: "On not quitting",   theme: "terra", topic: "perseverance", youth: true, text: "Half of winning is refusing to quit in the boring middle. Show up again tomorrow." },
+  { faith: "Wisdom", ref: "On your dreams",    theme: "bold",  topic: "hope",       youth: true, text: "Your dreams are not too big. You were handed them on purpose. Go get them." },
+  { faith: "Wisdom", ref: "On being young",    theme: "gold",  topic: "purpose",    youth: true, text: "This season is not the waiting room for your life. It is your life — live it awake." },
 ];
 
 // Curated existing verses that also belong in the Teens (13–20) collection —
@@ -397,6 +415,9 @@ const YOUTH_COLLECTION_REFS = new Set([
   "Proverbs 3:5-6", "Matthew 6:34", "Romans 12:2", "Philippians 4:6", "Philippians 4:13",
   "2 Timothy 1:7", "Matthew 11:28", "Psalm 34:18", "1 Peter 5:7",
   "Marcus Aurelius", "Epictetus", "Seneca", "Confucius", "Booker T. Washington", "Tao Te Ching 33",
+  "Marie Curie", "Theodore Roosevelt", "Walt Whitman",
+  "Romans 8:28", "Ephesians 2:10", "Romans 8:31", "Zephaniah 3:17", "Psalm 118:24",
+  "Psalm 27:1", "Matthew 5:14", "Matthew 5:16",
   "On being enough", "On your strength", "On beginning again", "On self-kindness",
   "On patience", "On this moment", "On overthinking",
 ]);
@@ -404,6 +425,8 @@ const YOUTH_COLLECTION_REFS = new Set([
 function youthCollection() {
   return VERSE_DB.filter((v) => v.youth || YOUTH_COLLECTION_REFS.has(v.ref));
 }
+// Is this verse part of the Teens (13–20) collection?
+function isYouthVerse(v) { return !!(v && (v.youth || YOUTH_COLLECTION_REFS.has(v.ref))); }
 
 // Display names for each source/faith (the `faith` key → human label).
 const FAITH_LABELS = {
