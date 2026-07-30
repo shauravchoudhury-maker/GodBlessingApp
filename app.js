@@ -138,6 +138,16 @@ function buildPlans(startDate) {
       plans[src].push({ date, verse });
     }
   });
+  // Curated collection that spans faiths (e.g. Teens 13–20) gets its own plan.
+  const yl = (typeof youthCollection === "function") ? youthCollection() : [];
+  if (yl.length) {
+    plans.Youth = [];
+    const startDoy = dayOfYear(startDate);
+    for (let d = 0; d < PLAN_DAYS; d++) {
+      const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + d);
+      plans.Youth.push({ date, verse: yl[(startDoy + d) % yl.length] });
+    }
+  }
   return plans;
 }
 
@@ -723,9 +733,13 @@ function initDaily() {
   // build 120-day plans for every tradition and fill the dropdowns
   daily.plans = buildPlans(daily.startDate);
   const faiths = Object.keys(daily.plans);
+  // Show curated collections (Teens 13–20) at the top of the picker, but keep
+  // the default active source on the first tradition.
+  const ordered = faiths.slice().sort((a, b) => (a === "Youth" ? -1 : b === "Youth" ? 1 : 0));
   $("daily-tradition").innerHTML = "";
-  faiths.forEach((f) => $("daily-tradition").add(new Option(faithLabel(f), f)));
+  ordered.forEach((f) => $("daily-tradition").add(new Option(faithLabel(f), f)));
   daily.activeSource = faiths[0]; daily.dayIndex = 0;
+  $("daily-tradition").value = daily.activeSource;
   populateDaySelect();
 
   $("daily-tradition").onchange = () => {

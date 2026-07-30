@@ -355,7 +355,55 @@ const VERSE_DB = [
   { faith: "Bible", ref: "1 John 3:1",          theme: "blush",   topic: "love",         text: "Behold, what manner of love the Father hath bestowed upon us, that we should be called the sons of God." },
   { faith: "Bible", ref: "Psalm 51:10",         theme: "calm",    topic: "change",       text: "Create in me a clean heart, O God; and renew a right spirit within me." },
   { faith: "Bible", ref: "Proverbs 16:9",       theme: "forest",  topic: "guidance",     text: "A man's heart deviseth his way: but the Lord directeth his steps." },
+
+  // ============ YOUTH / TEEN COLLECTION (ages 13–20) ============
+  // Motivational + inspirational lines tuned to teen life — identity, comparison,
+  // anxiety, discipline, showing up. Scripture uses public-domain renderings;
+  // "Timeless Wisdom" is public-domain thinkers + original EverVerse affirmations.
+  // Tagged youth:true so the "Teens (13–20)" collection can gather them.
+  { faith: "Bible", ref: "1 Timothy 4:12",  theme: "bold",  topic: "purpose",  youth: true, text: "Don't let anyone look down on you because you are young, but set an example in speech, in life, in love, in faith and in purity." },
+  { faith: "Bible", ref: "Jeremiah 1:5",    theme: "royal", topic: "purpose",  youth: true, text: "Before I formed you in the womb I knew you, before you were born I set you apart." },
+  { faith: "Bible", ref: "Psalm 56:3",      theme: "calm",  topic: "courage",  youth: true, text: "When I am afraid, I put my trust in you." },
+  { faith: "Bible", ref: "1 Corinthians 15:33", theme: "dusk", topic: "wisdom", youth: true, text: "Do not be misled: bad company corrupts good character." },
+
+  { faith: "Gita", ref: "Gita 2:47", theme: "gold", topic: "purpose",  youth: true, text: "You have a right to your actions, but never to the fruits of your actions. Let not the results be your motive, nor be attached to inaction." },
+  { faith: "Gita", ref: "Gita 6:5",  theme: "dusk", topic: "strength", youth: true, text: "Lift yourself by yourself; do not let yourself sink. For you alone are your own friend, and you alone are your own enemy." },
+  { faith: "Gita", ref: "Gita 3:35", theme: "moss", topic: "purpose",  youth: true, text: "It is better to walk your own path imperfectly than to live an imitation of another's life with perfection." },
+
+  { faith: "Dhammapada", ref: "Dhammapada 81", theme: "mono", topic: "strength", youth: true, text: "As a solid rock is not shaken by the wind, so the wise are not moved by praise or blame." },
+
+  { faith: "Wisdom", ref: "Aristotle",             theme: "sage",  topic: "wisdom",       youth: true, text: "Knowing yourself is the beginning of all wisdom." },
+  { faith: "Wisdom", ref: "Plato",                 theme: "royal", topic: "strength",     youth: true, text: "The first and greatest victory is to conquer yourself." },
+  { faith: "Wisdom", ref: "Socrates",              theme: "dusk",  topic: "purpose",      youth: true, text: "The unexamined life is not worth living." },
+
+  { faith: "Wisdom", ref: "On comparison",   theme: "ink",   topic: "wisdom",       youth: true, text: "Their highlight reel is not your behind-the-scenes. Stop grading your life against an edit." },
+  { faith: "Wisdom", ref: "On your worth",   theme: "blush", topic: "love",         youth: true, text: "Your worth was never up for a vote. The likes don't decide if you're real." },
+  { faith: "Wisdom", ref: "On starting",     theme: "bold",  topic: "courage",      youth: true, text: "You don't have to feel ready. You just have to begin — a little badly — today." },
+  { faith: "Wisdom", ref: "On failing",      theme: "terra", topic: "perseverance", youth: true, text: "A failed attempt is not a failed you. Miss, learn, run it back." },
+  { faith: "Wisdom", ref: "On the scroll",   theme: "ink",   topic: "peace",        youth: true, text: "The feed is built to make you feel behind. You are not behind. You are right on time." },
+  { faith: "Wisdom", ref: "On discipline",   theme: "mono",  topic: "strength",     youth: true, text: "Discipline is just love for your future self. Do the boring thing anyway." },
+  { faith: "Wisdom", ref: "On fitting in",   theme: "royal", topic: "purpose",      youth: true, text: "You were not built to blend in. The odd one is usually the original one." },
+  { faith: "Wisdom", ref: "On hard days",    theme: "gold",  topic: "strength",     youth: true, text: "You've survived 100% of your worst days so far. Today isn't the one that breaks the streak." },
+  { faith: "Wisdom", ref: "On slow progress",theme: "moss",  topic: "perseverance", youth: true, text: "Small reps, stacked daily, quietly become someone you're proud of. Keep stacking." },
+  { faith: "Wisdom", ref: "On self-talk",    theme: "peach", topic: "love",         youth: true, text: "Talk to yourself like someone you're rooting for, not someone you're grading." },
+  { faith: "Wisdom", ref: "On being brave",  theme: "bold",  topic: "courage",      youth: true, text: "Brave isn't feeling no fear. It's showing up, speaking up, trying — scared, and doing it anyway." },
 ];
+
+// Curated existing verses that also belong in the Teens (13–20) collection —
+// gathered by reference so we don't duplicate the entries. The collection =
+// everything tagged youth:true PLUS these proven, teen-resonant lines.
+const YOUTH_COLLECTION_REFS = new Set([
+  "Joshua 1:9", "Psalm 139:14", "Jeremiah 29:11", "Isaiah 40:31", "Isaiah 41:10",
+  "Proverbs 3:5-6", "Matthew 6:34", "Romans 12:2", "Philippians 4:6", "Philippians 4:13",
+  "2 Timothy 1:7", "Matthew 11:28", "Psalm 34:18", "1 Peter 5:7",
+  "Marcus Aurelius", "Epictetus", "Seneca", "Confucius", "Booker T. Washington", "Tao Te Ching 33",
+  "On being enough", "On your strength", "On beginning again", "On self-kindness",
+  "On patience", "On this moment", "On overthinking",
+]);
+// Everything in the youth collection, in DB order.
+function youthCollection() {
+  return VERSE_DB.filter((v) => v.youth || YOUTH_COLLECTION_REFS.has(v.ref));
+}
 
 // Display names for each source/faith (the `faith` key → human label).
 const FAITH_LABELS = {
@@ -367,6 +415,7 @@ const FAITH_LABELS = {
   Torah: "Torah",
   Tao: "Tao Te Ching",
   Wisdom: "Timeless Wisdom",
+  Youth: "✨ Teens · Ages 13–20",
 };
 function faithLabel(f) { return FAITH_LABELS[f] || f; }
 
