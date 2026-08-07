@@ -299,14 +299,56 @@ Object.assign(MEANINGS, {
   "On being young": "Right now isn't practice for later — this is the real thing, so show up fully.",
 });
 
+// ---- Coaches (motivation & leadership) collection ----
+Object.assign(MEANINGS, {
+  // Original coach-voice lines
+  "The coach on showing up": "Greatness isn't handed to you — but you already have what it takes. The only missing piece is starting.",
+  "Before the whistle": "You perform at the level you practised, not the level you hoped for. Prepare now so the big moment feels familiar.",
+  "The halftime talk": "A bad first half isn't the ending — it's a checkpoint. You still have time and power to turn it around.",
+  "On the team": "The best teams aren't the most gifted — they're the ones who carry each other and won't let anyone fail alone.",
+  "The captain's rule": "You lead by example, not volume: first to the work, last to quit. People follow what you do.",
+  "On the grind": "The unseen work — early mornings, quiet reps — is exactly what becomes visible when it counts.",
+  "After the loss": "Losing hurts, but it teaches. Study it, keep your head up, and let it sharpen you for tomorrow.",
+  "On building leaders": "Real leadership multiplies — you succeed by raising others up until they can stand on their own.",
+  "On the bench": "Waiting isn't wasted. Stay sharp and supportive, so when your moment comes you seize it and keep it.",
+  "The pre-game": "Fear tightens you up; trust sets you free. Lean on your preparation and your people, and hold nothing back.",
+  "On practice": "Small habits become big performances. Treat the little things seriously and they'll carry you in the clutch.",
+  "On pressure": "Feeling pressure means you're somewhere that matters. Slow your breath, and just do the next right thing.",
+  "On the underdog": "Being counted out is freedom — no fear of losing what you never had, all the fire to prove what you can do.",
+  "The fourth quarter": "When everyone's exhausted and quitting seems fair, that's exactly where the memorable ones dig in and finish.",
+  "On the standard": "Your life rises to what you refuse to accept. Set a high bar and never let yourself slip beneath it.",
+  "On carrying others": "True strength notices who's struggling and slows down to bring them along. Nobody gets left behind.",
+  "On the long season": "Motivation comes and goes; discipline is the routine you keep anyway. Trust the process on the flat days.",
+  "The final word": "The result doesn't own you — your response does. Who you become through it is the trophy that lasts.",
+  "Pierre de Coubertin": "Winning matters less than how you compete. Fight well and give your best, and you've already succeeded.",
+  // Marquee new scripture / Tao in this collection
+  "1 Corinthians 9:24": "Everyone runs, but the prize goes to the one who runs with everything — so give it all.",
+  "Philippians 3:14": "Stop replaying the past; fix your eyes ahead and press toward the goal in front of you.",
+  "Ecclesiastes 4:9-10": "You go further together — when you stumble, a real teammate is there to pull you back up.",
+  "Ecclesiastes 9:10": "Whatever's in front of you to do, do it wholeheartedly — half-effort is a wasted chance.",
+  "Proverbs 24:16": "Falling isn't failing. What sets you apart is that you get back up, every single time.",
+  "2 Chronicles 15:7": "Don't go weak now — the effort you're putting in is not wasted; the reward is coming.",
+  "1 Corinthians 16:13": "Stay alert, hold your ground, be courageous, and be strong — don't back down from what's right.",
+  "Nehemiah 6:3": "When you're doing something that matters, don't climb down for every distraction — protect the work.",
+  "Mark 10:43-44": "The way up is service — the greatest leaders are the ones who serve their people first.",
+  "Tao Te Ching 17": "The best leaders empower people so quietly that the team feels the victory is their own.",
+  "Tao Te Ching 66": "To lead people, put yourself below them and serve — humility, not dominance, is what lifts you up.",
+  "Tao Te Ching 68": "The strongest competitor stays calm and works with others — quiet control beats raw aggression.",
+});
+
 function meaningFor(v) {
   return MEANINGS[v.ref] || TOPIC_MEANING[v.topic] ||
     "A reminder that you are seen, loved, and not alone today.";
 }
 
 // A ~1-minute spoken narration script (verse + plain meaning + a gentle close).
+const _NARRATION_SOURCE = {
+  Bible: "the Bible", Gita: "the Bhagavad Gita", Torah: "the Torah",
+  Tao: "the Tao Te Ching", Sikh: "the Guru Granth Sahib",
+  Dhammapada: "the Dhammapada", Tripitaka: "the Buddhist scriptures",
+};
 function narrationFor(v) {
-  const src = v.faith === "Gita" ? "the Bhagavad Gita" : "the Bible";
+  const src = _NARRATION_SOURCE[v.faith] || "today's reflection";
   return `Today's blessing, from ${src}. ${v.ref}. ` +
     `${v.text} ` +
     `In simple words: ${meaningFor(v)} ` +

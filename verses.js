@@ -356,6 +356,39 @@ const VERSE_DB = [
   { faith: "Bible", ref: "Psalm 51:10",         theme: "calm",    topic: "change",       text: "Create in me a clean heart, O God; and renew a right spirit within me." },
   { faith: "Bible", ref: "Proverbs 16:9",       theme: "forest",  topic: "guidance",     text: "A man's heart deviseth his way: but the Lord directeth his steps." },
 
+  // ── More Bible · the race, leadership & the team (public-domain renderings) ──
+  { faith: "Bible", ref: "1 Corinthians 9:24",  theme: "bold",    topic: "purpose",      text: "Know ye not that they which run in a race run all, but one receiveth the prize? So run, that ye may obtain." },
+  { faith: "Bible", ref: "Philippians 3:14",    theme: "gold",    topic: "purpose",      text: "I press toward the mark for the prize of the high calling — forgetting what is behind, reaching for what is ahead." },
+  { faith: "Bible", ref: "Ecclesiastes 9:10",   theme: "terra",   topic: "purpose",      text: "Whatsoever thy hand findeth to do, do it with thy might." },
+  { faith: "Bible", ref: "Ecclesiastes 4:9-10", theme: "harvest", topic: "love",         text: "Two are better than one; for if they fall, the one will lift up his fellow: but woe to him that is alone when he falleth." },
+  { faith: "Bible", ref: "Proverbs 24:16",      theme: "night",   topic: "perseverance", text: "For a just man falleth seven times, and riseth up again." },
+  { faith: "Bible", ref: "2 Chronicles 15:7",   theme: "bold",    topic: "strength",     text: "Be ye strong therefore, and let not your hands be weak: for your work shall be rewarded." },
+  { faith: "Bible", ref: "1 Corinthians 16:13", theme: "bold",    topic: "courage",      text: "Watch ye, stand fast in the faith, quit you like men, be strong." },
+  { faith: "Bible", ref: "Proverbs 11:14",      theme: "forest",  topic: "wisdom",       text: "Where no counsel is, the people fall: but in the multitude of counsellors there is safety." },
+  { faith: "Bible", ref: "Proverbs 29:18",      theme: "dusk",    topic: "purpose",      text: "Where there is no vision, the people perish: but he that keepeth the law, happy is he." },
+  { faith: "Bible", ref: "Mark 10:43-44",       theme: "royal",   topic: "purpose",      text: "Whosoever will be great among you, shall be your servant: and whosoever of you will be the greatest, shall be servant of all." },
+  { faith: "Bible", ref: "Nehemiah 6:3",        theme: "mono",    topic: "purpose",      text: "I am doing a great work, so that I cannot come down: why should the work cease, whilst I leave it?" },
+
+  // ── More Torah · leadership, courage & passing the torch (public-domain) ──
+  { faith: "Torah", ref: "Numbers 13:30",       theme: "bold",    topic: "courage",      text: "Let us go up at once, and possess it; for we are well able to overcome it." },
+  { faith: "Torah", ref: "Deuteronomy 31:23",   theme: "gold",    topic: "courage",      text: "Be strong and of a good courage: for thou shalt bring the children of Israel into the land which I sware unto them: and I will be with thee." },
+  { faith: "Torah", ref: "Exodus 18:21",        theme: "royal",   topic: "wisdom",       text: "Provide out of all the people able men, such as fear God, men of truth — and place such over them, to be rulers." },
+  { faith: "Torah", ref: "Deuteronomy 1:38",    theme: "sage",    topic: "guidance",     text: "Encourage him: for he shall cause Israel to inherit it." },
+  { faith: "Torah", ref: "Numbers 27:17",       theme: "forest",  topic: "guidance",     text: "Set a leader over the congregation, which may go out before them, and go in before them — that they be not as sheep which have no shepherd." },
+  { faith: "Torah", ref: "Genesis 32:28",       theme: "night",   topic: "perseverance", text: "Thy name shall be called no more Jacob, but Israel: for as a prince hast thou power with God and with men, and hast prevailed." },
+  { faith: "Torah", ref: "Deuteronomy 4:9",     theme: "clay",    topic: "wisdom",       text: "Only take heed to thyself, and keep thy soul diligently — and teach them thy sons, and thy sons' sons." },
+  { faith: "Torah", ref: "Deuteronomy 32:7",    theme: "harvest", topic: "wisdom",       text: "Remember the days of old; ask thy father, and he will shew thee; thy elders, and they will tell thee." },
+
+  // ── More Tao Te Ching · the art of quiet leadership (standard renderings) ──
+  { faith: "Tao", ref: "Tao Te Ching 17", theme: "dusk",   topic: "guidance",     text: "The best leaders are barely known to their people. When the work is done and the aim fulfilled, the people all say: we did this ourselves." },
+  { faith: "Tao", ref: "Tao Te Ching 66", theme: "calm",   topic: "wisdom",       text: "Rivers and seas rule the streams because they lie below them. So the sage, to lead, must follow; to rise above, must place himself below." },
+  { faith: "Tao", ref: "Tao Te Ching 68", theme: "mono",   topic: "strength",     text: "The best fighter is never angry; the best leader does not display his bravery. This is the power of not contending, and the strength to work with others." },
+  { faith: "Tao", ref: "Tao Te Ching 27", theme: "sage",   topic: "love",         text: "A good runner leaves no track. The sage is always good at saving people, and so abandons no one; always good at saving things, and so wastes nothing." },
+  { faith: "Tao", ref: "Tao Te Ching 15", theme: "night",  topic: "peace",        text: "Who can wait quietly while the mud settles? Who can remain still until the moment for action comes?" },
+  { faith: "Tao", ref: "Tao Te Ching 30", theme: "terra",  topic: "wisdom",       text: "Achieve your purpose, but never take pride in it; achieve it, but not by force. What is forced soon fades, but what is done well endures." },
+  { faith: "Tao", ref: "Tao Te Ching 7",  theme: "gold",   topic: "purpose",      text: "The sage puts himself last, and so finds himself first; keeps himself apart, and so is preserved. Is it not through selflessness that he fulfils himself?" },
+  { faith: "Tao", ref: "Tao Te Ching 2",  theme: "moss",   topic: "peace",        text: "The sage acts without striving and teaches without words. The work is done, then let go — and because it is let go, it lasts." },
+
   // ============ YOUTH / TEEN COLLECTION (ages 13–20) ============
   // Motivational + inspirational lines tuned to teen life — identity, comparison,
   // anxiety, discipline, showing up. Scripture uses public-domain renderings;
@@ -405,6 +438,31 @@ const VERSE_DB = [
   { faith: "Wisdom", ref: "On not quitting",   theme: "terra", topic: "perseverance", youth: true, text: "Half of winning is refusing to quit in the boring middle. Show up again tomorrow." },
   { faith: "Wisdom", ref: "On your dreams",    theme: "bold",  topic: "hope",       youth: true, text: "Your dreams are not too big. You were handed them on purpose. Go get them." },
   { faith: "Wisdom", ref: "On being young",    theme: "gold",  topic: "purpose",    youth: true, text: "This season is not the waiting room for your life. It is your life — live it awake." },
+
+  // ============ COACHES · MOTIVATION & LEADERSHIP ============
+  // A locker-room thread of motivation, leadership and upliftment. Scripture,
+  // Gita, Tao and Stoics are gathered by reference below; these lines are
+  // ORIGINAL EverVerse writing in a coach's voice (no copyrighted quotes), so
+  // the whole collection is clean to license and post. Tagged coach:true.
+  { faith: "Wisdom", ref: "The coach on showing up", theme: "bold",    topic: "perseverance", coach: true, text: "Nobody is coming to make you great — but everything you need is already on your side of the line. Show up, and start." },
+  { faith: "Wisdom", ref: "Before the whistle",      theme: "mono",    topic: "courage",      coach: true, text: "You don't rise to the moment; you fall to the level of your preparation. So prepare like the moment is already here." },
+  { faith: "Wisdom", ref: "The halftime talk",       theme: "ink",     topic: "hope",         coach: true, text: "The scoreboard is not the final word — it's a status update. You've got a whole half left to change the story." },
+  { faith: "Wisdom", ref: "On the team",             theme: "gold",    topic: "love",         coach: true, text: "A team is not the most talented people in the room. It's the people who refuse to let each other lose alone." },
+  { faith: "Wisdom", ref: "The captain's rule",      theme: "royal",   topic: "purpose",      coach: true, text: "Leadership isn't the loudest voice or the best stat line. It's being the first one to the work and the last one to quit." },
+  { faith: "Wisdom", ref: "On the grind",            theme: "terra",   topic: "strength",     coach: true, text: "Champions are made in the empty gym, the early morning, the rep nobody claps for. The work you hide is the work that shows." },
+  { faith: "Wisdom", ref: "After the loss",          theme: "night",   topic: "perseverance", coach: true, text: "A loss is a lesson in a bad disguise. Watch the tape, keep your head up, and get back to work tomorrow." },
+  { faith: "Wisdom", ref: "On building leaders",     theme: "dusk",    topic: "guidance",     coach: true, text: "Great coaches don't build followers — they build more leaders. Lift someone today until they can lift themselves." },
+  { faith: "Wisdom", ref: "On the bench",            theme: "sage",    topic: "hope",         coach: true, text: "Your minutes are coming. Stay ready, stay loud for your team, and when your name is called, be impossible to sit back down." },
+  { faith: "Wisdom", ref: "The pre-game",            theme: "bold",    topic: "courage",      coach: true, text: "Play free. Fear makes you slow. Trust your training, trust your people, and leave nothing in the tank." },
+  { faith: "Wisdom", ref: "On practice",             theme: "moss",    topic: "wisdom",       coach: true, text: "How you do the small drills is how you'll do the big game. Practise like it counts — because one day it will." },
+  { faith: "Wisdom", ref: "On pressure",             theme: "noir",    topic: "strength",     coach: true, text: "Pressure is a privilege — it means you're in a moment that matters. Breathe, slow it down, do the next right thing." },
+  { faith: "Wisdom", ref: "On the underdog",         theme: "harvest", topic: "courage",      coach: true, text: "Nobody picked you? Good. Play like you have nothing to protect and everything to prove." },
+  { faith: "Wisdom", ref: "The fourth quarter",      theme: "gold",    topic: "perseverance", coach: true, text: "Everyone is tired now. That's the whole point. Legends are made in the minutes when quitting feels reasonable." },
+  { faith: "Wisdom", ref: "On the standard",         theme: "chrome",  topic: "purpose",      coach: true, text: "You don't get what you wish for — you get what you tolerate. Raise the standard, and refuse to drop below it." },
+  { faith: "Wisdom", ref: "On carrying others",      theme: "clay",    topic: "love",         coach: true, text: "The strongest one on the team is whoever notices the teammate falling behind — and drops back to run with them." },
+  { faith: "Wisdom", ref: "On the long season",      theme: "sand",    topic: "peace",        coach: true, text: "You won't feel motivated every day. Discipline is what shows up when motivation sleeps in. Trust the routine." },
+  { faith: "Wisdom", ref: "The final word",          theme: "ink",     topic: "hope",         coach: true, text: "Win or lose today, you get to decide who you become because of it. That choice is the real trophy." },
+  { faith: "Wisdom", ref: "Pierre de Coubertin",     theme: "royal",   topic: "courage",      coach: true, text: "The important thing in life is not the triumph but the struggle; the essential thing is not to have conquered, but to have fought well." },
 ];
 
 // Curated existing verses that also belong in the Teens (13–20) collection —
@@ -428,6 +486,34 @@ function youthCollection() {
 // Is this verse part of the Teens (13–20) collection?
 function isYouthVerse(v) { return !!(v && (v.youth || YOUTH_COLLECTION_REFS.has(v.ref))); }
 
+// Proven leadership / motivation lines already in the DB that also belong in the
+// Coaches collection — gathered by reference so we don't duplicate the entries.
+// The collection = everything tagged coach:true PLUS these existing verses.
+const COACH_COLLECTION_REFS = new Set([
+  // Scripture — the race, the team, standing firm
+  "Joshua 1:9", "Philippians 4:13", "Isaiah 40:31", "2 Timothy 1:7",
+  "Hebrews 12:1", "Proverbs 27:17", "Colossians 3:23", "Galatians 6:9",
+  "1 Corinthians 9:24", "Philippians 3:14", "Ecclesiastes 4:9-10", "Ecclesiastes 9:10",
+  "Proverbs 24:16", "2 Chronicles 15:7", "1 Corinthians 16:13", "Proverbs 11:14",
+  "Proverbs 29:18", "Mark 10:43-44", "Nehemiah 6:3",
+  // Gita — do your duty, lift yourself, act
+  "Bhagavad Gita 2:47", "Bhagavad Gita 6:5", "Bhagavad Gita 3:8", "Bhagavad Gita 2:3",
+  // Tao — quiet leadership
+  "Tao Te Ching 17", "Tao Te Ching 33", "Tao Te Ching 63",
+  // Buddhism — conquer yourself, walk the path
+  "Dhammapada 103", "Dhammapada 276",
+  // Stoics + voices that overcame
+  "Marcus Aurelius", "Epictetus", "Theodore Roosevelt", "Frederick Douglass",
+  "Booker T. Washington", "Confucius", "Japanese proverb", "African proverb",
+  "Swami Vivekananda", "Sun Tzu", "Florence Nightingale", "Abraham Lincoln", "Josh Billings",
+]);
+// Everything in the Coaches collection, in DB order.
+function coachCollection() {
+  return VERSE_DB.filter((v) => v.coach || COACH_COLLECTION_REFS.has(v.ref));
+}
+// Is this verse part of the Coaches (motivation & leadership) collection?
+function isCoachVerse(v) { return !!(v && (v.coach || COACH_COLLECTION_REFS.has(v.ref))); }
+
 // Display names for each source/faith (the `faith` key → human label).
 const FAITH_LABELS = {
   Bible: "Bible",
@@ -439,6 +525,7 @@ const FAITH_LABELS = {
   Tao: "Tao Te Ching",
   Wisdom: "Timeless Wisdom",
   Youth: "✨ Teens · Ages 13–20",
+  Coach: "🏆 Coaches · Motivation & Leadership",
 };
 function faithLabel(f) { return FAITH_LABELS[f] || f; }
 
