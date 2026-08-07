@@ -555,6 +555,18 @@ const THEME_PALETTES = {
   ink:   { name: "Ink",         stops: ["#28305a", "#0f1330"], text: "#eef1ff", accent: "#a9b6ff" },
   chrome:{ name: "Chrome",      stops: ["#c7ccd6", "#6f7683"], text: "#12151c", accent: "#eef2f8", light: true },
   peach: { name: "Peach",       stops: ["#ffd9c2", "#f2a488"], text: "#4a2b1c", accent: "#c7643f", light: true },
+  // Vivid pack (2026): saturated, scroll-stopping colour for reels & motivation.
+  coral:  { name: "Coral",       stops: ["#ff7a7a", "#c02a5b"], text: "#fff5f5", accent: "#ffd6d6" },
+  teal:   { name: "Lagoon",      stops: ["#1fb6c1", "#0b6b7a"], text: "#eafcff", accent: "#b8f0f5" },
+  plum:   { name: "Plum",        stops: ["#7b2f8a", "#3a1145"], text: "#fbefff", accent: "#e6b8f0" },
+  crimson:{ name: "Crimson",     stops: ["#e23b4e", "#7a0e1e"], text: "#fff2f3", accent: "#ffc2c8" },
+  amber:  { name: "Amber",       stops: ["#f0a63c", "#b5560e"], text: "#fff6e6", accent: "#ffdca0" },
+  slate:  { name: "Slate",       stops: ["#5b6b82", "#2b3547"], text: "#eef2f8", accent: "#b9c6dc" },
+  azure:  { name: "Azure",       stops: ["#3aa0ff", "#1146a8"], text: "#eef6ff", accent: "#bcdcff" },
+  // Soft pack (2026): pale, editorial, calming — dark text on light ground.
+  mint:   { name: "Mint",        stops: ["#cdefd8", "#8fcfa8"], text: "#1f4a33", accent: "#3a7a55", light: true },
+  lilac:  { name: "Lilac",       stops: ["#e7dcff", "#b9a4e8"], text: "#3a2a52", accent: "#6a4fb0", light: true },
+  butter: { name: "Butter",      stops: ["#fdf0c4", "#f2d488"], text: "#4a3a12", accent: "#9a7a1e", light: true },
 };
 
 // Target languages for the free MyMemory API (used in the Studio translator).

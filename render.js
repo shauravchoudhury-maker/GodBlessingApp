@@ -102,6 +102,8 @@ function renderVerse(canvas, W, H, opts) {
   else if (layout === "scripture") drawLayoutScripture(ctxArg);
   else if (layout === "lowerthird") drawLayoutLowerThird(ctxArg);
   else if (layout === "postcard") drawLayoutPostcard(ctxArg);
+  else if (layout === "spotlight") drawLayoutSpotlight(ctxArg);
+  else if (layout === "billboard") drawLayoutBillboard(ctxArg);
   else drawLayoutClassic(ctxArg);
 }
 
@@ -636,4 +638,86 @@ function drawLayoutPostcard({ ctx, W, H, pal, opts, font, kicker, minDim }) {
     ctx.fillStyle = hexToRgba(pal.accent, 0.95);
     ctx.fillText("— " + opts.ref, W / 2, H - m2 - minDim * 0.055);
   }
+}
+
+// SPOTLIGHT — a soft dark scrim focuses the eye on centered bold white text,
+// with the reference in an accent pill. Reads strongly on busy/bright art and
+// pops in video; a natural fit for motivation & leadership posts.
+function drawLayoutSpotlight({ ctx, W, H, pal, opts, font, minDim }) {
+  const text = opts.text || "";
+  const family = EV_FONTS[font] || EV_FONTS.sans;
+  const maxWidth = W - W * 0.12 * 2;
+  const showRef = opts.showRef !== false && opts.ref;
+  const scrim = ctx.createRadialGradient(W * 0.5, H * 0.46, minDim * 0.1, W * 0.5, H * 0.5, W * 0.72);
+  scrim.addColorStop(0, "rgba(0,0,0,0.44)");
+  scrim.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = scrim; ctx.fillRect(0, 0, W, H);
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const fit = fitText(ctx, text, maxWidth, H * (showRef ? 0.52 : 0.6), family, minDim * 0.088 * (opts.fontScale || 1), "800");
+  ctx.font = `800 ${fit.size}px ${family}`;
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = fit.size * 0.12; ctx.shadowOffsetY = fit.size * 0.03;
+  const lh = fit.size * 1.16;
+  const blockH = fit.lines.length * lh;
+  let y = H * 0.46 - blockH / 2 + lh / 2;
+  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += lh; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  if (showRef) {
+    ctx.direction = "ltr"; ctx.textBaseline = "middle";
+    const label = opts.ref.toUpperCase();
+    const fs = minDim * 0.028;
+    ctx.font = `700 ${fs}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.008);
+    const padX = fs * 0.9, padY = fs * 0.55;
+    const tw = ctx.measureText(label).width;
+    const pillW = tw + padX * 2, pillH = fs + padY * 2;
+    const px = W / 2 - pillW / 2, py = y + minDim * 0.02;
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    evRoundRect(ctx, px, py, pillW, pillH, pillH / 2); ctx.fill();
+    ctx.fillStyle = pal.light ? "#1a1a1a" : "#12131a";
+    ctx.fillText(label, W / 2, py + pillH / 2);
+    evSetTracking(ctx, 0);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
+}
+
+// BILLBOARD — huge bold type framed by an accent rule top and bottom, with the
+// reference tracked-out beneath. Bold, sporty, poster-like; built to stop the
+// scroll for motivation & leadership content.
+function drawLayoutBillboard({ ctx, W, H, pal, opts, font, minDim }) {
+  const text = opts.text || "";
+  const family = EV_FONTS[font] || EV_FONTS.sans;
+  const maxWidth = W - W * 0.11 * 2;
+  const showRef = opts.showRef !== false && opts.ref;
+  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const fit = fitText(ctx, text, maxWidth, H * 0.5, family, minDim * 0.096 * (opts.fontScale || 1), "800");
+  ctx.font = `800 ${fit.size}px ${family}`;
+  const lh = fit.size * 1.12;
+  const blockH = fit.lines.length * lh;
+  const midY = H * 0.47;
+  let y = midY - blockH / 2 + lh / 2;
+  ctx.fillStyle = pal.text;
+  if (!pal.light) { ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = fit.size * 0.1; }
+  for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += lh; }
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+  // Accent rules top & bottom of the text block.
+  const ruleW = Math.min(maxWidth, minDim * 0.5);
+  const topRuleY = midY - blockH / 2 - minDim * 0.055;
+  const botRuleY = midY + blockH / 2 + minDim * 0.05;
+  ctx.strokeStyle = hexToRgba(pal.accent, 0.9);
+  ctx.lineWidth = Math.max(2, minDim * 0.006);
+  [topRuleY, botRuleY].forEach((ry) => {
+    ctx.beginPath(); ctx.moveTo(W / 2 - ruleW / 2, ry); ctx.lineTo(W / 2 + ruleW / 2, ry); ctx.stroke();
+  });
+  if (showRef) {
+    ctx.direction = "ltr"; ctx.textBaseline = "middle";
+    ctx.font = `700 ${minDim * 0.03}px ${EV_FONTS.sans}`;
+    evSetTracking(ctx, minDim * 0.014);
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText(opts.ref.toUpperCase(), W / 2, botRuleY + minDim * 0.055);
+    evSetTracking(ctx, 0);
+  }
+  if (opts.watermark) drawWatermark(ctx, W, H, pal, "center");
 }
