@@ -655,6 +655,111 @@ function sceneLinen(ctx, W, H, pal, seed) {
   ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
 }
 
+// Stage spotlight — crossing light shafts from above + a floor pool of light.
+// Dramatic, high-energy: great for motivation, leadership and coach content.
+function sceneSpotlight(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(pal.stops[0], -22));
+  g.addColorStop(1, shade(pal.stops[1], -32));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 613);
+  ctx.globalCompositeOperation = "lighter";
+  [W * 0.34, W * 0.66].forEach((apexX, i) => {
+    const halfBase = W * (0.20 + rng() * 0.06);
+    const skew = (i === 0 ? -1 : 1) * W * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(apexX, -H * 0.05);
+    ctx.lineTo(apexX + skew - halfBase, H);
+    ctx.lineTo(apexX + skew + halfBase, H);
+    ctx.closePath();
+    const beam = ctx.createLinearGradient(0, 0, 0, H);
+    beam.addColorStop(0, rgba("#ffffff", 0.18));
+    beam.addColorStop(0.5, rgba(pal.accent, 0.08));
+    beam.addColorStop(1, rgba(pal.accent, 0));
+    ctx.fillStyle = beam; ctx.fill();
+  });
+  const glow = ctx.createRadialGradient(W * 0.5, -H * 0.05, 0, W * 0.5, -H * 0.05, W * 0.7);
+  glow.addColorStop(0, rgba("#ffffff", 0.22));
+  glow.addColorStop(1, rgba("#ffffff", 0));
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "source-over";
+  const pool = ctx.createRadialGradient(W * 0.5, H * 0.92, 0, W * 0.5, H * 0.92, W * 0.55);
+  pool.addColorStop(0, rgba(pal.accent, 0.16));
+  pool.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = pool; ctx.fillRect(0, 0, W, H);
+}
+
+// Layered waves — translucent sine bands rising from the base. Calm, universal.
+function sceneWaves(ctx, W, H, pal, seed) {
+  baseGradient(ctx, W, H, pal);
+  const rng = makeRng(seed + 733);
+  const layers = 5;
+  for (let l = 0; l < layers; l++) {
+    const t = l / layers;
+    const yBase = H * (0.34 + t * 0.6);
+    const amp = H * (0.045 + rng() * 0.04);
+    const phase = rng() * Math.PI * 2;
+    const col = l % 2 ? pal.accent : "#ffffff";
+    ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, yBase);
+    for (let x = 0; x <= W; x += W / 60) ctx.lineTo(x, yBase + Math.sin((x / W) * Math.PI * 2 + phase) * amp);
+    ctx.lineTo(W, H); ctx.closePath();
+    ctx.fillStyle = rgba(col, 0.05 + t * 0.05);
+    ctx.fill();
+  }
+}
+
+// Halftone — retro dot grid whose dots swell toward a light source. Editorial.
+function sceneHalftone(ctx, W, H, pal, seed) {
+  baseGradient(ctx, W, H, pal);
+  const rng = makeRng(seed + 811);
+  const cx = W * (0.26 + rng() * 0.14), cy = H * (0.24 + rng() * 0.14);
+  const step = Math.max(10, W * 0.028);
+  const maxR = step * 0.52;
+  const reach = Math.hypot(W, H);
+  const dot = pal.light ? "#5a4a2a" : pal.accent;
+  for (let y = step / 2; y < H; y += step) {
+    for (let x = step / 2; x < W; x += step) {
+      const d = Math.hypot(x - cx, y - cy) / reach;
+      const r = maxR * Math.max(0, 1 - d * 1.6);
+      if (r < 0.4) continue;
+      ctx.globalAlpha = 0.10 + (1 - d) * 0.26;
+      ctx.fillStyle = rgba(dot, 1);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Prism — diagonal light-refraction streaks in palette + white. Modern, glossy.
+function scenePrism(ctx, W, H, pal, seed) {
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, shade(pal.stops[0], 6));
+  g.addColorStop(1, shade(pal.stops[1], -14));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 907);
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 6; i++) {
+    const cx = W * rng();
+    const w = W * (0.05 + rng() * 0.09);
+    const col = i % 2 ? pal.accent : "#ffffff";
+    ctx.save();
+    ctx.translate(cx, 0);
+    ctx.rotate(-0.5 - rng() * 0.3);
+    const grd = ctx.createLinearGradient(-w, 0, w, 0);
+    grd.addColorStop(0, rgba(col, 0));
+    grd.addColorStop(0.5, rgba(col, 0.10 + rng() * 0.06));
+    grd.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = grd;
+    ctx.fillRect(-w, -H, w * 2, H * 3);
+    ctx.restore();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  const sheen = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.45, W * 0.7);
+  sheen.addColorStop(0, "rgba(255,255,255,0.06)");
+  sheen.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H);
+}
+
 // Registry — order = display order in the picker.
 const BACKGROUNDS = [
   { key: "gradient", name: "Soft Glow",  draw: sceneGradient },
@@ -685,6 +790,11 @@ const BACKGROUNDS = [
   { key: "liquid",   name: "Liquid Chrome",  draw: sceneLiquid },
   { key: "parchment",name: "Parchment",      draw: sceneParchment },
   { key: "linen",    name: "Linen",          draw: sceneLinen },
+  // Attractive pack (2026) — high-energy looks for motivation & leadership.
+  { key: "spotlight",name: "Spotlight",      draw: sceneSpotlight },
+  { key: "waves",    name: "Waves",          draw: sceneWaves },
+  { key: "halftone", name: "Halftone",       draw: sceneHalftone },
+  { key: "prism",    name: "Prism",          draw: scenePrism },
 ];
 
 function drawBackground(key, ctx, W, H, pal, seed) {
