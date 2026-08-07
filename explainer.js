@@ -487,22 +487,29 @@ function _cleanTag(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+
 // Teen-native tags for the Teens (13–20) collection — these reach the youth
 // motivation audience on TikTok / Reels / Shorts.
 const SHORT_TAGS_YOUTH = ["motivation", "mindset", "growthmindset", "selflove", "youth", "dailymotivation", "glowup", "faith"];
+// Coach / leadership tags for the Coaches collection — these reach the
+// motivation, sports and leadership audience on TikTok / Reels / Shorts.
+const SHORT_TAGS_COACH = ["motivation", "leadership", "mindset", "discipline", "success", "dailymotivation", "teamwork", "grind"];
 
 // opts.series = optional recurring frame ("Morning Prayer", "Evening Blessing").
 // opts.youth = frame this as youth motivation (teen-native tags + ✨).
+// opts.coach = frame this as coaching/leadership motivation (leadership tags + 🏆).
 function shortListing(v, secs, opts) {
   opts = opts || {};
   const faith = (typeof faithLabel === "function") ? faithLabel(v.faith) : v.faith;
   const youth = !!opts.youth || (typeof isYouthVerse === "function" && isYouthVerse(v) && opts.youth !== false);
-  // Youth titles lead with the hook (the data-proven winner) — no forced prefix;
-  // the ✨ and teen-native hashtags carry the "motivation" framing instead.
+  const coach = !!opts.coach || (typeof isCoachVerse === "function" && isCoachVerse(v) && opts.coach !== false);
+  // Motivation titles lead with the hook (the data-proven winner) — no forced
+  // prefix; the emoji and native hashtags carry the framing instead.
   const series = (opts.series || "").trim();
   const seriesPrefix = series ? series + " — " : "";
-  const topicTags = youth
+  const topicTags = coach
+    ? [...(SHORT_TAGS_BY_TOPIC[v.topic] || []).slice(0, 1), "motivation", "leadership"]
+    : youth
     ? [...(SHORT_TAGS_BY_TOPIC[v.topic] || []).slice(0, 1), "motivation", "mindset"]
     : (SHORT_TAGS_BY_TOPIC[v.topic] || ["faith", "blessed", "dailyverse"]);
   const titleTags = [...new Set([_cleanTag(series), ...topicTags, "eververse"].filter(Boolean))].slice(0, 5);
-  const emoji = youth ? "✨" : "🙏";
+  const emoji = coach ? "🏆" : youth ? "✨" : "🙏";
   const tagStr = titleTags.map((t) => "#" + t).join(" ");
   // Reserve room for the series prefix, emoji and hashtags, then size the hook
   // to fit YouTube's 100-char title — so the tags always survive.
@@ -513,7 +520,9 @@ function shortListing(v, secs, opts) {
   if (title.length > 100) title = title.slice(0, 100).trim();
   // Description: hook, verse + reference, meaning, CTA, then a fuller (still
   // curated) tag set for search discovery.
-  const descTags = youth
+  const descTags = coach
+    ? [...new Set([...titleTags, ...SHORT_TAGS_COACH, "inspiration", "nevergiveup", "winners", _cleanTag(faith)].filter(Boolean))].slice(0, 14)
+    : youth
     ? [...new Set([...titleTags, ...SHORT_TAGS_YOUTH, "teens", "innerpeace", "growth", _cleanTag(faith)].filter(Boolean))].slice(0, 14)
     : [...new Set([...titleTags, "dailyverse", "verseoftheday", "faith", "motivation", "devotional", "blessed", "amen", _cleanTag(faith)].filter(Boolean))].slice(0, 12);
   const meaning = (typeof meaningFor === "function") ? meaningFor(v) : "";

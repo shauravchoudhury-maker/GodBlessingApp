@@ -138,16 +138,19 @@ function buildPlans(startDate) {
       plans[src].push({ date, verse });
     }
   });
-  // Curated collection that spans faiths (e.g. Teens 13–20) gets its own plan.
-  const yl = (typeof youthCollection === "function") ? youthCollection() : [];
-  if (yl.length) {
-    plans.Youth = [];
+  // Curated collections that span faiths (Teens 13–20, Coaches) get their own plans.
+  const curated = { Youth: youthCollection, Coach: coachCollection };
+  Object.keys(curated).forEach((key) => {
+    const fn = curated[key];
+    const list = (typeof fn === "function") ? fn() : [];
+    if (!list.length) return;
+    plans[key] = [];
     const startDoy = dayOfYear(startDate);
     for (let d = 0; d < PLAN_DAYS; d++) {
       const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + d);
-      plans.Youth.push({ date, verse: yl[(startDoy + d) % yl.length] });
+      plans[key].push({ date, verse: list[(startDoy + d) % list.length] });
     }
-  }
+  });
   return plans;
 }
 
@@ -733,9 +736,11 @@ function initDaily() {
   // build 120-day plans for every tradition and fill the dropdowns
   daily.plans = buildPlans(daily.startDate);
   const faiths = Object.keys(daily.plans);
-  // Show curated collections (Teens 13–20) at the top of the picker, but keep
-  // the default active source on the first tradition.
-  const ordered = faiths.slice().sort((a, b) => (a === "Youth" ? -1 : b === "Youth" ? 1 : 0));
+  // Show curated collections (Teens 13–20, Coaches) at the top of the picker,
+  // but keep the default active source on the first tradition.
+  const CURATED = ["Youth", "Coach"];
+  const curatedRank = (f) => { const i = CURATED.indexOf(f); return i === -1 ? CURATED.length : i; };
+  const ordered = faiths.slice().sort((a, b) => curatedRank(a) - curatedRank(b));
   $("daily-tradition").innerHTML = "";
   ordered.forEach((f) => $("daily-tradition").add(new Option(faithLabel(f), f)));
   daily.activeSource = faiths[0]; daily.dayIndex = 0;
@@ -744,9 +749,10 @@ function initDaily() {
 
   $("daily-tradition").onchange = () => {
     daily.activeSource = $("daily-tradition").value; daily.dayIndex = 0;
-    // Entering the Teens (13–20) collection applies a teen-native visual preset
-    // (bold keyword captions). Revert any time with "✦ Reset to signature style".
-    if (daily.activeSource === "Youth") {
+    // Entering the Teens (13–20) or Coaches collection applies a bold, keyword-
+    // caption preset that suits motivation content. Revert any time with
+    // "✦ Reset to signature style".
+    if (daily.activeSource === "Youth" || daily.activeSource === "Coach") {
       EV_STYLE.layout = "captions"; EV_STYLE.font = "sans"; saveStyle();
       if ($("daily-layout")) $("daily-layout").value = "captions";
       if ($("daily-font")) $("daily-font").value = "sans";
@@ -1231,7 +1237,8 @@ function updateShortEstimate() {
   const hasSermon = (typeof SERMONS !== "undefined") && SERMONS.some((x) => x.verseRef === daily.verse.ref);
   const series = $("short-series") ? $("short-series").value : "";
   const youth = (daily.activeSource === "Youth") || (typeof isYouthVerse === "function" && isYouthVerse(daily.verse));
-  const L = (typeof shortListing === "function") ? shortListing(daily.verse, b.seconds, { series, youth }) : null;
+  const coach = (daily.activeSource === "Coach") || (typeof isCoachVerse === "function" && isCoachVerse(daily.verse));
+  const L = (typeof shortListing === "function") ? shortListing(daily.verse, b.seconds, { series, youth, coach }) : null;
   $("short-est").textContent = `${b.words} words ≈ ${b.seconds}s${!hasSermon && $("short-source").value === "sermon" ? " · (no sermon — using the verse)" : ""}${L ? ` · Title: ${L.title}` : ""}`;
 }
 // After a render, offer the finished media as a native Share button (send
@@ -1355,7 +1362,7 @@ async function runDailyShort() {
     if (!mobile) downloadBlob(blob, name);   // desktop convenience; phones use the buttons
     showMediaActions("short-actions", blob, name, { title: `${v.ref} — EverVerse`, label: "video" });
     // Listing copy to paste on YouTube/TikTok.
-    const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "", youth: (daily.activeSource === "Youth") || (typeof isYouthVerse === "function" && isYouthVerse(v)) });
+    const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "", youth: (daily.activeSource === "Youth") || (typeof isYouthVerse === "function" && isYouthVerse(v)), coach: (daily.activeSource === "Coach") || (typeof isCoachVerse === "function" && isCoachVerse(v)) });
     showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical ${mobile ? "720x1280" : "1080x1920"}\n`, "⬇ Listing text (title · tags · description)");
     status.textContent = mobile
       ? `✓ ${b.seconds}s short ready — tap 📤 Share (→ TikTok/YouTube) or ⬇ Download below.`
@@ -1390,7 +1397,7 @@ async function runShortAudio() {
     const mobile = isMobileDevice();
     if (!mobile) downloadBlob(blob, base + "." + ext);
     showMediaActions("short-actions", blob, base + "." + ext, { title: `${v.ref} — EverVerse`, label: "audio" });
-    const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "", youth: (daily.activeSource === "Youth") || (typeof isYouthVerse === "function" && isYouthVerse(v)) });
+    const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "", youth: (daily.activeSource === "Youth") || (typeof isYouthVerse === "function" && isYouthVerse(v)), coach: (daily.activeSource === "Coach") || (typeof isCoachVerse === "function" && isCoachVerse(v)) });
     const epTitle = L.title.replace(/#shorts/ig, "").trim();
     showTextDownloadLink("short-dl", base + "-episode.txt", `EPISODE TITLE\n-------------\n${epTitle}\n\nDESCRIPTION\n-----------\n${L.description}\n\nLength: ~${b.seconds}s  ·  audio ${ext.toUpperCase()}${withMusic ? " (voice + music)" : " (voice only)"}\n`, "⬇ Episode text (title · description)");
     status.textContent = mobile
