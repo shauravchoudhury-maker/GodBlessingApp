@@ -7,7 +7,7 @@
 //   • Cross-origin APIs (translation, Firestore) are never intercepted.
 //   • Navigations fall back to the cached shell when offline.
 
-const CACHE = "eververse-v69";
+const CACHE = "eververse-v70";
 const SHELL = [
   "./", "./index.html", "./app.html",
   "./styles.css", "./site.css",
