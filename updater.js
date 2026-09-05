@@ -81,7 +81,10 @@
     // it is not an "update", so don't reload on that.
     var hadController = !!navigator.serviceWorker.controller;
 
-    navigator.serviceWorker.register(swUrl || "sw.js").then(function (reg) {
+    // updateViaCache:"none" — sw.js itself is served with max-age=600, and a
+    // worker script read from the HTTP cache would report "no update" for ten
+    // minutes after a deploy. Always check the server for it.
+    navigator.serviceWorker.register(swUrl || "sw.js", { updateViaCache: "none" }).then(function (reg) {
       navigator.serviceWorker.addEventListener("controllerchange", function () {
         if (hadController) onUpdateReady();
       });
