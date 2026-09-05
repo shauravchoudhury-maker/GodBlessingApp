@@ -52,6 +52,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="daily"><span class="tab-ico">🏠</span><span class="tab-lbl">Daily</span></button>
       <button class="tab" data-tab="shorts"><span class="tab-ico">⚡</span><span class="tab-lbl">Shorts</span></button>
+      <button class="tab" data-tab="series"><span class="tab-ico">🌍</span><span class="tab-lbl">Series</span></button>
       <button class="tab" data-tab="read"><span class="tab-ico">📖</span><span class="tab-lbl">Read</span></button>
       <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
       <button class="tab" data-tab="schedule"><span class="tab-ico">🗓</span><span class="tab-lbl">Schedule</span></button>
@@ -131,6 +132,15 @@
             <option value="banner">Banner (colour band)</option>
             <option value="minimal">Minimal (calm, airy)</option>
           </optgroup>
+          <optgroup label="New template pack">
+            <option value="split">Split (art above, colour block below)</option>
+            <option value="stacked">Stacked (tight words, alternating colour)</option>
+            <option value="neon">Neon (glowing type, night feeds)</option>
+            <option value="ticket">Ticket (perforated paper card)</option>
+            <option value="typewriter">Typewriter (journal page)</option>
+            <option value="dropcap">Drop Cap (magazine opener)</option>
+            <option value="serene">Serene (hairline ring, lots of quiet)</option>
+          </optgroup>
         </select>
       </div>
       <div class="field">
@@ -138,6 +148,13 @@
         <select id="daily-font">
           <option value="serif">Serif (elegant)</option>
           <option value="sans">Sans (clean/modern)</option>
+          <option value="book">Book serif (scripture, long verses)</option>
+          <option value="slab">Slab serif (sturdy, editorial)</option>
+          <option value="humanist">Humanist (calm, quiet luxury)</option>
+          <option value="rounded">Rounded (warm &amp; friendly)</option>
+          <option value="display">Display (condensed poster shout)</option>
+          <option value="mono">Typewriter (journal)</option>
+          <option value="script">Handwritten (personal, short lines)</option>
         </select>
       </div>
       <label class="checkbox"><input type="checkbox" id="daily-grain" checked /> Film-grain texture</label>
@@ -178,6 +195,22 @@
       </div>
       <div class="kit-status" id="top8-status"></div>
       <div class="kit-status" id="localize-status"></div>
+
+      <div class="music-card" id="bilingual-card">
+        <div class="music-head">🇬🇧🇪🇸 Bilingual pack — both languages in one go</div>
+        <p class="hint" style="margin:6px 0 10px;">Renders <b>every platform size twice</b> — once in English, once in your second language — plus a caption file for each, in a single zip. No switching the language selector back and forth.</p>
+        <div class="btn-row kit-actions">
+          <label class="field" style="margin:0;">
+            <span class="sr-hint" style="display:block;font-size:12px;">Second language</span>
+            <select id="bilingual-lang" style="width:auto;"></select>
+          </label>
+          <button class="btn accent" id="gen-bilingual">🌐 Build bilingual pack (.zip)</button>
+          <button class="btn" id="preview-bilingual">👁 Preview both</button>
+        </div>
+        <div class="kit-status" id="bilingual-status"></div>
+        <div class="platform-grid" id="bilingual-preview"></div>
+      </div>
+
       <div class="platform-grid" id="platform-grid"></div>
     </section>
 
@@ -307,6 +340,44 @@
       <div id="short-dl"></div>
       <p class="hint" style="margin-top:10px;">💡 Records in real time, so a 60s short takes about a minute — leave the tab open. Hindi &amp; Spanish use your curated translations for the verse line.</p>
       <p class="hint" style="margin-top:6px;">📱 <b>On a phone</b> the <b>MP4</b> can be shaky (real-time video capture is heavy on mobile) — it renders lighter there, but for a guaranteed MP4 use a <b>desktop</b>. The <b>🎧 audio export works reliably on phones</b>. Keep the screen on and don't switch apps while it records.</p>
+    </section>
+  </main>
+
+  <!-- ============================ SERIES ============================ -->
+  <main class="app hidden" id="tab-series">
+    <section class="panel wide">
+      <div class="panel-head"><span class="tab-ico" style="font-size:1.4em;">🌍</span><h2>One question. Five traditions.</h2></div>
+      <p class="hint">The format no one else can run: <b>one human problem, answered by five different wisdom traditions</b> in a single post. Built to earn the <b>profile click</b> — every piece is numbered, named as part of a series, and ends by telling people what else is waiting.</p>
+      <div class="sched-toolbar">
+        <label>Question
+          <select id="series-pick" style="min-width:230px;"></select>
+        </label>
+        <label>Format
+          <select id="series-format">
+            <option value="story" selected>Vertical 9:16 — TikTok / Shorts / Reels</option>
+            <option value="portrait">Portrait 4:5 — Instagram carousel</option>
+            <option value="square">Square 1:1 — feed</option>
+          </select>
+        </label>
+        <label>Verse layout
+          <select id="series-layout">
+            <option value="editorial" selected>Editorial</option>
+            <option value="quote">Quote</option>
+            <option value="minimal">Minimal</option>
+            <option value="captions">Captions (bold)</option>
+          </select>
+        </label>
+        <label class="checkbox"><input type="checkbox" id="series-music" checked /> Music bed on video</label>
+      </div>
+      <div class="kit-status" id="series-meta"></div>
+      <div class="btn-row kit-actions">
+        <button class="btn accent" id="series-carousel">🎠 Carousel + caption (.zip)</button>
+        <button class="btn" id="series-video">🎥 Series video (.mp4)</button>
+        <button class="btn" id="series-copy">📋 Copy caption</button>
+      </div>
+      <div class="kit-status" id="series-status"></div>
+      <div id="series-preview" class="platform-grid"></div>
+      <p class="hint" style="margin-top:10px;">💡 The video records in real time (about 30 seconds per piece) — leave the tab open. Post one every two or three days rather than all twelve at once; the series only works as a reason to follow if there is always another one coming.</p>
     </section>
   </main>
 
@@ -691,6 +762,7 @@
   <script src="ecards.js"></script>
   <script src="mockups.js"></script>
   <script src="collection.js"></script>
+  <script src="series.js"></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>

@@ -445,6 +445,109 @@ async function generateVerseVideo(opts) {
   return finished;
 }
 
+// ── Card-sequence video (the "one question, five traditions" series) ──
+// generateVerseVideo animates a single card. A series needs several cards cut
+// together, so this takes pre-rendered cards with per-card durations, Ken-Burns
+// each one, and cross-fades between them. Same recorder plumbing as above, so
+// it inherits the manual-frame capture that survives a backgrounded tab.
+//
+// cards: [{ canvas, seconds }]
+async function generateCardSequenceVideo(cards, opts) {
+  opts = opts || {};
+  if (!videoSupported()) throw new Error("This browser can't record video (MediaRecorder/captureStream unavailable).");
+  if (!cards || !cards.length) throw new Error("No cards to render.");
+
+  const W = opts.w || 720, H = opts.h || 1280;
+  const fps = opts.fps || 30;
+  const XF = Math.max(0, opts.crossfadeSec != null ? opts.crossfadeSec : 0.45);
+
+  // Absolute start time of each card, and the total run.
+  let acc = 0;
+  const marks = cards.map((c) => {
+    const start = acc;
+    const secs = Math.max(0.4, c.seconds || 3);
+    acc += secs;
+    return { canvas: c.canvas, start, secs };
+  });
+  const dur = acc;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  let audioCtx = null, streamDest = null;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (opts.withMusic && AC) {
+    audioCtx = new AC();
+    if (audioCtx.state === "suspended") { try { await audioCtx.resume(); } catch (_) {} }
+    streamDest = audioCtx.createMediaStreamDestination();
+    buildAmbientMusic(audioCtx, streamDest, opts.theme, dur);
+  }
+
+  const videoStream = canvas.captureStream(0);
+  const vtrack = videoStream.getVideoTracks()[0];
+  const stream = new MediaStream(streamDest ? [vtrack, ...streamDest.stream.getAudioTracks()] : [vtrack]);
+
+  const mime = pickVideoMime();
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: opts.videoBitsPerSecond || 6_000_000 } : undefined);
+  const chunks = [];
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  const finished = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: mimeContainer(mime) })); });
+
+  // One card, Ken-Burns by local progress, drawn at the given opacity.
+  function paint(mark, local, alpha) {
+    const p = clamp01(local / mark.secs);
+    const scale = 1.0 + 0.045 * easeInOut(p);
+    const drawW = W * scale, drawH = H * scale;
+    const dx = -(drawW - W) / 2;
+    const dy = -(drawH - H) / 2 + (drawH - H) * 0.12 * (p - 0.5);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(mark.canvas, 0, 0, mark.canvas.width, mark.canvas.height, dx, dy, drawW, drawH);
+    ctx.globalAlpha = 1;
+  }
+
+  rec.start();
+  const interval = 1000 / fps;
+  const start = performance.now();
+  await new Promise((resolve) => {
+    function tick() {
+      const t = Math.min(dur, (performance.now() - start) / 1000);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+
+      // The card currently on screen.
+      let i = 0;
+      while (i < marks.length - 1 && t >= marks[i].start + marks[i].secs) i++;
+      const cur = marks[i];
+      const local = t - cur.start;
+
+      // Fade the outgoing card under the incoming one for the last XF seconds.
+      const next = marks[i + 1];
+      const intoNext = local - (cur.secs - XF);
+      if (next && XF > 0 && intoNext > 0) {
+        const k = clamp01(intoNext / XF);
+        paint(cur, local, 1 - k);
+        paint(next, 0, k);
+      } else {
+        // Hold a short fade at the very start and very end of the whole cut.
+        const edge = Math.min(clamp01(t / 0.35), clamp01((dur - t) / 0.5));
+        paint(cur, local, edge);
+      }
+
+      if (vtrack.requestFrame) vtrack.requestFrame();
+      else if (videoStream.requestFrame) videoStream.requestFrame();
+      if (opts.onProgress) opts.onProgress(t / dur);
+      if (t >= dur) { resolve(); return; }
+      setTimeout(tick, interval);
+    }
+    tick();
+  });
+  rec.stop();
+  stream.getTracks().forEach((tr) => tr.stop());
+  if (audioCtx) { try { await audioCtx.close(); } catch (_) {} }
+  return finished;
+}
+
 // ── Audio-only export (Spotify) ──────────────────────────────────────
 // Mix the MP3 narration with the optional ambient music bed offline and
 // return a 16-bit PCM WAV (ArrayBuffer). No MP3 encoder library is bundled,
