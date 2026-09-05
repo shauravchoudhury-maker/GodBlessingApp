@@ -178,6 +178,9 @@ function setActiveVerse() {
   track.sources.forEach((s) => { const li = document.createElement("li"); li.textContent = s; ul.appendChild(li); });
 
   $("verse-meaning").textContent = meaningFor(v);
+  // The bilingual preview belongs to the previous verse — clear it.
+  if ($("bilingual-preview")) $("bilingual-preview").innerHTML = "";
+  if ($("bilingual-status")) $("bilingual-status").textContent = "";
   updateFavVerse();
   stopSpeak(); // stop any narration from the previous verse
 
@@ -713,6 +716,175 @@ async function downloadTop8() {
   }
 }
 
+
+/* ---- Bilingual pack — English + a second language in one pass ------ */
+// The Daily tab shows ONE language at a time, so posting to a bilingual
+// audience used to mean: switch language, export, switch back, export again.
+// Everything below runs both passes from a single click and keeps
+// daily.lang / daily.trans untouched, so the on-screen preview never moves.
+
+const BILINGUAL_PREF_KEY = "ev_bilingual_lang";
+
+function bilingualCode() {
+  const sel = $("bilingual-lang");
+  const v = sel && sel.value ? sel.value : "es";
+  return v === "en" ? "es" : v; // "English + English" is not a pack
+}
+function bilingualMeta() {
+  return LANGUAGES.find((l) => l.code === bilingualCode()) || LANGUAGES[0];
+}
+function langFolder(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+// Verse text in the second language. Curated wording (translations.js) wins
+// over MyMemory, and results are cached so a preview then a build costs one call.
+async function bilingualVerseText(code, rtl) {
+  const key = daily.verse.ref + "|" + code;
+  if (daily.transCache[key]) return daily.transCache[key];
+  const text = await translateText(daily.verse.text, code);
+  daily.transCache[key] = { text, rtl: !!rtl };
+  return daily.transCache[key];
+}
+
+function renderBilingualImage(w, h, text, rtl) {
+  const c = document.createElement("canvas");
+  renderVerse(c, w, h, {
+    text, ref: daily.verse.ref, rtl, paletteKey: daily.paletteKey,
+    bgKey: daily.bgKey, watermark: daily.watermark, showRef: true,
+  });
+  return c;
+}
+
+// Side-by-side thumbnails so the pair can be eyeballed before the zip is built.
+async function previewBilingual() {
+  const btn = $("preview-bilingual"), status = $("bilingual-status");
+  const wrap = $("bilingual-preview");
+  const meta = bilingualMeta();
+  btn.disabled = true;
+  status.textContent = `Translating to ${meta.name}…`;
+  try {
+    const t = await bilingualVerseText(meta.code, meta.rtl);
+    wrap.innerHTML = "";
+    [
+      { label: "English", text: daily.verse.text, rtl: false },
+      { label: meta.name, text: t.text, rtl: !!meta.rtl },
+    ].forEach((v) => {
+      const box = document.createElement("div");
+      box.className = "platform-card";
+      const head = document.createElement("div");
+      head.className = "pc-head";
+      head.innerHTML = `<span class="pc-title">${v.label}</span><span class="pc-size">1080×1080</span>`;
+      const thumbWrap = document.createElement("div");
+      thumbWrap.className = "pc-thumb";
+      thumbWrap.appendChild(renderBilingualImage(300, 300, v.text, v.rtl));
+      const cap = document.createElement("div");
+      cap.className = "pc-caption";
+      cap.textContent = v.text;
+      if (v.rtl) cap.setAttribute("dir", "rtl");
+      box.append(head, thumbWrap, cap);
+      wrap.appendChild(box);
+    });
+    const curated = typeof isCuratedVerse === "function" && isCuratedVerse(daily.verse.ref, meta.code);
+    status.textContent = curated
+      ? `✓ Both versions ready — the ${meta.name} wording is curated, not machine translation.`
+      : `✓ Both versions ready. The ${meta.name} line is machine translation — read it before you post.`;
+  } catch (e) {
+    status.textContent = `⚠ Could not translate to ${meta.name}: ${e.message}. The free API may be rate-limited — try again shortly.`;
+  } finally { btn.disabled = false; }
+}
+
+// Every platform size, twice, plus a caption file per language, in one zip.
+async function generateBilingualPack() {
+  const btn = $("gen-bilingual"), status = $("bilingual-status");
+  const meta = bilingualMeta();
+  btn.disabled = true;
+  try {
+    status.textContent = `Translating the verse to ${meta.name}…`;
+    const t = await bilingualVerseText(meta.code, meta.rtl);
+
+    // Captions too, so the second language is a complete post and not just an
+    // image with an English caption stuck underneath it.
+    status.textContent = `Translating the captions to ${meta.name}…`;
+    let loc = null;
+    try {
+      const reflection = await translateText(reflectionFor(daily.verse), meta.code);
+      const mean = await translateText(meaningFor(daily.verse), meta.code);
+      loc = { lang: meta.code, rtl: !!meta.rtl, verse: t.text, reflection, meaning: mean };
+    } catch (_) { /* images still ship; captions fall back to English below */ }
+
+    const kit = buildPostKit(daily.verse);
+    const folder = langFolder(meta.name);
+    const files = [];
+    for (const p of kit.platforms) {
+      status.textContent = `Rendering ${p.name}…`;
+      files.push({
+        name: `english/${kitFilename(p.key + "_en", "png")}`,
+        bytes: dataUrlToBytes(renderBilingualImage(p.w, p.h, daily.verse.text, false).toDataURL("image/png")),
+      });
+      files.push({
+        name: `${folder}/${kitFilename(p.key + "_" + meta.code, "png")}`,
+        bytes: dataUrlToBytes(renderBilingualImage(p.w, p.h, t.text, !!meta.rtl).toDataURL("image/png")),
+      });
+    }
+
+    files.push({ name: "captions-english.txt", bytes: new TextEncoder().encode(bilingualCaptions(kit, "English", null)) });
+    files.push({ name: `captions-${folder}.txt`, bytes: new TextEncoder().encode(bilingualCaptions(kit, meta.name, loc)) });
+    files.push({ name: "READ-ME-FIRST.txt", bytes: new TextEncoder().encode(bilingualReadme(kit, meta, t.text, !!loc)) });
+
+    downloadBlob(createZipBlob(files, daily.date), kitFilename("bilingual_en_" + meta.code, "zip"));
+    status.textContent = `✓ Pack ready — ${kit.platforms.length} sizes × 2 languages (${files.length} files).` +
+      (loc ? "" : ` Captions could not be translated this time, so the ${meta.name} caption file falls back to English.`);
+  } catch (err) {
+    status.textContent = `⚠ Could not build the bilingual pack: ${err.message}`;
+  } finally { btn.disabled = false; }
+}
+
+// One caption file per language. `loc` null = English (or a failed caption
+// translation, which falls back to the English wording rather than nothing).
+function bilingualCaptions(kit, langName, loc) {
+  const d = daily.date;
+  let out = `EVERVERSE — ${langName.toUpperCase()} CAPTIONS\n${d.toDateString()}\n\n`;
+  out += `Verse: "${loc ? loc.verse : kit.verse.text}"\n${kit.verse.ref} (${kit.verse.faith === "Gita" ? "Bhagavad Gita" : kit.verse.faith})\n\n`;
+  out += `${"=".repeat(60)}\n\n`;
+  kit.platforms.forEach((p) => {
+    const suffix = loc ? "_" + loc.lang : "_en";
+    out += `### ${p.name.toUpperCase()} (${p.w}×${p.h}) — image: ${kitFilename(p.key + suffix, "png")}\n\n`;
+    out += `${loc ? buildLocalizedCaption(p, loc) : p.caption}\n\n${"-".repeat(60)}\n\n`;
+  });
+  return out;
+}
+
+function bilingualReadme(kit, meta, translated, captionsOk) {
+  const curated = typeof isCuratedVerse === "function" && isCuratedVerse(daily.verse.ref, meta.code);
+  const folder = langFolder(meta.name);
+  const L = [];
+  L.push("EVERVERSE — BILINGUAL PACK", daily.date.toDateString(), "");
+  L.push(`Verse: ${kit.verse.ref}`, `English: ${kit.verse.text}`, `${meta.name}: ${translated}`, "");
+  L.push("WHAT IS IN HERE");
+  L.push("  english/            — every platform size, English wording");
+  L.push(`  ${folder}/${" ".repeat(Math.max(1, 19 - folder.length))}— the same sizes, ${meta.name} wording`);
+  L.push("  captions-english.txt");
+  L.push(`  captions-${folder}.txt`, "");
+  L.push("HOW TO POST IT");
+  L.push("  1. Post the English image with the English caption.");
+  L.push(`  2. Post the ${meta.name} image with the ${meta.name} caption — either to a second`);
+  L.push("     account, or a few hours later on the same one so the two do not compete.");
+  L.push("  3. Same verse, same art, same day: the pair reads as one campaign.", "");
+  L.push("BEFORE YOU POST");
+  if (curated) {
+    L.push(`  The ${meta.name} wording is a curated, hand-written translation — safe to post.`);
+  } else {
+    L.push(`  The ${meta.name} wording is machine translation. Read it once before posting;`);
+    L.push("  for sacred text a quick check by a native speaker is always wise.");
+  }
+  if (!captionsOk) {
+    L.push("", `  NOTE: caption translation failed this time, so captions-${folder}.txt`);
+    L.push("  contains the English wording as a fallback.");
+  }
+  L.push("", "eververse.org");
+  return L.join("\n");
+}
 // Fill the day dropdown with "Day N · date — ref" for the active tradition.
 function populateDaySelect() {
   const sel = $("daily-day");
@@ -732,6 +904,21 @@ function initDaily() {
   // language dropdown: English first, then all supported languages
   $("daily-lang").add(new Option("English (original)", "en"));
   LANGUAGES.forEach((l) => $("daily-lang").add(new Option(l.name, l.code)));
+
+  // Bilingual pack: the second language pairs with English, so English itself
+  // is not an option here. Spanish is the default and the choice is remembered.
+  if ($("bilingual-lang")) {
+    LANGUAGES.forEach((l) => $("bilingual-lang").add(new Option(l.name, l.code)));
+    let pref = "es";
+    try { pref = localStorage.getItem(BILINGUAL_PREF_KEY) || "es"; } catch (e) {}
+    if (!LANGUAGES.some((l) => l.code === pref)) pref = "es";
+    $("bilingual-lang").value = pref;
+    $("bilingual-lang").onchange = () => {
+      try { localStorage.setItem(BILINGUAL_PREF_KEY, $("bilingual-lang").value); } catch (e) {}
+      $("bilingual-preview").innerHTML = "";
+      $("bilingual-status").textContent = "";
+    };
+  }
 
   // build 120-day plans for every tradition and fill the dropdowns
   daily.plans = buildPlans(daily.startDate);
@@ -780,6 +967,8 @@ function initDaily() {
   if ($("gen-carousel")) $("gen-carousel").onclick = generateCarousel;
   $("download-kit").onclick = downloadKit;
   $("gen-top8").onclick = downloadTop8;
+  if ($("gen-bilingual")) $("gen-bilingual").onclick = generateBilingualPack;
+  if ($("preview-bilingual")) $("preview-bilingual").onclick = previewBilingual;
   $("verify-meaning").onclick = checkMeaning;
   $("gen-video").onclick = generateDailyVideo;
   $("share-today").onclick = shareToday;
@@ -2147,8 +2336,152 @@ async function runAudiobookFull() {
 /* ================================================================== */
 /*  Tabs + boot                                                        */
 /* ================================================================== */
+/* ============================ SERIES ============================ */
+/*  "One question, five traditions" — the format built to earn the       */
+/*  profile click, not just the like.                                    */
+
+const SERIES_SIZES = {
+  story:    { w: 1080, h: 1920 },
+  portrait: { w: 1080, h: 1350 },
+  square:   { w: 1080, h: 1080 },
+};
+
+function seriesKey() { return $("series-pick") ? $("series-pick").value : SERIES[0].key; }
+function seriesSize() { return SERIES_SIZES[$("series-format") ? $("series-format").value : "story"] || SERIES_SIZES.story; }
+function seriesOpts() { return { layout: $("series-layout") ? $("series-layout").value : "editorial" }; }
+
+// Render one planned card. The cover and CTA carry a second line under the
+// main text, which renderVerse has no slot for, so it is drawn on afterwards.
+function renderSeriesCard(card, W, H) {
+  const c = document.createElement("canvas");
+  renderVerse(c, W, H, {
+    text: card.text, ref: card.ref, paletteKey: card.paletteKey, bgKey: card.bgKey,
+    layout: card.layout, showRef: card.showRef, watermark: card.watermark,
+    grain: card.grain, kicker: card.kicker,
+  });
+  if (card.sub) {
+    const ctx = c.getContext("2d");
+    const pal = THEME_PALETTES[card.paletteKey] || THEME_PALETTES.warm;
+    ctx.textAlign = "center";
+    ctx.direction = "ltr";
+    ctx.font = `600 ${Math.min(W, H) * 0.030}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.fillStyle = hexToRgba(pal.accent, 0.95);
+    ctx.fillText(card.sub, W / 2, H * 0.895);
+  }
+  return c;
+}
+
+function renderSeriesPreview() {
+  const wrap = $("series-preview");
+  if (!wrap) return;
+  const key = seriesKey();
+  const plan = seriesCardPlan(key, seriesOpts());
+  const { w: W, h: H } = seriesSize();
+
+  const trads = seriesTraditions(key);
+  $("series-meta").textContent =
+    `Part ${seriesPart(key)} of ${SERIES.length} · ${plan.length} cards · ~${Math.round(seriesDurationSec(key, seriesOpts()))}s video · ` +
+    trads.join(" · ");
+
+  wrap.innerHTML = "";
+  plan.forEach((card) => {
+    const full = renderSeriesCard(card, W, H);
+    const box = document.createElement("div");
+    box.className = "platform-card";
+    const thumb = document.createElement("canvas");
+    const tw = 150, th = Math.round((H / W) * tw);
+    thumb.width = tw; thumb.height = th;
+    thumb.style.width = "100%"; thumb.style.height = "auto"; thumb.style.borderRadius = "8px";
+    thumb.getContext("2d").drawImage(full, 0, 0, tw, th);
+    const cap = document.createElement("div");
+    cap.className = "pc-caption";
+    cap.textContent = card.kind === "verse"
+      ? faithLabel(card.verse.faith) + " · " + card.ref
+      : card.kind.toUpperCase();
+    box.appendChild(thumb); box.appendChild(cap);
+    wrap.appendChild(box);
+  });
+}
+
+async function generateSeriesCarousel() {
+  const btn = $("series-carousel"); if (btn) btn.disabled = true;
+  $("series-status").textContent = "Building series…";
+  try {
+    const key = seriesKey();
+    const { w: W, h: H } = seriesSize();
+    const plan = seriesCardPlan(key, seriesOpts());
+    const files = [];
+    for (let i = 0; i < plan.length; i++) {
+      const c = renderSeriesCard(plan[i], W, H);
+      files.push({ name: `slide-${String(i + 1).padStart(2, "0")}.jpg`, bytes: await canvasToBytes(c, "image/jpeg", 0.9) });
+    }
+    files.push({ name: "caption-instagram.txt", bytes: new TextEncoder().encode(seriesCaption(key, "instagram")) });
+    files.push({ name: "caption-tiktok.txt", bytes: new TextEncoder().encode(seriesCaption(key, "tiktok")) });
+    files.push({ name: "title.txt", bytes: new TextEncoder().encode(seriesTitle(key)) });
+    downloadBlob(createZipBlob(files, new Date()), `eververse-series-${key}.zip`);
+    $("series-status").textContent = `✓ ${plan.length} slides + captions zipped. Upload in order — the cover is slide 1.`;
+  } catch (e) {
+    $("series-status").textContent = "Series error: " + (e && e.message ? e.message : e);
+  } finally { if (btn) btn.disabled = false; }
+}
+
+async function generateSeriesVideoFile() {
+  const btn = $("series-video"); if (btn) btn.disabled = true;
+  const status = $("series-status");
+  try {
+    if (typeof generateCardSequenceVideo !== "function") throw new Error("Video engine not loaded.");
+    const key = seriesKey();
+    const { w: W, h: H } = seriesSize();
+    const plan = seriesCardPlan(key, seriesOpts());
+    // Record at half resolution: real-time capture at 1080 wide drops frames.
+    const vw = Math.round(W / 1.5), vh = Math.round(H / 1.5);
+    status.textContent = "Rendering cards…";
+    const cards = plan.map((card) => ({ canvas: renderSeriesCard(card, vw, vh), seconds: seriesCardSeconds(card) }));
+    const total = cards.reduce((a, c) => a + c.seconds, 0);
+    status.textContent = `Recording ~${Math.round(total)}s — leave this tab open…`;
+    const blob = await generateCardSequenceVideo(cards, {
+      w: vw, h: vh,
+      withMusic: $("series-music") ? $("series-music").checked : true,
+      theme: seriesByKey(key).palettes[0],
+      onProgress: (p) => { status.textContent = `Recording… ${Math.round(p * 100)}%`; },
+    });
+    const ext = (typeof videoFileExt === "function") ? videoFileExt(blob) : "webm";
+    downloadBlob(blob, `eververse-series-${key}.${ext}`);
+    try { await navigator.clipboard.writeText(seriesCaption(key, "tiktok")); } catch (_) {}
+    status.textContent = `✓ Video saved (${Math.round(total)}s). TikTok caption copied to your clipboard.`;
+  } catch (e) {
+    status.textContent = "Video error: " + (e && e.message ? e.message : e);
+  } finally { if (btn) btn.disabled = false; }
+}
+
+function initSeries() {
+  const sel = $("series-pick");
+  if (!sel) return;
+  SERIES.forEach((s, i) => sel.add(new Option(`${i + 1}. ${s.title.replace(/,.*$/, "")} — ${s.question}`, s.key)));
+
+  // A bad ref would quietly shorten a post, so surface it in the studio.
+  const issues = (typeof seriesIssues === "function") ? seriesIssues() : [];
+  if (issues.length) {
+    $("series-status").textContent = `⚠ ${issues.length} series pick(s) no longer resolve: ` +
+      issues.map((i) => i.key + " → " + i.ref).join(", ");
+  }
+
+  sel.onchange = renderSeriesPreview;
+  if ($("series-format")) $("series-format").onchange = renderSeriesPreview;
+  if ($("series-layout")) $("series-layout").onchange = renderSeriesPreview;
+  $("series-carousel").onclick = generateSeriesCarousel;
+  $("series-video").onclick = generateSeriesVideoFile;
+  $("series-copy").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(seriesCaption(seriesKey(), "tiktok"));
+      $("series-status").textContent = "✓ TikTok caption copied.";
+    } catch (_) { $("series-status").textContent = "Copy failed — select the caption manually."; }
+  };
+  renderSeriesPreview();
+}
+
 function initTabs() {
-  const panels = { daily: "tab-daily", shorts: "tab-shorts", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
+  const panels = { daily: "tab-daily", shorts: "tab-shorts", series: "tab-series", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -2156,6 +2489,7 @@ function initTabs() {
       const name = tab.dataset.tab;
       Object.entries(panels).forEach(([key, id]) => $(id).classList.toggle("hidden", key !== name));
       if (name === "cards" && typeof renderEcardPreview === "function") renderEcardPreview();
+      if (name === "series" && typeof renderSeriesPreview === "function") renderSeriesPreview();
     };
   });
 }
@@ -2181,6 +2515,7 @@ function init() {
   initExplainer();
   initShort();
   initCards();
+  initSeries();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);
