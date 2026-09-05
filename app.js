@@ -816,15 +816,19 @@ async function generateBilingualPack() {
     const kit = buildPostKit(daily.verse);
     const folder = langFolder(meta.name);
     const files = [];
+    // JPEG, not PNG: this pack is twice the usual number of images, and these
+    // are photographic gradients with no flat colour or transparency to
+    // preserve. At q=0.92 the difference is invisible on a feed and the zip
+    // drops from ~25 MB to ~2 MB — small enough to actually move around.
     for (const p of kit.platforms) {
       status.textContent = `Rendering ${p.name}…`;
       files.push({
-        name: `english/${kitFilename(p.key + "_en", "png")}`,
-        bytes: dataUrlToBytes(renderBilingualImage(p.w, p.h, daily.verse.text, false).toDataURL("image/png")),
+        name: `english/${kitFilename(p.key + "_en", "jpg")}`,
+        bytes: await canvasToBytes(renderBilingualImage(p.w, p.h, daily.verse.text, false), "image/jpeg", 0.92),
       });
       files.push({
-        name: `${folder}/${kitFilename(p.key + "_" + meta.code, "png")}`,
-        bytes: dataUrlToBytes(renderBilingualImage(p.w, p.h, t.text, !!meta.rtl).toDataURL("image/png")),
+        name: `${folder}/${kitFilename(p.key + "_" + meta.code, "jpg")}`,
+        bytes: await canvasToBytes(renderBilingualImage(p.w, p.h, t.text, !!meta.rtl), "image/jpeg", 0.92),
       });
     }
 
@@ -849,7 +853,7 @@ function bilingualCaptions(kit, langName, loc) {
   out += `${"=".repeat(60)}\n\n`;
   kit.platforms.forEach((p) => {
     const suffix = loc ? "_" + loc.lang : "_en";
-    out += `### ${p.name.toUpperCase()} (${p.w}×${p.h}) — image: ${kitFilename(p.key + suffix, "png")}\n\n`;
+    out += `### ${p.name.toUpperCase()} (${p.w}×${p.h}) — image: ${kitFilename(p.key + suffix, "jpg")}\n\n`;
     out += `${loc ? buildLocalizedCaption(p, loc) : p.caption}\n\n${"-".repeat(60)}\n\n`;
   });
   return out;
