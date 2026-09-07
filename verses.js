@@ -874,6 +874,30 @@ const VERSE_DB = [
   { faith: "Wisdom", ref: "On skill and patience",   theme: "clay",   topic: "perseverance",youth: true, text: "You are not bad at this. You are early in it. Those look identical from the inside." },
   { faith: "Wisdom", ref: "On the phone call home",  theme: "warm",   topic: "love",        text: "Call the person you keep meaning to call. The window is not as wide as it feels." },
   { faith: "Wisdom", ref: "On being ordinary",       theme: "forest", topic: "gratitude",   text: "An ordinary life, loved well, is not a consolation prize. It is most of what anyone ever wanted." },
+
+  /* ---- Gift-occasion verses: Christmas, baptism, wedding, home, Easter ---- */
+  { faith: "Bible", ref: "Luke 2:14",          theme: "gold",    topic: "joy",        text: "Glory to God in the highest, and on earth peace, goodwill toward all." },
+  { faith: "Bible", ref: "Isaiah 9:6",         theme: "royal",   topic: "hope",       text: "For unto us a child is born, unto us a son is given; and his name shall be called Wonderful Counsellor, Mighty God, Everlasting Father, Prince of Peace." },
+  { faith: "Bible", ref: "Luke 2:11",          theme: "warm",    topic: "hope",       text: "For unto you is born this day in the city of David a Saviour, who is Christ the Lord." },
+  { faith: "Bible", ref: "Matthew 1:23",       theme: "night",   topic: "faith",      text: "They shall call his name Immanuel — which means, God with us." },
+  { faith: "Bible", ref: "John 1:14",          theme: "amber",   topic: "faith",      text: "The Word became flesh and made his dwelling among us, full of grace and truth." },
+  { faith: "Bible", ref: "Mark 10:14",         theme: "blush",   topic: "love",       text: "Let the little children come to me, and do not hinder them, for the kingdom of God belongs to such as these." },
+  { faith: "Bible", ref: "1 Samuel 1:27",      theme: "peach",   topic: "gratitude",  text: "For this child I prayed, and the Lord has granted me what I asked of him." },
+  { faith: "Bible", ref: "Psalm 127:3",        theme: "butter",  topic: "gratitude",  text: "Children are a heritage from the Lord, offspring a reward from him." },
+  { faith: "Bible", ref: "Ruth 1:16",          theme: "sage",    topic: "love",       text: "Where you go I will go, and where you stay I will stay; your people will be my people and your God my God." },
+  { faith: "Bible", ref: "Colossians 3:14",    theme: "coral",   topic: "love",       text: "And over all these virtues put on love, which binds them all together in perfect unity." },
+  { faith: "Bible", ref: "Song of Solomon 3:4",theme: "blush",   topic: "love",       text: "I have found the one whom my soul loves." },
+  { faith: "Bible", ref: "Joshua 24:15",       theme: "terra",   topic: "faith",      text: "But as for me and my household, we will serve the Lord." },
+  { faith: "Bible", ref: "Psalm 127:1",        theme: "clay",    topic: "faith",      text: "Unless the Lord builds the house, the builders labour in vain." },
+  { faith: "Bible", ref: "Proverbs 24:3-4",    theme: "harvest", topic: "wisdom",     text: "By wisdom a house is built, and through understanding it is established; through knowledge its rooms are filled with rare and beautiful treasures." },
+  { faith: "Bible", ref: "1 Corinthians 15:57",theme: "gold",    topic: "faith",      text: "But thanks be to God! He gives us the victory through our Lord Jesus Christ." },
+  { faith: "Bible", ref: "Matthew 28:6",       theme: "hope",    topic: "faith",      text: "He is not here; he has risen, just as he said." },
+  { faith: "Bible", ref: "John 11:25",         theme: "royal",   topic: "faith",      text: "I am the resurrection and the life. The one who believes in me will live, even though they die." },
+  { faith: "Bible", ref: "Romans 6:4",         theme: "mint",    topic: "change",     text: "Just as Christ was raised from the dead through the glory of the Father, so we too may live a new life." },
+  { faith: "Bible", ref: "Proverbs 31:28",     theme: "blush",   topic: "love",       text: "Her children arise and call her blessed; her husband also, and he praises her." },
+  { faith: "Bible", ref: "Isaiah 66:13",       theme: "peach",   topic: "comfort",    text: "As a mother comforts her child, so will I comfort you." },
+  { faith: "Bible", ref: "Proverbs 22:6",      theme: "moss",    topic: "guidance",   text: "Start children off on the way they should go, and even when they are old they will not turn from it." },
+  { faith: "Bible", ref: "Psalm 103:13",       theme: "warm",    topic: "love",       text: "As a father has compassion on his children, so the Lord has compassion on those who love him." },
 ];
 
 // Curated existing verses that also belong in the Teens (13–20) collection —
