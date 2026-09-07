@@ -1787,6 +1787,23 @@ function initCards() {
   if ($("printpack-run")) $("printpack-run").onclick = generatePrintablePack;
   if ($("collection-run")) $("collection-run").onclick = generateEtsyCollection;
   if ($("pinpack-run")) $("pinpack-run").onclick = generatePinPack;
+  if ($("occ-pick")) {
+    const sel = $("occ-pick");
+    sel.add(new Option("All occasions (" + OCCASION_COLLECTION.length + " listings)", "all"));
+    Object.entries(OCCASIONS).forEach(([k, o]) => {
+      const n = OCCASION_COLLECTION.filter((e) => e.occ === k).length;
+      sel.add(new Option(o.label + " (" + n + ")", k));
+    });
+    const showWindow = () => {
+      const k = sel.value;
+      $("occ-window").textContent = k === "all"
+        ? "Christmas first — it is the only occasion with a deadline you cannot move."
+        : "⏱ " + OCCASIONS[k].window;
+    };
+    sel.onchange = showWindow; showWindow();
+    $("occ-run").onclick = generateOccasionCollection;
+    $("occ-pins").onclick = generateOccasionPins;
+  }
   $("merch-pack").onclick = generateMerchPack;
 }
 let _ecardTimer = null;
@@ -2034,6 +2051,175 @@ async function generatePinPack() {
   } catch (err) {
     status.textContent = "Pin pack error: " + (err && err.message ? err.message : err);
   } finally { btn.disabled = false; }
+}
+
+/* ---- Gift-occasion Etsy listings ------------------------------------
+   Same build as the curated collection, but the SEO leads with the
+   occasion rather than the decor style — "baptism gift" instead of
+   "scripture wall art". Far less competition, far higher buying intent. */
+async function generateOccasionCollection() {
+  const btn = $("occ-run"); if (!btn) return;
+  const status = $("occ-status");
+  const key = ($("occ-pick") || {}).value || "all";
+  const list = occasionsFor(key);
+  btn.disabled = true;
+  const files = []; const index = ["#,occasion,reference,style,room,title"]; const done = [];
+  try {
+    for (let n = 0; n < list.length; n++) {
+      const e = list[n];
+      const L = occasionListing(e);
+      if (!L) continue;
+      const v = L.v;
+      const nn = String(n + 1).padStart(2, "0");
+      const slug = e.head.replace(/[^\w]+/g, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 32);
+      const folder = `${e.occ}/${nn}-${slug}`;
+      status.textContent = `Building ${n + 1}/${list.length} — ${v.ref}…`;
+      await new Promise((r) => setTimeout(r));
+      const pf = await buildPrintFilesZip(v, occasionArtOpts(e, v), slug, (i, tot, t) => {
+        status.textContent = `Building ${n + 1}/${list.length} — ${v.ref} — print ${i}/${tot}${t ? " (optimising)" : ""}`;
+      });
+      files.push({ name: `${folder}/print-files.zip`, bytes: pf.bytes });
+      const shots = await buildListingImages(v, occasionArtOpts(e, v, { watermark: true }));
+      shots.forEach((f) => files.push({ name: `${folder}/${f.name}`, bytes: f.bytes }));
+      const listingTxt =
+`TITLE\n-----\n${L.title}\n\n` +
+`TAGS (paste one per box; Etsy allows 13)\n----\n${L.tags.join(", ")}\n\n` +
+`DESCRIPTION\n-----------\n${L.description}\n\n---\n` +
+`OCCASION: ${L.occ.label}\nWHEN TO LIST: ${L.occ.window}\n` +
+`PHOTOS: upload the 5 files in listing-images/ (mockup-oak-warm first).\n` +
+`DIGITAL FILE: upload print-files.zip.\nType: Digital / instant download. Suggested price: $6.\n`;
+      files.push({ name: `${folder}/listing.txt`, bytes: new TextEncoder().encode(listingTxt) });
+      index.push(`${n + 1},"${L.occ.label}","${v.ref}","${e.style}","${e.room}","${L.title.replace(/"/g, "'")}"`);
+      done.push(`${nn}  [${L.occ.label}]  ${v.ref} — ${e.head}`);
+    }
+    files.push({ name: "ALL-LISTINGS.csv", bytes: new TextEncoder().encode(index.join("\n")) });
+    files.push({ name: "START-HERE.txt", bytes: new TextEncoder().encode(occasionStartHere(done, key)) });
+    downloadBlob(createZipBlob(files, new Date()), `EverVerse-occasion-listings-${done.length}.zip`);
+    status.textContent = `✓ ${done.length} gift listings ready — one folder per listing, grouped by occasion.`;
+  } catch (err) {
+    status.textContent = "Occasion pack error at listing " + (done.length + 1) + ": " + (err && err.message ? err.message : err);
+  } finally { btn.disabled = false; }
+}
+
+function occasionStartHere(done, key) {
+  const which = key === "all" ? "every occasion" : (OCCASIONS[key] ? OCCASIONS[key].label : key);
+  const windows = Object.entries(OCCASIONS)
+    .map(([k, o]) => `  ${o.label.padEnd(26)} ${o.window}`).join("\n");
+  return `EverVerse — GIFT-OCCASION LISTINGS (${which})
+${"=".repeat(60)}
+
+${done.length} listings. One folder each: 5 listing photos, print-files.zip,
+and listing.txt with the title, 13 tags and the description.
+
+WHY THESE ARE DIFFERENT FROM THE OTHER COLLECTION
+-------------------------------------------------
+The curated collection competes on decor terms — "scripture wall art",
+"boho wall art". Those searches are enormous and mostly people browsing.
+
+These compete on GIFT terms — "baptism gift", "sympathy gift for loss of
+mother", "christian christmas gift". Fewer searches, far less competition,
+and the person searching has already decided to buy something. That is the
+whole reason this pack exists.
+
+THE ORDER TO LIST THEM IN
+-------------------------
+Etsy rewards listings that have had time to gather clicks. A listing put up
+today is competitive in about 6-10 weeks, so seasonal work is always done
+early:
+
+${windows}
+
+DO THIS FIRST
+-------------
+1. Christmas, now. It is the only one with a hard deadline you cannot move.
+2. Then the evergreens — sympathy, baptism, wedding, baby. They sell all year.
+3. Then the spring set — Easter, Mother's Day, graduation — before February.
+
+PRICING
+-------
+$6 is the sweet spot for a single printable. Consider a bundle listing per
+occasion at $14 for the whole set; bundles lift average order value and
+Etsy's algorithm reads a higher order value favourably.
+
+A NOTE ON PATIENCE
+------------------
+Almost nothing sells in its first fortnight. Etsy ranks partly on how a
+listing converts once it has had impressions, and it cannot know that yet.
+Judge these at 8 weeks, not at 8 days.
+`;
+}
+
+/* ---- Pinterest: three angles per listing ---------------------------
+   Pinterest rewards fresh pins, not repeats. One pin per listing gives
+   nothing to post tomorrow. Three angles turns the catalogue into
+   months of daily pinning without repeating yourself. */
+async function generateOccasionPins() {
+  const btn = $("occ-pins"); if (!btn) return;
+  const status = $("occ-status");
+  const key = ($("occ-pick") || {}).value || "all";
+  const queue = occasionPinQueue(key);
+  btn.disabled = true;
+  const files = [];
+  const copy = ["EverVerse — Pinterest pins (gift occasions)", "=".repeat(44), "",
+    `${queue.length} pins — ${PIN_ANGLES.length} angles for each listing, so you can pin`,
+    "daily for months without posting the same image twice.", ""];
+  try {
+    for (let n = 0; n < queue.length; n++) {
+      const p = queue[n], e = p.entry, v = p.v;
+      const nn = String(n + 1).padStart(3, "0");
+      const slug = e.head.replace(/[^\w]+/g, "-").toLowerCase().replace(/^-+|-+$/g, "").slice(0, 28);
+      status.textContent = `Building pin ${n + 1}/${queue.length} — ${v.ref}…`;
+      await new Promise((r) => setTimeout(r));
+      const c = document.createElement("canvas");
+      drawPin(c, v, e.head, occasionArtOpts(e, v), 1000, 1500);
+      files.push({ name: `pins/${e.occ}/${nn}-${slug}-${p.angle.toLowerCase().replace(/\s+/g, "")}.jpg`,
+                   bytes: await canvasToBytes(c, "image/jpeg", 0.9) });
+      c.width = c.height = 0;
+      copy.push(`#${n + 1} — ${OCCASIONS[e.occ].label} · ${v.ref} · angle: ${p.angle}`);
+      copy.push(`LINK TO: your Etsy listing for "${e.head}"`);
+      copy.push(`TITLE: ${p.title}`);
+      copy.push(`DESCRIPTION:\n${p.description}`);
+      copy.push("");
+    }
+    files.push({ name: "PINS-COPY.txt", bytes: new TextEncoder().encode(copy.join("\n")) });
+    files.push({ name: "PIN-SCHEDULE.txt", bytes: new TextEncoder().encode(occasionPinGuide(queue.length)) });
+    downloadBlob(createZipBlob(files, new Date()), `EverVerse-occasion-pins-${queue.length}.zip`);
+    status.textContent = `✓ ${queue.length} pins ready — about ${Math.round(queue.length / 3)} days at 3 pins a day.`;
+  } catch (err) {
+    status.textContent = "Pin pack error: " + (err && err.message ? err.message : err);
+  } finally { btn.disabled = false; }
+}
+
+function occasionPinGuide(count) {
+  return `EverVerse — PINTEREST SCHEDULE
+${"=".repeat(40)}
+
+${count} pins, three angles per listing:
+  • The verse    — the scripture itself, for people browsing faith content
+  • The gift     — "${"looking for a baptism gift that is not another candle"}", for buyers
+  • The styling  — the room and the aesthetic, for people planning decor
+
+Pin the SAME listing from all three angles on different days. Pinterest treats
+them as fresh pins because the image and copy differ, and each one reaches a
+different search.
+
+THE RHYTHM
+----------
+3 pins a day, every day. That is roughly ${Math.round(count / 3)} days from this pack alone.
+Spread them across boards; never post three pins to the same board in one day.
+
+BOARDS TO MAKE (one per occasion, plus these)
+  Christian Gift Ideas · Scripture Wall Art · Nursery & Baby Faith Decor
+  Sympathy & Comfort · Wedding Scripture · Christmas Faith Decor
+
+WHAT TO EXPECT, HONESTLY
+------------------------
+Pinterest is slow. A pin typically takes 3-6 months to reach its audience,
+and the traffic curve is a long ramp rather than a spike. Judging this at
+three weeks will tell you nothing. Pin daily, check at month three.
+
+The single biggest mistake is stopping at week four because nothing happened.
+`;
 }
 function pinGuide(count) {
   return `EverVerse — Pinterest pin pack
