@@ -75,6 +75,15 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 .blessing .refl{font-size:15.5px;line-height:1.65;white-space:pre-wrap}
 .blessing .from{font-size:13px;color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .muted{color:var(--muted)}
+.tagwrap{display:flex;flex-wrap:wrap;gap:7px}
+.tag2{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:99px;padding:7px 13px;
+  font:600 13.5px/1 inherit;cursor:pointer}
+.tag2[aria-pressed="true"]{background:#f2effe;border-color:var(--accent);color:var(--accent)}
+.gcard{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:9px;cursor:pointer;background:#fff}
+.gcard[aria-pressed="true"]{border-color:var(--accent);background:#f9f8ff;box-shadow:0 0 0 1px var(--accent) inset}
+.gname{font-weight:700;font-size:15.5px}
+.gwhy{font-size:13.5px;color:var(--accent);margin-top:2px}
+.gabout{font-size:13.5px;color:var(--muted);margin-top:6px}
 .hiddenb{display:none!important}
 .foot{border-top:1px solid var(--line);margin-top:44px;padding:22px 0 50px;color:var(--muted);font-size:13.5px}
 .foot p{max-width:62ch}
@@ -140,8 +149,11 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
       <div class="checkline"><input type="checkbox" id="ok18">
         <label for="ok18">I am 18 or older, and I understand a guide offers prayer and reflection — never medical, legal or mental-health advice.</label></div>
 
+      <div id="matches" style="margin:6px 0 18px"></div>
+
       <div class="rowx">
-        <button class="btnb" id="send">Send it to a guide</button>
+        <button class="btnb ghost" id="findmatch">Find someone who fits</button>
+        <button class="btnb" id="send">Send it</button>
         <span class="muted" id="sendmsg" style="font-size:14px"></span>
       </div>
 
@@ -237,6 +249,16 @@ $("note").addEventListener("input", () => {
   $("crisis").classList.toggle("on", risky(t));
 });
 
+let pickedGuide = null;
+$("findmatch").onclick = async () => {
+  const note = $("note").value.trim();
+  if (note.length < 10) { $("sendmsg").textContent = "Write a little first, so the match means something."; return; }
+  if (!db) { $("sendmsg").textContent = "Not connected yet."; return; }
+  $("sendmsg").textContent = "";
+  await showMatches({ tradition: $("trad").value, category: $("cat").value, note, language: "en" },
+                    (uid) => { pickedGuide = uid; });
+};
+
 $("send").onclick = async () => {
   const note = $("note").value.trim();
   if (note.length < 10) { $("sendmsg").textContent = "A sentence or two, so a guide knows what to hold."; return; }
@@ -247,6 +269,7 @@ $("send").onclick = async () => {
     const ref = await addDoc(collection(db, "blessing", "circle", "requests"), {
       tradition: $("trad").value, category: $("cat").value,
       note: note.slice(0, 1200), status: "open", replies: 0,
+      forGuide: pickedGuide || "",
       flagged: risky(note), createdAt: new Date().toISOString(),
     });
     const url = location.origin + location.pathname + "?r=" + ref.id;
@@ -368,11 +391,17 @@ async function renderQueue(){
                     where("status", "==", "open"), limit(25));
     const snap = await getDocs(q);
     let html = '<div class="panelb"><h2>Open requests</h2>' +
-      '<p class="lede">Signed in as ' + esc(me.displayName || me.email) + ' · <a href="#" id="out">sign out</a></p>';
+      '<p class="lede">Signed in as ' + esc(me.displayName || me.email) +
+      ' · <a href="#" id="prof">your profile</a> · <a href="#" id="out">sign out</a></p>';
     if (snap.empty) html += '<p class="muted">Nothing waiting right now. That is a good thing.</p>';
-    snap.forEach((d) => {
-      const r = d.data();
+    // Anything addressed to me by the matcher comes first.
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, r: d.data() }));
+    rows.sort((a, b) => (b.r.forGuide === me.uid ? 1 : 0) - (a.r.forGuide === me.uid ? 1 : 0));
+    rows.forEach(({ id: rowId, r }) => {
+      const d = { id: rowId };
       html += '<div class="req"><div class="meta">' +
+        (r.forGuide === me.uid ? '<span class="chipb" style="background:#eafafb;color:#2b8f99">matched to you</span>' : '') +
         '<span class="chipb t">' + esc(r.tradition) + '</span>' +
         '<span class="chipb">' + esc(r.category) + '</span>' +
         (r.flagged ? '<span class="chipb" style="background:#fdf1ef;color:#9c3427">flagged — read with care</span>' : '') +
@@ -384,6 +413,13 @@ async function renderQueue(){
     html += '</div>';
     guideShell(html);
     $("out").onclick = (e) => { e.preventDefault(); signOut(auth); };
+    $("prof").onclick = async (e) => {
+      e.preventDefault();
+      let cur = null;
+      try { const d = await getDoc(doc(db, "blessing", "circle", "guides", me.uid)); if (d.exists()) cur = d.data(); }
+      catch (err) {}
+      renderProfile(cur);
+    };
     document.querySelectorAll("[data-reply]").forEach((b) => {
       b.onclick = () => renderReply(b.dataset.reply, b.dataset.trad);
     });
@@ -456,6 +492,257 @@ if (auth) {
   onAuthStateChanged(auth, (u) => {
     me = u;
     if (view === "guide") { u ? renderQueue() : renderGuideSignedOut(); }
+  });
+}
+
+
+/* ==================================================================
+   MATCHING
+   Airbnb and Rover match on what a provider can DO. The strongest
+   signal here is different and much simpler: has this person been
+   where I am? A guide who has buried a parent is the right answer for
+   someone burying a parent, and no amount of credential beats it.
+   So the profile is built from lived experience, not qualifications,
+   and the match is explained in those terms.
+   ================================================================== */
+
+// A controlled vocabulary, deliberately. Free-text specialisms are how a
+// prayer directory turns into people advertising cures.
+const LIVED = [
+  ["loss-parent",   "Losing a parent"],
+  ["loss-child",    "Losing a child"],
+  ["loss-partner",  "Losing a partner"],
+  ["loss-other",    "Bereavement more widely"],
+  ["illness-own",   "Serious illness of my own"],
+  ["illness-carer", "Caring for someone who is ill"],
+  ["ageing",        "Caring for ageing parents"],
+  ["anxiety",       "Living with anxiety"],
+  ["low",           "Long periods of feeling low"],
+  ["addiction",     "Addiction and recovery"],
+  ["divorce",       "Divorce or separation"],
+  ["fertility",     "Infertility or miscarriage"],
+  ["parenting",     "Parenting, and its hard days"],
+  ["money",         "Money worry or losing work"],
+  ["migration",     "Being far from where I am from"],
+  ["lonely",        "Long stretches of loneliness"],
+  ["doubt",         "Losing faith, and finding it again"],
+  ["disability",    "Living with disability"],
+];
+const LIVED_LABEL = Object.fromEntries(LIVED);
+
+// Which lived experience the request category points at, before we even
+// read the words.
+const CAT_HINT = {
+  grief:   ["loss-parent","loss-child","loss-partner","loss-other"],
+  illness: ["illness-own","illness-carer","ageing","disability"],
+  worry:   ["anxiety","low","lonely"],
+  family:  ["parenting","divorce","ageing"],
+  work:    ["money"],
+  faith:   ["doubt"],
+  thanks:  [],
+  other:   [],
+};
+
+// And what the person's own words point at. Kept small and obvious on
+// purpose — a wrong guess here is worse than no guess.
+const WORD_HINT = [
+  [/\b(mum|mom|mother|dad|father|parent)\b.*\b(died|passed|gone|funeral)\b/, "loss-parent"],
+  [/\b(son|daughter|baby|child)\b.*\b(died|passed|lost)\b/, "loss-child"],
+  [/\b(husband|wife|partner|spouse)\b.*\b(died|passed|lost)\b/, "loss-partner"],
+  [/\b(died|passed away|funeral|bereave|grieving|grief)\b/, "loss-other"],
+  [/\b(cancer|diagnos|chemo|hospital|surgery|terminal)\b/, "illness-carer"],
+  [/\b(my diagnosis|i was diagnosed|my illness|my treatment)\b/, "illness-own"],
+  [/\b(anxious|anxiety|panic|worry|worried|afraid|scared)\b/, "anxiety"],
+  [/\b(depress|hopeless|empty|numb|low)\b/, "low"],
+  [/\b(drink|drinking|alcohol|sober|addict|relapse)\b/, "addiction"],
+  [/\b(divorce|separat|marriage|split up)\b/, "divorce"],
+  [/\b(miscarriage|miscarried|ivf|infertil|conceive)\b/, "fertility"],
+  [/\b(job|redundan|laid off|fired|unemploy|money|rent|debt|bills)\b/, "money"],
+  [/\b(alone|lonely|loneliness|no one)\b/, "lonely"],
+  [/\b(visa|immigrat|far from home|back home|homesick)\b/, "migration"],
+  [/\b(doubt|doubting|lost my faith|dont believe|don't believe)\b/, "doubt"],
+  [/\b(my son|my daughter|my kids|my children)\b/, "parenting"],
+];
+
+function neededExperience(category, note){
+  const want = new Set(CAT_HINT[category] || []);
+  const t = " " + (note || "").toLowerCase() + " ";
+  WORD_HINT.forEach(([re, tag]) => { if (re.test(t)) want.add(tag); });
+  return [...want];
+}
+
+/* Score one guide against one request. Returns null when the guide cannot
+   serve it at all, so a bad match is never padded out to look plausible. */
+function scoreGuide(g, req, want){
+  if (g.active === false) return null;
+  const trads = g.tradition || [];
+  if (trads.length && trads.indexOf(req.tradition) === -1) return null;   // tradition is a hard gate
+
+  let s = 0; const why = [];
+
+  const shared = (g.experience || []).filter((e) => want.indexOf(e) !== -1);
+  if (shared.length) {
+    s += 40 + Math.min(20, shared.length * 8);
+    why.push("has been through " + LIVED_LABEL[shared[0]].toLowerCase());
+  }
+  if (trads.indexOf(req.tradition) !== -1) { s += 20; }
+
+  const langs = g.languages || ["en"];
+  if (req.language && langs.indexOf(req.language) !== -1) {
+    s += req.language === "en" ? 6 : 22;                 // a shared non-English tongue matters a great deal
+    if (req.language !== "en") why.push("answers in your language");
+  } else if (req.language && req.language !== "en") {
+    return null;                                          // no point matching someone who cannot reply to them
+  }
+
+  const open = g.openCount || 0, cap = g.capacity || 3;
+  if (open >= cap) return null;                           // full is full
+  s += Math.max(0, (cap - open)) * 3;
+
+  if (!why.length) why.push("shares your tradition and has room to answer");
+  return { guide: g, score: s, why };
+}
+
+/* Top matches, best first. Deliberately returns few — a person in
+   distress should not be handed a directory to browse. */
+function matchGuides(guides, req, n){
+  const want = neededExperience(req.category, req.note);
+  return guides
+    .map((g) => scoreGuide(g, req, want))
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n || 3);
+}
+
+
+/* ---- Guide profile ------------------------------------------------
+   Structured, not free marketing. Experience comes from a fixed list
+   and the only free text is a short "about" — because the moment a
+   guide can write whatever they like in a directory, some of them
+   start promising outcomes. */
+function renderProfile(existing){
+  const g = existing || {};
+  const chosen = new Set(g.experience || []);
+  const langs = new Set(g.languages || ["en"]);
+  const trads = new Set(g.tradition || []);
+
+  let html = '<div class="panelb"><h2>Your profile</h2>' +
+    '<p class="lede">This is what the matcher uses. It is not an advertisement, and nobody is ranked against anybody — ' +
+    'it exists so that a person writing about their mother\'s funeral reaches someone who has stood at one.</p>' +
+    '<label class="bf"><span>Sign your blessings as</span>' +
+    '<input type="text" id="p-name" maxlength="60" value="' + esc(g.name || "") + '" placeholder="a first name is plenty"></label>' +
+    '<label class="bf"><span>Traditions you can answer from</span><div id="p-trad" class="tagwrap"></div></label>' +
+    '<label class="bf"><span>Languages you can write in</span><div id="p-lang" class="tagwrap"></div></label>' +
+    '<label class="bf"><span>Which of these have you lived through?</span>' +
+    '<div class="muted" style="font-size:13px;margin:-2px 0 8px">Only tick what is true. This is the whole basis of the match, ' +
+    'and it is the one thing that cannot be faked well.</div>' +
+    '<div id="p-exp" class="tagwrap"></div></label>' +
+    '<label class="bf"><span>A few words about you</span>' +
+    '<textarea id="p-about" maxlength="400" style="min-height:90px" placeholder="Who you are, and how you tend to listen.">' +
+    esc(g.about || "") + '</textarea></label>' +
+    '<div class="note" id="p-warn" style="display:none"><b>One thing to change</b><p id="p-warntext"></p></div>' +
+    '<label class="bf"><span>How many at once?</span>' +
+    '<select id="p-cap"><option value="1">One at a time</option><option value="3">Up to three</option>' +
+    '<option value="5">Up to five</option></select></label>' +
+    '<div class="checkline"><input type="checkbox" id="p-active"' + (g.active === false ? "" : " checked") + '>' +
+    '<label for="p-active">I am available to receive requests just now</label></div>' +
+    '<div class="rowx"><button class="btnb" id="p-save">Save profile</button>' +
+    '<button class="btnb ghost sm" id="p-back">Back to the queue</button>' +
+    '<span class="muted" id="p-msg" style="font-size:14px"></span></div></div>';
+  guideShell(html);
+
+  const tagbox = (host, items, set) => {
+    $(host).innerHTML = items.map(([v, l]) =>
+      '<button type="button" class="tag2" data-v="' + v + '" aria-pressed="' + (set.has(v) ? "true" : "false") + '">' +
+      esc(l) + '</button>').join("");
+    $(host).querySelectorAll(".tag2").forEach((b) => b.onclick = () => {
+      const v = b.dataset.v;
+      if (set.has(v)) { set.delete(v); b.setAttribute("aria-pressed", "false"); }
+      else { set.add(v); b.setAttribute("aria-pressed", "true"); }
+    });
+  };
+  tagbox("p-trad", FAITHS, trads);
+  tagbox("p-lang", [["en","English"],["es","Spanish"],["hi","Hindi"],["pa","Punjabi"],["gu","Gujarati"],
+                    ["ta","Tamil"],["te","Telugu"],["bn","Bengali"],["ur","Urdu"],["fr","French"],
+                    ["pt","Portuguese"],["zh-CN","Chinese"],["tl","Filipino"],["vi","Vietnamese"],["ar","Arabic"]], langs);
+  tagbox("p-exp", LIVED, chosen);
+  $("p-cap").value = String(g.capacity || 3);
+  $("p-back").onclick = renderQueue;
+
+  // A soft guardrail on the one free-text field. Not censorship — the
+  // guide is told plainly what the problem is and can rewrite it.
+  const CLAIMY = [/\bcure[sd]?\b/i, /\bheal(s|ed|ing)\b.*\b(cancer|illness|disease|depression|anxiety)\b/i,
+                  /\bguarantee/i, /\btreat(s|ment|ed)?\b/i, /\bdiagnos/i, /\bmedical\b/i, /\brecover(y|ed) rate\b/i];
+  function claimCheck(t){
+    const hit = CLAIMY.find((re) => re.test(t));
+    if (!hit) { $("p-warn").style.display = "none"; return true; }
+    $("p-warntext").textContent =
+      "Your description reads as a promise about health outcomes. Guides offer prayer and reflection, never treatment — " +
+      "please describe how you listen rather than what you can fix.";
+    $("p-warn").style.display = "block";
+    return false;
+  }
+  $("p-about").addEventListener("input", () => claimCheck($("p-about").value));
+
+  $("p-save").onclick = async () => {
+    const about = $("p-about").value.trim();
+    if (!claimCheck(about)) { $("p-msg").textContent = "Please reword the description first."; return; }
+    if (!trads.size) { $("p-msg").textContent = "Choose at least one tradition."; return; }
+    $("p-save").disabled = true; $("p-msg").textContent = "Saving…";
+    try {
+      await setDoc(doc(db, "blessing", "circle", "guides", me.uid), {
+        name: ($("p-name").value.trim() || "a guide").slice(0, 60),
+        tradition: [...trads], languages: [...langs], experience: [...chosen],
+        about: about.slice(0, 400), capacity: +$("p-cap").value || 3,
+        active: $("p-active").checked, updatedAt: new Date().toISOString(),
+      }, { merge: true });
+      $("p-msg").textContent = "Saved ✓";
+    } catch (e) {
+      $("p-msg").textContent = "Could not save: " + (e.code === "permission-denied"
+        ? "your account is not on the approved list yet." : e.message);
+    } finally { $("p-save").disabled = false; }
+  };
+}
+
+/* ---- The match step the requester sees ---------------------------- */
+async function showMatches(req, onPick){
+  const box = $("matches");
+  box.innerHTML = '<p class="muted">Finding someone…</p>';
+  let guides = [];
+  try {
+    const snap = await getDocs(collection(db, "blessing", "circle", "guides"));
+    snap.forEach((d) => guides.push(Object.assign({ uid: d.id }, d.data())));
+  } catch (e) { /* fall through to "anyone" */ }
+
+  const top = matchGuides(guides, req, 3);
+  if (!top.length) {
+    box.innerHTML = '<div class="note"><b>We will send it to the circle.</b>' +
+      '<p>Nobody is free in that tradition at this moment, so your request goes to everyone who can answer it. ' +
+      'That usually works just as well — it simply takes a little longer.</p></div>';
+    onPick(null);
+    return;
+  }
+  box.innerHTML = '<p class="lede" style="margin-bottom:12px">Three people who could hold this. ' +
+    'Pick one, or let whoever is free reply.</p>' +
+    top.map((m, i) =>
+      '<div class="gcard" data-uid="' + esc(m.guide.uid) + '" role="button" tabindex="0" aria-pressed="' + (i===0?"true":"false") + '">' +
+      '<div class="gname">' + esc(m.guide.name || "a guide") + '</div>' +
+      '<div class="gwhy">' + esc(m.why.join(", and ")) + '</div>' +
+      (m.guide.about ? '<div class="gabout">' + esc(m.guide.about) + '</div>' : '') +
+      '</div>').join("") +
+    '<div class="gcard" data-uid="" role="button" tabindex="0" aria-pressed="false">' +
+    '<div class="gname">Whoever is free</div>' +
+    '<div class="gwhy">Send it to the whole circle — often the quickest</div></div>';
+
+  let picked = top[0].guide.uid;
+  onPick(picked);
+  box.querySelectorAll(".gcard").forEach((c) => {
+    c.onclick = () => {
+      box.querySelectorAll(".gcard").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      c.setAttribute("aria-pressed", "true");
+      picked = c.dataset.uid || null;
+      onPick(picked);
+    };
   });
 }
 

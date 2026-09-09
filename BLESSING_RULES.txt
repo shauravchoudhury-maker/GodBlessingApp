@@ -20,7 +20,7 @@ file, or reactions, Twin Track and Second Chance all stop working.
     match /blessing/circle/requests/{id} {
       // Anyone may ask for a blessing, without an account.
       allow create: if
-        request.resource.data.keys().hasOnly(['tradition','category','note','status','replies','flagged','createdAt'])
+        request.resource.data.keys().hasOnly(['tradition','category','note','status','replies','flagged','forGuide','createdAt'])
         && request.resource.data.note is string
         && request.resource.data.note.size() > 0
         && request.resource.data.note.size() <= 1200
@@ -53,11 +53,23 @@ file, or reactions, Twin Track and Second Chance all stop working.
       }
     }
 
-    // The approved-guide list. Written ONLY from the Firebase console — there
-    // is deliberately no way for the app to add a guide.
+    // The approved-guide list, which doubles as the guide directory the
+    // matcher reads. Profiles are meant to be seen, so they are public — but
+    // APPROVAL itself can only be granted from the Firebase console.
     match /blessing/circle/guides/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
+      allow read: if true;
+
+      // An approved guide may edit their own profile, and nothing else. They
+      // cannot approve themselves, because create is refused outright: the
+      // document has to already exist, and only the console can make it.
+      allow create: if false;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name','tradition','languages','experience','about','capacity','active','updatedAt'])
+        && request.resource.data.about is string
+        && request.resource.data.about.size() <= 400
+        && request.resource.data.name.size() <= 60;
+      allow delete: if false;
     }
 
     // Applications go in; nothing comes back out through the client.
@@ -79,8 +91,13 @@ How to approve a guide
    — that is expected, and it registers their account.
 3. Find their UID in Firebase console → Authentication → Users.
 4. Create `blessing/circle/guides/<that UID>` with, say,
-   { name: "…", tradition: "Bible", approvedAt: "2026-09-09" }.
-5. They reload and the queue appears.
+   { name: "…", tradition: ["Bible"], approvedAt: "2026-09-09" }.
+5. They reload, the queue appears, and they fill in their own profile from
+   inside the app — lived experience, languages, how many at once.
+
+Note the asymmetry: a guide can edit their profile but can never CREATE the
+document, so approval is impossible from inside the app. Only the console
+grants it.
 
 There is no way to do step 4 from inside the app, on purpose. Adding a guide
 should require deliberately opening the console.
