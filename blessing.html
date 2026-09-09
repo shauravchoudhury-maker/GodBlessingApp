@@ -84,6 +84,39 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 .gname{font-weight:700;font-size:15.5px}
 .gwhy{font-size:13.5px;color:var(--accent);margin-top:2px}
 .gabout{font-size:13.5px;color:var(--muted);margin-top:6px}
+/* --- the steps a person walks down --- */
+.step{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;margin:22px 0 10px}
+.step:first-of-type{margin-top:6px}
+.stepn{flex:0 0 auto;width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:13px;font-weight:800;display:grid;place-items:center}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* --- faith cards --- */
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(134px,1fr));gap:8px}
+.pick{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;
+  cursor:pointer;font:inherit;display:block;transition:border-color .12s,background .12s}
+.pick:hover{border-color:#c9cfdd}
+.pick .pl{display:block;font-weight:700;font-size:14.5px;color:var(--ink)}
+.pick .pb{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.pick[aria-checked="true"]{border-color:var(--accent);background:#f9f8ff;box-shadow:0 0 0 1px var(--accent) inset}
+.pick[aria-checked="true"] .pl{color:var(--accent)}
+
+/* --- subject chips --- */
+.pickwrap{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer;
+  font:inherit;font-size:14px;color:var(--ink);transition:border-color .12s,background .12s}
+.chip:hover{border-color:#c9cfdd}
+.chip[aria-checked="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+
+.ctx{font-size:13.5px;color:var(--accent);margin:10px 0 0;min-height:19px}
+.hint{font-size:13px;color:var(--muted);margin:-4px 0 10px;max-width:62ch}
+.opt{font-style:normal;font-weight:400;color:var(--muted);font-size:12.5px}
+.appcard{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff}
+.appcard h4{margin:0 0 2px;font-size:15.5px}
+.appcard .who{font-size:13px;color:var(--muted);margin-bottom:8px}
+.appcard pre{background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:10px;
+  font-size:12px;overflow-x:auto;white-space:pre;margin:10px 0 0}
+
 .gfacts{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
 .fact{font-size:12.5px;background:#f4f6f9;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:#41506b}
 .fact em{font-style:normal;color:var(--muted)}
@@ -112,7 +145,8 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 <div class="bwrap">
   <div class="bhero">
     <h1>Tell someone what you are carrying.</h1>
-    <p>A guide reads it, chooses a verse for you from the tradition you ask for, and writes back. No charge, no account, and you can stay anonymous.</p>
+    <p>A guide reads it, chooses a verse for you from your own tradition, and writes back.
+      Seven faiths, and a door for people who have none. No charge, no account, and you can stay anonymous.</p>
   </div>
 
   <nav class="tabsb">
@@ -127,23 +161,15 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
       <h2>What would you like held?</h2>
       <p class="lede">Write as much or as little as you want. Please leave out full names, addresses and anything that identifies you — a guide does not need them to pray for you.</p>
 
-      <div class="rowb">
-        <label class="bf"><span>Which tradition</span>
-          <select id="trad"></select></label>
-        <label class="bf"><span>What is it about</span>
-          <select id="cat">
-            <option value="grief">Grief or loss</option>
-            <option value="illness">Illness — mine or someone's</option>
-            <option value="worry">Worry or fear</option>
-            <option value="family">Family</option>
-            <option value="work">Work or money</option>
-            <option value="faith">Faith and doubt</option>
-            <option value="thanks">Giving thanks</option>
-            <option value="other">Something else</option>
-          </select></label>
-      </div>
+      <div class="step"><span class="stepn">1</span><span>Which faith should your blessing come from?</span></div>
+      <div id="trad" class="pickgrid" role="radiogroup" aria-label="Faith"></div>
+      <p class="ctx" id="tradctx"></p>
 
-      <label class="bf"><span>In your own words</span>
+      <div class="step"><span class="stepn">2</span><span>What is it about?</span></div>
+      <div id="cat" class="pickwrap" role="radiogroup" aria-label="What it is about"></div>
+
+      <div class="step"><span class="stepn">3</span><span>Tell them in your own words</span></div>
+      <label class="bf"><span class="vh">In your own words</span>
         <textarea id="note" placeholder="I have been carrying…" maxlength="1200"></textarea></label>
       <div class="muted" style="font-size:12.5px;margin:-9px 0 14px"><span id="count">0</span> / 1200</div>
 
@@ -277,12 +303,99 @@ const RISK = [
 function risky(t){ const s=" "+t.toLowerCase().replace(/[^a-z' ]+/g," ").replace(/\s+/g," ")+" ";
   return RISK.some((p)=>s.indexOf(" "+p+" ")!==-1 || s.indexOf(p)!==-1); }
 
-const FAITHS = [
-  ["Bible","Bible — Christian"], ["Gita","Bhagavad Gita — Hindu"], ["Torah","Torah — Jewish"],
-  ["Sikh","Guru Granth Sahib — Sikh"], ["Dhammapada","Dhammapada — Buddhist"],
-  ["Tripitaka","Tripitaka — Buddhist"], ["Tao","Tao Te Ching — Taoist"], ["Wisdom","Timeless wisdom — no tradition"],
+/* Seven religions, plus a door for people who do not have one. The list
+   used to be named after BOOKS, which meant Buddhism appeared twice and
+   Islam not at all — a person looking for their own faith could not find
+   it. Religion first; the scripture is what we tell them they will get. */
+const RELIGIONS = [
+  { key:"christian", label:"Christianity", people:"Christian", book:"the Bible",             texts:["Bible"] },
+  { key:"islam",     label:"Islam",        people:"Muslim",    book:"the Qur'an",            texts:["Quran"] },
+  { key:"hindu",     label:"Hinduism",     people:"Hindu",     book:"the Bhagavad Gita",     texts:["Gita"] },
+  { key:"buddhist",  label:"Buddhism",     people:"Buddhist",  book:"the Dhammapada and the suttas", texts:["Dhammapada","Tripitaka"] },
+  { key:"jewish",    label:"Judaism",      people:"Jewish",    book:"the Torah",             texts:["Torah"] },
+  { key:"sikh",      label:"Sikhism",      people:"Sikh",      book:"the Guru Granth Sahib", texts:["Sikh"] },
+  { key:"taoist",    label:"Taoism",       people:"Taoist",    book:"the Tao Te Ching",      texts:["Tao"] },
+  { key:"none",      label:"No tradition", people:"anyone",    book:"timeless wisdom",       texts:["Wisdom"] },
 ];
-FAITHS.forEach(([v,l]) => $("trad").add(new Option(l, v)));
+const RELIGION = Object.fromEntries(RELIGIONS.map((r) => [r.key, r]));
+const LANGS = [["en","English"],["es","Spanish"],["hi","Hindi"],["pa","Punjabi"],["gu","Gujarati"],
+  ["ta","Tamil"],["te","Telugu"],["bn","Bengali"],["ur","Urdu"],["ar","Arabic"],["fa","Persian"],
+  ["fr","French"],["pt","Portuguese"],["zh-CN","Chinese"],["tl","Filipino"],["vi","Vietnamese"],
+  ["ko","Korean"],["sw","Swahili"],["ru","Russian"],["pl","Polish"]];
+
+/* One multi-select, used by the application form and the profile, so a
+   guide meets the same control twice and learns it once. */
+function multiPick(hostId, items, set, cls){
+  const el = $(hostId);
+  el.className = cls || "pickwrap";
+  el.innerHTML = items.map(([v, l, sub]) =>
+    '<button type="button" class="' + (cls === "pickgrid" ? "pick" : "chip") + '" data-v="' + v + '" ' +
+    'aria-checked="' + (set.has(v) ? "true" : "false") + '" role="checkbox">' +
+    (cls === "pickgrid"
+      ? '<span class="pl">' + esc(l) + '</span><span class="pb">' + esc(sub || "") + '</span>'
+      : esc(l)) + '</button>').join("");
+  el.querySelectorAll("[data-v]").forEach((b) => b.onclick = () => {
+    const v = b.dataset.v;
+    if (set.has(v)) { set.delete(v); b.setAttribute("aria-checked", "false"); }
+    else { set.add(v); b.setAttribute("aria-checked", "true"); }
+  });
+}
+function textsFor(key){ return (RELIGION[key] || {}).texts || []; }
+function religionLabel(key){ return (RELIGION[key] || {}).label || key; }
+// the old book-keyed list, still used anywhere a raw text name is needed
+const FAITHS = RELIGIONS.map((r) => [r.key, r.label]);
+/* A picker of cards rather than a select. On a phone a native select hides
+   every option behind a tap, which is a poor way to ask someone what they
+   believe — and it hid the fact that we serve seven faiths at all. */
+const CATEGORIES = [
+  ["grief",   "Grief or loss",       "Since they died I have been…"],
+  ["illness", "Illness",             "The diagnosis came last week and…"],
+  ["worry",   "Worry or fear",       "I lie awake worrying that…"],
+  ["family",  "Family",              "Things at home have been…"],
+  ["work",    "Work or money",       "I lost my job and I have not been able to…"],
+  ["faith",   "Faith and doubt",     "I have prayed for months and heard nothing…"],
+  ["thanks",  "Giving thanks",       "Something good happened and I wanted to…"],
+  ["other",   "Something else",      "I have been carrying…"],
+];
+let chosenReligion = "christian", chosenCat = "grief";
+
+function pickerBuild(host, items, initial, onPick){
+  $(host).innerHTML = items;
+  $(host).querySelectorAll("[data-v]").forEach((b) => {
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", b.dataset.v === initial ? "true" : "false");
+    b.onclick = () => {
+      $(host).querySelectorAll("[data-v]").forEach((x) => x.setAttribute("aria-checked", "false"));
+      b.setAttribute("aria-checked", "true");
+      onPick(b.dataset.v);
+    };
+  });
+}
+
+pickerBuild("trad", RELIGIONS.map((r) =>
+  '<button type="button" class="pick" data-v="' + r.key + '">' +
+  '<span class="pl">' + esc(r.label) + '</span>' +
+  '<span class="pb">' + esc(r.book) + '</span></button>').join(""),
+  chosenReligion, (v) => { chosenReligion = v; tradCtx(); });
+
+pickerBuild("cat", CATEGORIES.map(([v, l]) =>
+  '<button type="button" class="chip" data-v="' + v + '">' + esc(l) + '</button>').join(""),
+  chosenCat, (v) => {
+    chosenCat = v;
+    // the prompt follows the subject, so the empty box is never a blank wall
+    const c = CATEGORIES.find((x) => x[0] === v);
+    if (c) $("note").placeholder = c[2];
+  });
+
+// Say plainly what they are going to get. This is the whole "in context"
+// promise: which book, and who will be holding it.
+function tradCtx(){
+  const r = RELIGION[chosenReligion];
+  $("tradctx").textContent = r.key === "none"
+    ? "Your blessing will be drawn from timeless wisdom, without a tradition, by a guide who is comfortable answering that way."
+    : "Your blessing will be drawn from " + r.book + ", by a " + r.people + " guide.";
+}
+tradCtx();
 
 /* ---- ask ---- */
 $("note").addEventListener("input", () => {
@@ -297,7 +410,7 @@ $("findmatch").onclick = async () => {
   if (note.length < 10) { $("sendmsg").textContent = "Write a little first, so the match means something."; return; }
   if (!db) { $("sendmsg").textContent = "Not connected yet."; return; }
   $("sendmsg").textContent = "";
-  await showMatches({ tradition: $("trad").value, category: $("cat").value, note, language: "en",
+  await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: "en",
                       flagged: risky(note) },
                     (uid) => { pickedGuide = uid; });
 };
@@ -321,7 +434,7 @@ $("send").onclick = async () => {
   const flagged = risky(note);
   if (flagged && !pickedGuide) {
     $("sendmsg").textContent = "Finding the right person…";
-    await showMatches({ tradition: $("trad").value, category: $("cat").value, note, language: "en", flagged: true },
+    await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: "en", flagged: true },
                       (uid) => { pickedGuide = uid; });
     $("sendmsg").textContent = "";
   }
@@ -334,7 +447,7 @@ $("send").onclick = async () => {
   $("send").disabled = true; $("sendmsg").textContent = "Sending…";
   try {
     const ref = await addDoc(collection(db, "blessing", "circle", "requests"), {
-      tradition: $("trad").value, category: $("cat").value,
+      tradition: chosenReligion, category: chosenCat,
       note: note.slice(0, 1200), status: "open", replies: 0,
       forGuide: pickedGuide || "",
       flagged, createdAt: new Date().toISOString(),
@@ -424,40 +537,89 @@ function renderGuideSignedOut(){
   $("applybtn").onclick = renderApply;
 }
 
+/* One form, asked once. It used to collect a name, an email and a
+   dropdown, which told the person reviewing it almost nothing and meant
+   the guide filled in everything that actually matters a second time
+   after approval. Now the application IS the profile: same questions,
+   same controls, and on approval it is copied across. */
 function renderApply(){
+  const rels = new Set(), exp = new Set(), langs = new Set(["en"]);
   guideShell(
     '<div class="panelb"><h2>Apply to be a guide</h2>' +
-    '<p class="lede">Tell us who you are and why. Every application is read by a person, so this is not quick — that is deliberate. ' +
-    'The first hundred guides set the culture permanently.</p>' +
-    '<label class="bf"><span>Your name</span><input type="text" id="a-name"></label>' +
-    '<label class="bf"><span>Email</span><input type="email" id="a-mail"></label>' +
-    '<label class="bf"><span>Your tradition</span><select id="a-trad"></select></label>' +
-    '<label class="bf"><span>Any ministry, chaplaincy or community role? (optional)</span><input type="text" id="a-role"></label>' +
-    '<label class="bf"><span>Why do you want to do this?</span><textarea id="a-why" maxlength="900"></textarea></label>' +
-    '<div class="checkline"><input type="checkbox" id="a-ok">' +
-    '<label for="a-ok">I understand I offer prayer and reflection only — never medical, psychological or legal advice — ' +
-    'and I will never ask anyone for money or private contact details.</label></div>' +
+    '<p class="lede">This asks more of you than a sign-up form usually does. Every application is read by a person, ' +
+    'and the first hundred guides set the culture permanently — so it is worth the ten minutes.</p>' +
+
+    '<div class="step"><span class="stepn">1</span><span>Who you are</span></div>' +
+    '<div class="rowb">' +
+      '<label class="bf"><span>Your name</span><input type="text" id="a-name" autocomplete="name"></label>' +
+      '<label class="bf"><span>Email</span><input type="email" id="a-mail" autocomplete="email"></label>' +
+    '</div>' +
+
+    '<div class="step"><span class="stepn">2</span><span>Which faith would you answer from?</span></div>' +
+    '<p class="hint">Pick more than one only if you could genuinely write from inside each. This is a hard gate in the ' +
+      'matcher — nobody is ever sent a blessing from a tradition they did not ask for.</p>' +
+    '<div id="a-rel"></div>' +
+
+    '<div class="step"><span class="stepn">3</span><span>What have you lived through?</span></div>' +
+    '<p class="hint">This matters more than anything else on the page. Someone writing about their mother\'s funeral is ' +
+      'matched to a guide who has stood at one. Only tick what is true — it is the one thing that cannot be faked well.</p>' +
+    '<div id="a-exp"></div>' +
+
+    '<div class="step"><span class="stepn">4</span><span>Which languages could you write in?</span></div>' +
+    '<div id="a-lang"></div>' +
+
+    '<div class="step"><span class="stepn">5</span><span>A little about you</span></div>' +
+    '<label class="bf"><span>Any ministry, chaplaincy or community role? <em class="opt">optional</em></span>' +
+      '<input type="text" id="a-role" placeholder="Hospice volunteer at St Mary\'s; lay reader; none at all"></label>' +
+    '<p class="hint">If you name an organisation we will ring them before it ever appears on your profile. ' +
+      'Nothing unverified is shown to anyone.</p>' +
+    '<label class="bf"><span>Why do you want to do this?</span>' +
+      '<textarea id="a-why" maxlength="900" placeholder="There is no right answer. We are reading for honesty, not eloquence."></textarea></label>' +
+
+    '<div class="step"><span class="stepn">6</span><span>Three things you are agreeing to</span></div>' +
+    '<div class="checkline"><input type="checkbox" id="a-ok1"><label for="a-ok1">' +
+      'I offer prayer and reflection only — never medical, psychological or legal advice, and I will never tell anyone to stop a treatment.</label></div>' +
+    '<div class="checkline"><input type="checkbox" id="a-ok2"><label for="a-ok2">' +
+      'I will never ask anyone for money, or for contact details, or move a conversation anywhere else.</label></div>' +
+    '<div class="checkline"><input type="checkbox" id="a-ok3"><label for="a-ok3">' +
+      'I understand a blessing cannot be edited or deleted once sent, and that a moderator can read it if it is reported.</label></div>' +
+
     '<div class="rowx"><button class="btnb" id="a-send">Send application</button>' +
     '<button class="btnb ghost sm" id="a-back">Back</button>' +
     '<span class="muted" id="a-msg" style="font-size:14px"></span></div></div>');
-  FAITHS.forEach(([v,l]) => $("a-trad").add(new Option(l, v)));
+
+  multiPick("a-rel", RELIGIONS.map((r) => [r.key, r.label, r.book]), rels, "pickgrid");
+  multiPick("a-exp", LIVED, exp);
+  multiPick("a-lang", LANGS, langs);
   $("a-back").onclick = renderGuideSignedOut;
+
   $("a-send").onclick = async () => {
-    if (!$("a-ok").checked) { $("a-msg").textContent = "Please tick the box."; return; }
     const name = $("a-name").value.trim(), mail = $("a-mail").value.trim();
-    if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { $("a-msg").textContent = "Name and a valid email, please."; return; }
-    if (!db) { $("a-msg").textContent = "Not connected yet."; return; }
-    $("a-send").disabled = true; $("a-msg").textContent = "Sending…";
+    const say = (m) => { $("a-msg").textContent = m; };
+    if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return say("Your name and a valid email, please.");
+    const tw = titleWarning(name);
+    if (tw) return say("Please apply under your name alone, without a title — to someone frightened it reads as a " +
+                       "credential we have checked, and we have not. You can describe what you do below.");
+    if (!rels.size) return say("Choose at least one faith you could answer from.");
+    if (!exp.size)  return say("Please tick at least one thing you have lived through — it is how you get matched.");
+    if ($("a-why").value.trim().length < 40) return say("A few more sentences on why, please.");
+    if (!$("a-ok1").checked || !$("a-ok2").checked || !$("a-ok3").checked) return say("Please read and tick all three.");
+    if (!db) return say("Not connected yet.");
+    $("a-send").disabled = true; say("Sending…");
     try {
       await addDoc(collection(db, "blessing", "circle", "applications"), {
-        name: name.slice(0,80), email: mail.slice(0,120), tradition: $("a-trad").value,
+        name: name.slice(0,80), email: mail.slice(0,120),
+        religions: [...rels], experience: [...exp], languages: [...langs],
         role: $("a-role").value.trim().slice(0,140), why: $("a-why").value.trim().slice(0,900),
         createdAt: new Date().toISOString(),
       });
-      guideShell('<div class="panelb"><h2>Thank you.</h2><p class="lede">We read every one. If it is a fit you will hear from us — ' +
-        'and if you do not, it is far more likely to be about timing than about you.</p></div>');
+      guideShell('<div class="panelb"><h2>Thank you.</h2>' +
+        '<p class="lede">We read every one. If it is a fit you will hear from us — and if you do not, ' +
+        'it is far more likely to be about timing than about you.</p>' +
+        '<p class="muted">When you are approved, sign in here with Google using <b>' + esc(mail) + '</b> ' +
+        'and everything you have just written will be waiting on your profile.</p></div>');
     } catch (e) {
-      $("a-msg").textContent = "Could not send: " + (e.code === "permission-denied" ? "rules not published yet." : e.message);
+      say("Could not send: " + (e.code === "permission-denied" ? "the Firestore rules have not been published yet." : e.message));
       $("a-send").disabled = false;
     }
   };
@@ -473,7 +635,7 @@ async function renderQueue(){
     let html = '<div class="panelb"><h2>Open requests</h2>' +
       '<p class="lede">Signed in as ' + esc(me.displayName || me.email) +
       ' · <a href="#" id="prof">your profile</a>' +
-      (isAdmin ? ' · <a href="#" id="mod">reports</a>' : '') +
+      (isAdmin ? ' · <a href="#" id="mod">reports</a> · <a href="#" id="apps">applications</a>' : '') +
       ' · <a href="#" id="out">sign out</a></p>';
     // Anything addressed to me by the matcher comes first.
     const rows = [];
@@ -500,6 +662,7 @@ async function renderQueue(){
     guideShell(html);
     $("out").onclick = (e) => { e.preventDefault(); signOut(auth); };
     if (isAdmin && $("mod")) $("mod").onclick = (e) => { e.preventDefault(); renderModeration(); };
+    if (isAdmin && $("apps")) $("apps").onclick = (e) => { e.preventDefault(); renderApplications(); };
     $("prof").onclick = async (e) => {
       e.preventDefault();
       let cur = null;
@@ -540,7 +703,10 @@ async function renderQueue(){
 }
 
 function renderReply(id, tradition){
-  const pool = (typeof VERSE_DB !== "undefined" ? VERSE_DB : []).filter((v) => v.faith === tradition);
+  // Buddhism has two books in the database, so match on the religion's
+  // whole shelf rather than a single text name.
+  const shelf = textsFor(tradition);
+  const pool = (typeof VERSE_DB !== "undefined" ? VERSE_DB : []).filter((v) => shelf.indexOf(v.faith) !== -1);
   let picked = null;
   let html = '<div class="panelb"><h2>Choose a verse</h2>' +
     '<p class="lede">From ' + esc(tradition) + '. Pick the one you would actually say to them, not the most impressive one.</p>' +
@@ -891,12 +1057,15 @@ function renderProfile(existing){
     '</div>' +
     '<label class="bf"><span>Sign your blessings as</span>' +
     '<input type="text" id="p-name" maxlength="60" value="' + esc(g.name || "") + '" placeholder="a first name is plenty"></label>' +
-    '<label class="bf"><span>Traditions you can answer from</span><div id="p-trad" class="tagwrap"></div></label>' +
-    '<label class="bf"><span>Languages you can write in</span><div id="p-lang" class="tagwrap"></div></label>' +
-    '<label class="bf"><span>Which of these have you lived through?</span>' +
-    '<div class="muted" style="font-size:13px;margin:-2px 0 8px">Only tick what is true. This is the whole basis of the match, ' +
-    'and it is the one thing that cannot be faked well.</div>' +
-    '<div id="p-exp" class="tagwrap"></div></label>' +
+    '<div class="step"><span class="stepn">1</span><span>Which faith do you answer from?</span></div>' +
+    '<div id="p-trad"></div>' +
+    '<div class="step"><span class="stepn">2</span><span>What have you lived through?</span></div>' +
+    '<p class="hint">Only tick what is true. This is the whole basis of the match, and it is the one thing ' +
+      'that cannot be faked well.</p>' +
+    '<div id="p-exp"></div>' +
+    '<div class="step"><span class="stepn">3</span><span>Which languages can you write in?</span></div>' +
+    '<div id="p-lang"></div>' +
+    '<div class="step"><span class="stepn">4</span><span>In your own words</span></div>' +
     '<label class="bf"><span>A few words about you</span>' +
     '<textarea id="p-about" maxlength="400" style="min-height:90px" placeholder="Who you are, and how you tend to listen.">' +
     esc(g.about || "") + '</textarea></label>' +
@@ -911,21 +1080,9 @@ function renderProfile(existing){
     '<span class="muted" id="p-msg" style="font-size:14px"></span></div></div>';
   guideShell(html);
 
-  const tagbox = (host, items, set) => {
-    $(host).innerHTML = items.map(([v, l]) =>
-      '<button type="button" class="tag2" data-v="' + v + '" aria-pressed="' + (set.has(v) ? "true" : "false") + '">' +
-      esc(l) + '</button>').join("");
-    $(host).querySelectorAll(".tag2").forEach((b) => b.onclick = () => {
-      const v = b.dataset.v;
-      if (set.has(v)) { set.delete(v); b.setAttribute("aria-pressed", "false"); }
-      else { set.add(v); b.setAttribute("aria-pressed", "true"); }
-    });
-  };
-  tagbox("p-trad", FAITHS, trads);
-  tagbox("p-lang", [["en","English"],["es","Spanish"],["hi","Hindi"],["pa","Punjabi"],["gu","Gujarati"],
-                    ["ta","Tamil"],["te","Telugu"],["bn","Bengali"],["ur","Urdu"],["fr","French"],
-                    ["pt","Portuguese"],["zh-CN","Chinese"],["tl","Filipino"],["vi","Vietnamese"],["ar","Arabic"]], langs);
-  tagbox("p-exp", LIVED, chosen);
+  multiPick("p-trad", RELIGIONS.map((r) => [r.key, r.label, r.book]), trads, "pickgrid");
+  multiPick("p-lang", LANGS, langs);
+  multiPick("p-exp", LIVED, chosen);
   $("p-cap").value = String(g.capacity || 3);
   $("p-back").onclick = renderQueue;
 
@@ -1255,6 +1412,67 @@ function reportUI(host, requestId, responseId, guideUid){
     }
   };
   host.appendChild(b); host.appendChild(panel);
+}
+
+/* ---- Applications ----------------------------------------------------
+   Approving a guide still means opening the Firebase console and creating
+   the document by hand. That friction is the safety property — nothing in
+   this app can grant anyone access. What this screen removes is the
+   pointless half of the work: reading the application, and retyping it.
+   It hands you the exact document to paste, and nothing more. */
+async function renderApplications(){
+  guideShell('<div class="panelb"><h2>Applications</h2><p class="lede">Reading…</p></div>');
+  try {
+    const snap = await getDocs(query(collection(db, "blessing", "circle", "applications"), limit(40)));
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, a: d.data() }));
+    items.sort((x, y) => String(y.a.createdAt || "").localeCompare(String(x.a.createdAt || "")));
+
+    let html = '<div class="panelb"><h2>Applications</h2>' +
+      '<p class="lede">Approving is still a console job on purpose — nothing here can let anyone in. ' +
+      'This only saves you the retyping. <a href="#" id="ap-back">back to the queue</a></p>';
+    if (!items.length) html += '<p class="muted">Nothing waiting.</p>';
+
+    html += items.map(({ id, a }) => {
+      const doc = {
+        name: a.name || "", tradition: a.religions || [],
+        languages: a.languages || ["en"], experience: a.experience || [],
+        about: "", capacity: 3, active: true,
+        approvedAt: new Date().toISOString().slice(0, 10),
+      };
+      return '<div class="appcard">' +
+        '<h4>' + esc(a.name || "(no name)") + '</h4>' +
+        '<div class="who">' + esc(a.email || "") + ' · applied ' + esc(String(a.createdAt || "").slice(0, 10)) + '</div>' +
+        '<div class="gfacts">' +
+          (a.religions || []).map((r) => '<span class="fact">' + esc(religionLabel(r)) + '</span>').join("") +
+          (a.languages || []).map((l) => '<span class="fact">' + esc((LANGS.find((x) => x[0] === l) || [l, l])[1]) + '</span>').join("") +
+        '</div>' +
+        '<div class="gfacts" style="margin-top:6px">' +
+          (a.experience || []).map((e) => '<span class="fact">' + esc(LIVED_LABEL[e] || e) + '</span>').join("") +
+        '</div>' +
+        (a.role ? '<p style="font-size:13.5px;margin:10px 0 0"><b>Role:</b> ' + esc(a.role) +
+          ' <em class="opt">— ring them before this ever appears on a profile</em></p>' : '') +
+        (a.why ? '<p style="font-size:13.5px;margin:8px 0 0">' + esc(a.why) + '</p>' : '') +
+        '<pre id="ap-j-' + id + '">' + esc(JSON.stringify(doc, null, 2)) + '</pre>' +
+        '<div class="rowx" style="margin-top:8px">' +
+        '<button class="btnb ghost sm" data-copy="' + id + '">Copy this document</button>' +
+        '<span class="muted" data-cmsg="' + id + '" style="font-size:13px">' +
+        'paste into blessing/circle/guides/&lt;their UID&gt;</span></div></div>';
+    }).join("");
+    html += '</div>';
+    guideShell(html);
+    $("ap-back").onclick = (e) => { e.preventDefault(); renderQueue(); };
+    document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = () => {
+      const txt = $("ap-j-" + b.dataset.copy).textContent;
+      const msg = document.querySelector('[data-cmsg="' + b.dataset.copy + '"]');
+      navigator.clipboard?.writeText(txt)
+        .then(() => { msg.textContent = "copied ✓ — now paste it in the console"; })
+        .catch(() => { msg.textContent = "could not copy; select the text above"; });
+    });
+  } catch (e) {
+    guideShell('<div class="panelb"><h2>Applications</h2><p class="muted">Could not load: ' + esc(e.message) +
+      '</p><p class="muted">Admins can only read these once the updated rules are published.</p></div>');
+  }
 }
 
 /* ---- 3. The moderation queue ---- */

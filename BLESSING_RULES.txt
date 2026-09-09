@@ -186,14 +186,30 @@ file, or reactions, Twin Track and Second Chance all stop working.
       allow write: if false;
     }
 
-    // Applications go in; nothing comes back out through the client.
+    // Applications. Anyone may send one; only an admin may read them, and
+    // nobody may edit or delete one — including the person who wrote it.
+    // The application now carries everything the profile does, so a guide
+    // answers the questions once rather than twice, and the person deciding
+    // has something real to decide on.
     match /blessing/circle/applications/{id} {
       allow create: if
-        request.resource.data.keys().hasOnly(['name','email','tradition','role','why','createdAt'])
+        request.resource.data.keys().hasOnly(['name','email','religions','experience',
+                                              'languages','role','why','createdAt'])
+        && request.resource.data.name is string
         && request.resource.data.name.size() <= 80
+        && request.resource.data.email is string
         && request.resource.data.email.size() <= 120
-        && request.resource.data.why.size() <= 900;
-      allow read, update, delete: if false;
+        && request.resource.data.why is string
+        && request.resource.data.why.size() <= 900
+        && request.resource.data.religions is list
+        && request.resource.data.religions.size() >= 1
+        && request.resource.data.religions.size() <= 8
+        && request.resource.data.experience is list
+        && request.resource.data.experience.size() <= 18
+        && request.resource.data.languages is list
+        && request.resource.data.languages.size() <= 20;
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
 
 
@@ -217,19 +233,49 @@ key to everybody's private life.
 
 How to approve a guide
 ----------------------
-1. Read the application in Firestore → `blessing/circle/applications`.
-2. Ask them to sign in once at /blessing.html → "For guides" → Sign in with
-   Google. They will see "this account is not on the approved-guide list
-   yet" — that is expected, and it registers their account.
-3. Find their UID in Firebase console → Authentication → Users.
-4. Create `blessing/circle/guides/<that UID>` with, say,
-   { name: "…", tradition: ["Bible"], approvedAt: "2026-09-09" }.
-5. They reload, the queue appears, and they fill in their own profile from
-   inside the app — lived experience, languages, how many at once.
+1. Sign in at /blessing.html as an admin and open "applications". Every
+   application is there, with the exact guide document ready to copy.
+2. If they named an organisation, RING THE ORGANISATION. Do not confirm an
+   affiliation on the applicant's word — it appears to a frightened person
+   as "confirmed with St Mary's Hospice", and that is your promise, not
+   theirs.
+3. Ask them to sign in once at /blessing.html → "For guides" → Sign in with
+   Google, using the same email they applied with. They will see "this
+   account is not on the approved-guide list yet" — that is expected, and
+   it registers their account.
+4. Find their UID in Firebase console → Authentication → Users.
+5. Create `blessing/circle/guides/<that UID>` and paste the document you
+   copied in step 1.
+6. They reload and the queue appears, with their faith, languages and lived
+   experience already filled in from the application.
+
+Steps 4 and 5 are deliberately still console work. Nothing in the app can
+grant anyone access; the applications screen only saves you the retyping.
 
 Note the asymmetry: a guide can edit their profile but can never CREATE the
 document, so approval is impossible from inside the app. Only the console
 grants it. There is no way to do step 4 from inside the app, on purpose.
+
+The seven faiths
+----------------
+The taxonomy is by RELIGION, not by book. It used to be by book, which meant
+Buddhism appeared twice (Dhammapada and Tripitaka) and Islam did not appear
+at all — a Muslim looking for their own tradition could not find it, and a
+Muslim guide had nothing to reply with.
+
+  christian  Christianity   the Bible
+  islam      Islam          the Qur'an
+  hindu      Hinduism       the Bhagavad Gita
+  buddhist   Buddhism       the Dhammapada and the suttas   (two texts)
+  jewish     Judaism        the Torah
+  sikh       Sikhism        the Guru Granth Sahib
+  taoist     Taoism         the Tao Te Ching
+  none       No tradition   timeless wisdom
+
+A request stores one of these keys in `tradition`; a guide stores a list of
+them. The verse pool a guide replies from is every text of that religion, so
+a Buddhist guide sees both books.
+
 
 Standing — what a guide is cleared to do
 ---------------------------------------
