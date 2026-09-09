@@ -1,0 +1,101 @@
+EverVerse — Blessing Circle Firestore rules
+===========================================
+
+Paste into the Firebase console for `eververse2117`:
+  Build → Firestore Database → Rules → Publish.
+
+Keep everything already there. Add this INSIDE the same
+`match /databases/{database}/documents { ... }` block — do not replace the
+file, or reactions, Twin Track and Second Chance all stop working.
+
+
+    // ---- Blessing Circle ----
+    // A request contains someone's private burden. It is readable ONLY by an
+    // approved guide, never by the public, and never listed to anyone else.
+    function isGuide() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid));
+    }
+
+    match /blessing/circle/requests/{id} {
+      // Anyone may ask for a blessing, without an account.
+      allow create: if
+        request.resource.data.keys().hasOnly(['tradition','category','note','status','replies','flagged','createdAt'])
+        && request.resource.data.note is string
+        && request.resource.data.note.size() > 0
+        && request.resource.data.note.size() <= 1200
+        && request.resource.data.tradition is string
+        && request.resource.data.tradition.size() <= 24
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 24
+        && request.resource.data.status == 'open';
+
+      // Only approved guides can read what people have written.
+      allow read: if isGuide();
+
+      // A guide may mark it answered, and nothing else.
+      allow update: if isGuide()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','replies']);
+
+      allow delete: if false;
+
+      // Replies are readable by whoever holds the request's secret id — that
+      // is how the person who asked gets back to their blessing without an
+      // account and without giving us an email address.
+      match /responses/{rid} {
+        allow read: if true;
+        allow create: if isGuide()
+          && request.resource.data.keys().hasOnly(['verseRef','verseText','reflection','guideName','guideUid','createdAt'])
+          && request.resource.data.reflection is string
+          && request.resource.data.reflection.size() <= 900
+          && request.resource.data.guideUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // The approved-guide list. Written ONLY from the Firebase console — there
+    // is deliberately no way for the app to add a guide.
+    match /blessing/circle/guides/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Applications go in; nothing comes back out through the client.
+    match /blessing/circle/applications/{id} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['name','email','tradition','role','why','createdAt'])
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.email.size() <= 120
+        && request.resource.data.why.size() <= 900;
+      allow read, update, delete: if false;
+    }
+
+
+How to approve a guide
+----------------------
+1. Read the application in Firestore → `blessing/circle/applications`.
+2. Ask them to sign in once at /blessing.html → "For guides" → Sign in with
+   Google. They will see "this account is not on the approved-guide list yet"
+   — that is expected, and it registers their account.
+3. Find their UID in Firebase console → Authentication → Users.
+4. Create `blessing/circle/guides/<that UID>` with, say,
+   { name: "…", tradition: "Bible", approvedAt: "2026-09-09" }.
+5. They reload and the queue appears.
+
+There is no way to do step 4 from inside the app, on purpose. Adding a guide
+should require deliberately opening the console.
+
+
+What this protects, and what it does not
+----------------------------------------
+PROTECTED: nobody without an approved guide account can read a single
+request. The collection cannot be listed, searched or enumerated by the
+public, and requests can never be deleted or edited after the fact.
+
+NOT PROTECTED, by design: anyone holding a request's link can read the
+replies to it. That is the trade for not collecting email addresses — the
+secret link IS the credential, exactly as it is for a password-reset URL.
+The person is told plainly to keep it.
+
+STILL YOUR JOB: an approved guide can read every open request. Approval is
+therefore a real trust decision, not a formality. Approve slowly.

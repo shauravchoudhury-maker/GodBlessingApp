@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ask for a Blessing — EverVerse</title>
+<meta name="description" content="Share what you are carrying. A guide reads it and sends back a verse chosen for you, from the tradition you ask for.">
+<meta name="theme-color" content="#fbfaff">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="site.css">
+<style>
+/* Blessing circle — leans on site.css for the EverVerse palette. */
+.bwrap{max-width:760px;margin:0 auto;padding:0 20px 90px}
+.bhero{padding:46px 0 26px}
+.bhero h1{font-family:Georgia,"Times New Roman",serif;font-size:38px;line-height:1.12;margin:0 0 14px;max-width:16ch}
+.bhero p{font-size:18px;color:var(--muted);max-width:52ch;margin:0}
+@media(max-width:600px){.bhero h1{font-size:29px}}
+
+.tabsb{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:22px 0 0}
+.tabb{border:0;background:none;color:var(--muted);font:600 14.5px/1 inherit;padding:11px 14px;
+  border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+.tabb[aria-current]{color:var(--ink);border-bottom-color:var(--accent)}
+
+.panelb{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-top:22px;
+  box-shadow:var(--shadow)}
+.panelb h2{font-family:Georgia,serif;font-size:22px;margin:0 0 6px}
+.panelb .lede{color:var(--muted);font-size:14.5px;margin:0 0 18px;max-width:58ch}
+label.bf{display:block;margin-bottom:15px}
+label.bf > span{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px}
+select,input[type=text],input[type=email],textarea{width:100%;padding:11px 13px;border:1px solid var(--line);
+  border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:16px}
+textarea{min-height:130px;resize:vertical;line-height:1.6}
+.rowb{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.rowb{grid-template-columns:1fr}}
+.btnb{background:var(--grad);color:#fff;border:0;border-radius:11px;padding:13px 22px;font-weight:700;font-size:16px;cursor:pointer}
+.btnb.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btnb.sm{padding:9px 15px;font-size:14px}
+.btnb:disabled{opacity:.5;cursor:default}
+.rowx{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px}
+
+.checkline{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:var(--muted);margin-bottom:14px}
+.checkline input{margin-top:4px;flex:none;width:auto}
+
+/* crisis — deliberately the loudest thing on the page when it appears */
+.crisis{display:none;border:2px solid #c4483c;background:#fdf1ef;border-radius:14px;padding:20px 22px;margin:18px 0}
+.crisis.on{display:block}
+.crisis h3{font-family:Georgia,serif;font-size:20px;margin:0 0 8px;color:#9c3427}
+.crisis p{margin:0 0 12px;font-size:15.5px;color:#5c2620;max-width:54ch}
+.crisis .num{font-size:26px;font-weight:800;letter-spacing:-.02em;color:#9c3427;display:block;margin:4px 0}
+.crisis a{color:#9c3427;font-weight:700;text-decoration:underline}
+
+.note{border-left:3px solid var(--accent);background:#f6f4ff;padding:14px 17px;border-radius:0 10px 10px 0;margin:16px 0}
+.note b{display:block;font-weight:700;margin-bottom:4px}
+.note p{margin:0;font-size:14.5px;color:var(--muted);max-width:58ch}
+.okmsg{display:none;border:1px solid #3bb4bf;background:#eefafb;border-radius:12px;padding:18px 20px;margin-top:16px}
+.okmsg.on{display:block}
+.okmsg code{background:#fff;border:1px solid var(--line);padding:3px 7px;border-radius:6px;font-size:13.5px;word-break:break-all}
+
+.req{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:#fff}
+.req .meta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.chipb{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:#f2effe;color:var(--accent)}
+.chipb.t{background:#eafafb;color:#2b8f99}
+.req .body{font-size:15.5px;white-space:pre-wrap;line-height:1.6}
+.req .when{font-size:12.5px;color:var(--muted)}
+.vpick{display:grid;gap:8px;max-height:230px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
+.vopt{border:1px solid transparent;border-radius:8px;padding:9px 11px;cursor:pointer;font-size:14px}
+.vopt:hover{background:#faf9ff}
+.vopt[aria-pressed="true"]{border-color:var(--accent);background:#f6f4ff}
+.vopt b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+
+.blessing{border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:14px;background:#fff}
+.blessing .v{font-family:Georgia,serif;font-size:19px;line-height:1.55;margin-bottom:8px}
+.blessing .ref{color:var(--accent);font-weight:700;font-size:14px;margin-bottom:12px}
+.blessing .refl{font-size:15.5px;line-height:1.65;white-space:pre-wrap}
+.blessing .from{font-size:13px;color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.muted{color:var(--muted)}
+.hiddenb{display:none!important}
+.foot{border-top:1px solid var(--line);margin-top:44px;padding:22px 0 50px;color:var(--muted);font-size:13.5px}
+.foot p{max-width:62ch}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="logo" href="index.html"><span class="mark">✦</span> EverVerse</a>
+    <nav class="sections"><a href="index.html"><button>← Back to EverVerse</button></a></nav>
+  </div>
+</header>
+
+<div class="bwrap">
+  <div class="bhero">
+    <h1>Tell someone what you are carrying.</h1>
+    <p>A guide reads it, chooses a verse for you from the tradition you ask for, and writes back. No charge, no account, and you can stay anonymous.</p>
+  </div>
+
+  <nav class="tabsb">
+    <button class="tabb" data-v="ask" aria-current="page">Ask</button>
+    <button class="tabb" data-v="read">Read a reply</button>
+    <button class="tabb" data-v="guide">For guides</button>
+  </nav>
+
+  <!-- ============ ASK ============ -->
+  <section id="v-ask">
+    <div class="panelb">
+      <h2>What would you like held?</h2>
+      <p class="lede">Write as much or as little as you want. Please leave out full names, addresses and anything that identifies you — a guide does not need them to pray for you.</p>
+
+      <div class="rowb">
+        <label class="bf"><span>Which tradition</span>
+          <select id="trad"></select></label>
+        <label class="bf"><span>What is it about</span>
+          <select id="cat">
+            <option value="grief">Grief or loss</option>
+            <option value="illness">Illness — mine or someone's</option>
+            <option value="worry">Worry or fear</option>
+            <option value="family">Family</option>
+            <option value="work">Work or money</option>
+            <option value="faith">Faith and doubt</option>
+            <option value="thanks">Giving thanks</option>
+            <option value="other">Something else</option>
+          </select></label>
+      </div>
+
+      <label class="bf"><span>In your own words</span>
+        <textarea id="note" placeholder="I have been carrying…" maxlength="1200"></textarea></label>
+      <div class="muted" style="font-size:12.5px;margin:-9px 0 14px"><span id="count">0</span> / 1200</div>
+
+      <div class="crisis" id="crisis">
+        <h3>Please read this first.</h3>
+        <p>Some of what you have written suggests you may be in real danger right now. A verse is not enough, and waiting for a volunteer is not enough. Please talk to someone trained, today.</p>
+        <p><b>In the US, call or text 988</b> — the Suicide &amp; Crisis Lifeline, free, 24 hours.
+          <span class="num">988</span>
+          <a href="https://988lifeline.org/chat/" target="_blank" rel="noopener">Or chat with them online →</a></p>
+        <p>If someone is in immediate danger, call 911.</p>
+        <p style="margin-bottom:0">You are welcome to send your request as well — a guide will still read it. But please make the call first.</p>
+      </div>
+
+      <div class="checkline"><input type="checkbox" id="ok18">
+        <label for="ok18">I am 18 or older, and I understand a guide offers prayer and reflection — never medical, legal or mental-health advice.</label></div>
+
+      <div class="rowx">
+        <button class="btnb" id="send">Send it to a guide</button>
+        <span class="muted" id="sendmsg" style="font-size:14px"></span>
+      </div>
+
+      <div class="okmsg" id="ok">
+        <b>Sent. Keep this link.</b>
+        <p style="margin:8px 0">It is the only way back to your reply, and we deliberately do not have your email. Save it somewhere.</p>
+        <p><code id="link"></code></p>
+        <div class="rowx"><button class="btnb sm ghost" id="copylink">Copy the link</button>
+          <span class="muted" id="copied" style="font-size:13.5px"></span></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>What happens next</b>
+      <p>Guides are volunteers who apply and are approved by hand. Someone usually replies within a day or two, though nobody is on a rota — this is people giving their time, not a service you have bought.</p>
+    </div>
+  </section>
+
+  <!-- ============ READ ============ -->
+  <section id="v-read" class="hiddenb">
+    <div class="panelb">
+      <h2>Read your reply</h2>
+      <p class="lede">Paste the link you were given, or open it directly.</p>
+      <label class="bf"><span>Your link or code</span><input type="text" id="code" placeholder="paste it here"></label>
+      <button class="btnb" id="fetch">Open it</button>
+      <div id="replies" style="margin-top:18px"></div>
+    </div>
+  </section>
+
+  <!-- ============ GUIDE ============ -->
+  <section id="v-guide" class="hiddenb">
+    <div id="g-out"></div>
+  </section>
+
+  <footer class="foot">
+    <p><b>EverVerse guides offer prayer, scripture and reflection.</b> They are volunteers, not clinicians. Nothing here is medical, psychological or legal advice, and nothing here treats or cures any condition. If you are unwell, please also speak to a doctor.</p>
+    <p style="margin-top:10px">In the US, the Suicide &amp; Crisis Lifeline is <b>988</b>, free and 24 hours.</p>
+  </footer>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="verses.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc,
+         query, where, orderBy, limit, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+let app = null, auth = null, db = null;
+try {
+  if (typeof FIREBASE_READY !== "undefined" && FIREBASE_READY) {
+    app = initializeApp(FIREBASE_CONFIG);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  }
+} catch (e) { /* the page still explains itself without a backend */ }
+
+/* ------------------------------------------------------------------
+   Crisis check.
+   Someone writing "I need healing" may be in genuine danger, and a
+   volunteer who sees it in six hours is not an answer. This runs as
+   they type, and when it fires it becomes the loudest thing on the
+   page. It is deliberately over-sensitive: a false alarm costs someone
+   a moment's irritation, a miss costs immeasurably more.
+   ------------------------------------------------------------------ */
+const RISK = [
+  "kill myself","killing myself","end my life","ending my life","take my life","taking my life",
+  "take my own life","want to die","wish i was dead","wish i were dead","suicide","suicidal",
+  "self harm","self-harm","self harming","hurt myself","hurting myself","harm myself","harming myself",
+  "cut myself","cutting myself","no reason to live","nothing to live for","better off without me",
+  "better off dead","overdose","end it all","cant go on","can't go on","give up on life",
+  "dont want to be here","don't want to be here","dont want to live","don't want to live",
+];
+function risky(t){ const s=" "+t.toLowerCase().replace(/[^a-z' ]+/g," ").replace(/\s+/g," ")+" ";
+  return RISK.some((p)=>s.indexOf(" "+p+" ")!==-1 || s.indexOf(p)!==-1); }
+
+const FAITHS = [
+  ["Bible","Bible — Christian"], ["Gita","Bhagavad Gita — Hindu"], ["Torah","Torah — Jewish"],
+  ["Sikh","Guru Granth Sahib — Sikh"], ["Dhammapada","Dhammapada — Buddhist"],
+  ["Tripitaka","Tripitaka — Buddhist"], ["Tao","Tao Te Ching — Taoist"], ["Wisdom","Timeless wisdom — no tradition"],
+];
+FAITHS.forEach(([v,l]) => $("trad").add(new Option(l, v)));
+
+/* ---- ask ---- */
+$("note").addEventListener("input", () => {
+  const t = $("note").value;
+  $("count").textContent = t.length;
+  $("crisis").classList.toggle("on", risky(t));
+});
+
+$("send").onclick = async () => {
+  const note = $("note").value.trim();
+  if (note.length < 10) { $("sendmsg").textContent = "A sentence or two, so a guide knows what to hold."; return; }
+  if (!$("ok18").checked) { $("sendmsg").textContent = "Please tick the box above first."; return; }
+  if (!db) { $("sendmsg").textContent = "Not connected yet — the backend rules still need publishing."; return; }
+  $("send").disabled = true; $("sendmsg").textContent = "Sending…";
+  try {
+    const ref = await addDoc(collection(db, "blessing", "circle", "requests"), {
+      tradition: $("trad").value, category: $("cat").value,
+      note: note.slice(0, 1200), status: "open", replies: 0,
+      flagged: risky(note), createdAt: new Date().toISOString(),
+    });
+    const url = location.origin + location.pathname + "?r=" + ref.id;
+    $("link").textContent = url;
+    $("ok").classList.add("on");
+    $("sendmsg").textContent = "";
+    $("note").value = ""; $("count").textContent = "0";
+    $("copylink").onclick = () => navigator.clipboard?.writeText(url)
+      .then(() => { $("copied").textContent = "copied ✓"; setTimeout(()=>$("copied").textContent="",1500); }).catch(()=>{});
+  } catch (e) {
+    $("sendmsg").textContent = "Could not send — " + (e.code === "permission-denied"
+      ? "the Firestore rules have not been published yet." : e.message);
+  } finally { $("send").disabled = false; }
+};
+
+/* ---- read a reply ---- */
+async function showReplies(id){
+  const box = $("replies");
+  box.innerHTML = '<p class="muted">Looking…</p>';
+  if (!db) { box.innerHTML = '<p class="muted">Not connected yet.</p>'; return; }
+  try {
+    const snap = await getDocs(collection(db, "blessing", "circle", "requests", id, "responses"));
+    if (snap.empty) {
+      box.innerHTML = '<div class="note"><b>Nothing yet.</b><p>No guide has replied so far. ' +
+        'Keep the link and come back — replies usually arrive within a day or two.</p></div>';
+      return;
+    }
+    box.innerHTML = "";
+    snap.forEach((d) => {
+      const r = d.data();
+      const el = document.createElement("div");
+      el.className = "blessing";
+      el.innerHTML = '<div class="v">“' + esc(r.verseText) + '”</div>' +
+        '<div class="ref">' + esc(r.verseRef) + '</div>' +
+        '<div class="refl">' + esc(r.reflection) + '</div>' +
+        '<div class="from">— ' + esc(r.guideName || "a guide") + ', ' +
+        esc((r.createdAt || "").slice(0, 10)) + '</div>';
+      box.appendChild(el);
+    });
+  } catch (e) {
+    box.innerHTML = '<p class="muted">Could not open that: ' + esc(e.message) + '</p>';
+  }
+}
+$("fetch").onclick = () => {
+  const raw = $("code").value.trim();
+  const m = raw.match(/[?&]r=([A-Za-z0-9_-]+)/);
+  const id = m ? m[1] : raw.replace(/[^A-Za-z0-9_-]/g, "");
+  if (id) showReplies(id);
+};
+
+/* ---- guides ---- */
+let me = null, approved = false;
+
+function guideShell(inner){ $("g-out").innerHTML = inner; }
+
+function renderGuideSignedOut(){
+  guideShell(
+    '<div class="panelb"><h2>For guides</h2>' +
+    '<p class="lede">Guides are volunteers who read what someone has written and send back a verse from their tradition, ' +
+    'with a few words of their own. Everyone is approved by hand.</p>' +
+    '<div class="note"><b>What a guide does, and does not do</b>' +
+    '<p>You offer scripture, prayer and reflection. You never diagnose, never advise on medicine or treatment, never tell ' +
+    'someone to stop seeing a doctor, and never ask for money or personal contact details. If something frightens you, ' +
+    'flag it rather than handling it alone.</p></div>' +
+    '<div class="rowx"><button class="btnb" id="signin">Sign in with Google</button>' +
+    '<button class="btnb ghost" id="applybtn">Apply to become a guide</button></div>' +
+    '<p class="muted" style="font-size:13px;margin-top:12px">Signing in is only used to check you are an approved guide.</p></div>');
+  $("signin").onclick = async () => {
+    if (!auth) { alert("Not connected yet."); return; }
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) { alert("Sign-in failed: " + e.message); }
+  };
+  $("applybtn").onclick = renderApply;
+}
+
+function renderApply(){
+  guideShell(
+    '<div class="panelb"><h2>Apply to be a guide</h2>' +
+    '<p class="lede">Tell us who you are and why. Every application is read by a person, so this is not quick — that is deliberate. ' +
+    'The first hundred guides set the culture permanently.</p>' +
+    '<label class="bf"><span>Your name</span><input type="text" id="a-name"></label>' +
+    '<label class="bf"><span>Email</span><input type="email" id="a-mail"></label>' +
+    '<label class="bf"><span>Your tradition</span><select id="a-trad"></select></label>' +
+    '<label class="bf"><span>Any ministry, chaplaincy or community role? (optional)</span><input type="text" id="a-role"></label>' +
+    '<label class="bf"><span>Why do you want to do this?</span><textarea id="a-why" maxlength="900"></textarea></label>' +
+    '<div class="checkline"><input type="checkbox" id="a-ok">' +
+    '<label for="a-ok">I understand I offer prayer and reflection only — never medical, psychological or legal advice — ' +
+    'and I will never ask anyone for money or private contact details.</label></div>' +
+    '<div class="rowx"><button class="btnb" id="a-send">Send application</button>' +
+    '<button class="btnb ghost sm" id="a-back">Back</button>' +
+    '<span class="muted" id="a-msg" style="font-size:14px"></span></div></div>');
+  FAITHS.forEach(([v,l]) => $("a-trad").add(new Option(l, v)));
+  $("a-back").onclick = renderGuideSignedOut;
+  $("a-send").onclick = async () => {
+    if (!$("a-ok").checked) { $("a-msg").textContent = "Please tick the box."; return; }
+    const name = $("a-name").value.trim(), mail = $("a-mail").value.trim();
+    if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { $("a-msg").textContent = "Name and a valid email, please."; return; }
+    if (!db) { $("a-msg").textContent = "Not connected yet."; return; }
+    $("a-send").disabled = true; $("a-msg").textContent = "Sending…";
+    try {
+      await addDoc(collection(db, "blessing", "circle", "applications"), {
+        name: name.slice(0,80), email: mail.slice(0,120), tradition: $("a-trad").value,
+        role: $("a-role").value.trim().slice(0,140), why: $("a-why").value.trim().slice(0,900),
+        createdAt: new Date().toISOString(),
+      });
+      guideShell('<div class="panelb"><h2>Thank you.</h2><p class="lede">We read every one. If it is a fit you will hear from us — ' +
+        'and if you do not, it is far more likely to be about timing than about you.</p></div>');
+    } catch (e) {
+      $("a-msg").textContent = "Could not send: " + (e.code === "permission-denied" ? "rules not published yet." : e.message);
+      $("a-send").disabled = false;
+    }
+  };
+}
+
+async function renderQueue(){
+  guideShell('<div class="panelb"><h2>Open requests</h2><p class="lede">Reading…</p></div>');
+  try {
+    const q = query(collection(db, "blessing", "circle", "requests"),
+                    where("status", "==", "open"), limit(25));
+    const snap = await getDocs(q);
+    let html = '<div class="panelb"><h2>Open requests</h2>' +
+      '<p class="lede">Signed in as ' + esc(me.displayName || me.email) + ' · <a href="#" id="out">sign out</a></p>';
+    if (snap.empty) html += '<p class="muted">Nothing waiting right now. That is a good thing.</p>';
+    snap.forEach((d) => {
+      const r = d.data();
+      html += '<div class="req"><div class="meta">' +
+        '<span class="chipb t">' + esc(r.tradition) + '</span>' +
+        '<span class="chipb">' + esc(r.category) + '</span>' +
+        (r.flagged ? '<span class="chipb" style="background:#fdf1ef;color:#9c3427">flagged — read with care</span>' : '') +
+        '<span class="when">' + esc((r.createdAt||"").slice(0,10)) + '</span></div>' +
+        '<div class="body">' + esc(r.note) + '</div>' +
+        '<div class="rowx"><button class="btnb sm" data-reply="' + d.id + '" data-trad="' + esc(r.tradition) + '">Reply with a verse</button></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    guideShell(html);
+    $("out").onclick = (e) => { e.preventDefault(); signOut(auth); };
+    document.querySelectorAll("[data-reply]").forEach((b) => {
+      b.onclick = () => renderReply(b.dataset.reply, b.dataset.trad);
+    });
+  } catch (e) {
+    guideShell('<div class="panelb"><h2>Open requests</h2><p class="muted">Could not load: ' +
+      (e.code === "permission-denied"
+        ? "this account is not on the approved-guide list yet."
+        : esc(e.message)) + '</p>' +
+      '<div class="rowx"><button class="btnb ghost sm" id="out2">Sign out</button></div></div>');
+    const o = $("out2"); if (o) o.onclick = () => signOut(auth);
+  }
+}
+
+function renderReply(id, tradition){
+  const pool = (typeof VERSE_DB !== "undefined" ? VERSE_DB : []).filter((v) => v.faith === tradition);
+  let picked = null;
+  let html = '<div class="panelb"><h2>Choose a verse</h2>' +
+    '<p class="lede">From ' + esc(tradition) + '. Pick the one you would actually say to them, not the most impressive one.</p>' +
+    '<label class="bf"><span>Search</span><input type="text" id="vq" placeholder="a word, a theme, a reference"></label>' +
+    '<div class="vpick" id="vlist"></div>' +
+    '<label class="bf"><span>A few words of your own</span>' +
+    '<textarea id="refl" maxlength="900" placeholder="Why this verse, for them."></textarea></label>' +
+    '<label class="bf"><span>Sign it as</span><input type="text" id="gname" maxlength="60" placeholder="a first name, or how you would like to be known"></label>' +
+    '<div class="rowx"><button class="btnb" id="sendrep">Send the blessing</button>' +
+    '<button class="btnb ghost sm" id="backq">Back to the queue</button>' +
+    '<span class="muted" id="repmsg" style="font-size:14px"></span></div></div>';
+  guideShell(html);
+
+  function list(f){
+    const q = (f||"").toLowerCase();
+    const rows = pool.filter((v) => !q || v.text.toLowerCase().includes(q) || v.ref.toLowerCase().includes(q)
+      || (v.topic||"").toLowerCase().includes(q)).slice(0, 60);
+    $("vlist").innerHTML = rows.map((v, i) =>
+      '<div class="vopt" role="button" tabindex="0" data-i="' + i + '" aria-pressed="false">' +
+      '<b>' + esc(v.ref) + '</b>' + esc(v.text.slice(0, 130)) + (v.text.length > 130 ? "…" : "") + '</div>').join("")
+      || '<p class="muted" style="margin:6px">Nothing matches that.</p>';
+    $("vlist").querySelectorAll(".vopt").forEach((n) => {
+      n.onclick = () => {
+        $("vlist").querySelectorAll(".vopt").forEach((x) => x.setAttribute("aria-pressed","false"));
+        n.setAttribute("aria-pressed","true");
+        picked = rows[+n.dataset.i];
+      };
+    });
+  }
+  list(""); $("vq").oninput = () => list($("vq").value);
+  $("backq").onclick = renderQueue;
+  $("sendrep").onclick = async () => {
+    if (!picked) { $("repmsg").textContent = "Choose a verse first."; return; }
+    const refl = $("refl").value.trim();
+    if (refl.length < 10) { $("repmsg").textContent = "A sentence or two of your own, please."; return; }
+    $("sendrep").disabled = true; $("repmsg").textContent = "Sending…";
+    try {
+      await addDoc(collection(db, "blessing", "circle", "requests", id, "responses"), {
+        verseRef: picked.ref, verseText: picked.text, reflection: refl.slice(0,900),
+        guideName: ($("gname").value.trim() || "a guide").slice(0,60),
+        guideUid: me.uid, createdAt: new Date().toISOString(),
+      });
+      await updateDoc(doc(db, "blessing", "circle", "requests", id), { status: "answered" });
+      guideShell('<div class="panelb"><h2>Sent.</h2><p class="lede">They will find it on their link. Thank you for the time.</p>' +
+        '<button class="btnb" id="backq2">Back to the queue</button></div>');
+      $("backq2").onclick = renderQueue;
+    } catch (e) {
+      $("repmsg").textContent = "Could not send: " + esc(e.message);
+      $("sendrep").disabled = false;
+    }
+  };
+}
+
+if (auth) {
+  onAuthStateChanged(auth, (u) => {
+    me = u;
+    if (view === "guide") { u ? renderQueue() : renderGuideSignedOut(); }
+  });
+}
+
+/* ---- tabs ---- */
+let view = "ask";
+function show(v){
+  view = v;
+  ["ask","read","guide"].forEach((k) => $("v-"+k).classList.toggle("hiddenb", k !== v));
+  document.querySelectorAll(".tabb").forEach((b) =>
+    b.dataset.v === v ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+  if (v === "guide") { me ? renderQueue() : renderGuideSignedOut(); }
+}
+document.querySelectorAll(".tabb").forEach((b) => b.onclick = () => show(b.dataset.v));
+
+// Opening the link someone was given goes straight to their reply.
+const rid = new URLSearchParams(location.search).get("r");
+if (rid) { show("read"); $("code").value = location.href; showReplies(rid); }
+</script>
+</body>
+</html>
