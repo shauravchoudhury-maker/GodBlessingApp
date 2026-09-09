@@ -1,0 +1,157 @@
+EverVerse — the Blessing Circle campaign
+========================================
+
+The code is in campaign.js. This is the part that is not code: what to do
+first, where, and what would make it go wrong.
+
+
+THE ONE THING THAT MATTERS MOST
+-------------------------------
+There are zero approved guides today.
+
+If we market the Circle to people in pain before there are guides, somebody
+writes down the worst thing in their life, presses send, and nothing comes
+back. That is worse than never having offered. It is also the fastest way
+to lose the only asset this platform has, which is being trusted — and it
+is unrecoverable, because the person it happened to will never come back
+and will tell people.
+
+So: SUPPLY FIRST. Recruit guides for six to eight weeks. Only then invite
+people to ask.
+
+campaign.js enforces this rather than trusting the plan. GUIDE_COUNTS is a
+hand-edited constant, and until a faith reaches three approved guides the
+daily posts say "we need guides", not "come and ask". Switching it is a
+decision someone makes on purpose after looking at who those guides are —
+not something that happens because a query returned a number.
+
+
+WHERE THE FIRST GUIDES COME FROM
+--------------------------------
+Not ads. In order of how well they will work:
+
+1. THE AUDIENCE WE ALREADY HAVE. Whoever opens the daily verse is already
+   religious, already here, and has never been asked. This is the single
+   best source and it costs nothing. The daily post CTA does this.
+
+2. THE ETSY BUYERS. Someone who bought a scripture print for their mother's
+   funeral is exactly the person who should be answering requests about
+   losing a parent. A card in the digital download, one line, no pressure.
+
+3. FAITH COMMUNITIES, ONE AT A TIME. A letter to a parish, a mosque, a
+   gurdwara, a temple, a synagogue. Not a mail merge — a real letter naming
+   the specific thing we want: two or three people who have been through
+   something and would answer one message a week. This is slow and it is
+   the only route that produces STEWARDS, because the institution can then
+   confirm the affiliation.
+
+4. HOSPICE AND CHAPLAINCY VOLUNTEER NETWORKS. People already doing this
+   work in person, already background-checked by someone.
+
+5. Reddit and Facebook faith groups. Read the self-promotion rules first
+   and follow them; getting banned from r/Christianity would cost more than
+   it gains.
+
+Do NOT buy ads for guide recruitment. The people who respond to a paid ad
+for "become a spiritual guide" are, on average, not the people we want, and
+the ones we do want are unreachable that way.
+
+
+THE RATIO
+---------
+Per campaign.js monthPlan(): out of 28 days —
+
+  20  daily verse posts, with one quiet campaign line appended
+   4  trust posts (weekly)
+   4  guide recruitment posts (weekly), rotating across the seven faiths
+
+The daily verse is the traffic. It is what gets shared, and a verse post
+that turns into an advert stops being shared, which kills the engine. Hence
+one short line, rotating, and NEVER on a post about grief or peace — a
+verse someone opens while hurting is not an acquisition channel. That
+suppression is in the code, not left to judgement.
+
+
+THE POSITIONING
+---------------
+Every competitor in "spiritual wellness" advertises what it can do FOR you.
+Almost nobody advertises what it structurally cannot do TO you.
+
+That is the gap, it is defensible, and it is the only claim we can keep
+under scrutiny. So the trust posts are the campaign's spine:
+
+  · A guide can write to you exactly once. Not policy — the system refuses
+    a second message.
+  · A guide cannot give you contact details, a link, or a way to reach them
+    anywhere else.
+  · Nobody can ask you for money. There is no paid tier.
+  · A guide cannot read anyone's request but yours. There is no queue to
+    browse. We used to allow it. We closed it.
+  · A guide cannot sign as "Dr." or "Therapist", even if they are one.
+  · If a request reads as coming from someone under 18, we do not pass it
+    on. There is no override.
+  · If someone is in real danger, it goes to an identity-checked,
+    background-checked guide — or we say we cannot take it and point at 988.
+
+Every one of those is true today and provable by reading the code.
+
+A note on "biggest". It is the wrong goal to chase first and a dangerous
+one to claim — campaign.js refuses the word, along with "#1", "the best"
+and "most trusted", because we cannot prove any of them. The way to end up
+biggest in this category is to be the one that never has the scandal.
+Scale is the reward for being trusted, not the route to it.
+
+
+WHAT WE WILL NEVER DO
+---------------------
+Enforced by checkCampaignCopy() and tested. In summary:
+
+  · No health or outcome claims. No "cure", "heal your", "fix your".
+  · Never positioned against medical care or therapy.
+  · No clinical targeting. Never buy or hashtag "depression", "anxiety
+    disorder", "PTSD", "addict".
+  · NEVER target crisis terms — "suicidal", "want to die", "self-harm".
+    Advertising at people in crisis is ambulance-chasing, and doing it
+    while claiming to be the safe option would be indefensible.
+  · No life-event targeting on Meta or Google. The platforms will happily
+    let us target "recently bereaved". We do not.
+  · No testimonials. A recipient's words are theirs. We never quote what
+    somebody wrote to us, in any form, however moving, however anonymised.
+  · No manufactured urgency, no invented social proof, no unprovable
+    superlatives, no implied paid tier.
+
+The check runs on OUR copy, never on the scripture we quote — Gita 9:34
+says "Fix your mind on me" and Matthew 28:6 says "just as he said", and the
+right response to a filter flagging those is obviously not to edit
+scripture. Use checkCaption(caption, verse), which strips the verse first.
+
+
+HOW WE WILL KNOW IT IS WORKING
+------------------------------
+Not by traffic. The numbers that matter, in order:
+
+  1. Approved guides per faith. Below three, that faith is not open.
+  2. Median time to a reply. If it goes past three days, stop all
+     requester-facing marketing until it comes down.
+  3. Requests that never got an answer. This should be zero. If it is not
+     zero, nothing else on this list matters.
+  4. Reports per hundred blessings, and how many were upheld.
+  5. Only then: requests received.
+
+If 2 or 3 go wrong, the correct response is to turn the campaign OFF, not
+to recruit faster.
+
+
+FIRST FOUR WEEKS, CONCRETELY
+----------------------------
+Week 1  Publish BLESSING_RULES.txt. Nothing below works until the rules are
+        live — right now every write returns 403.
+        Approve yourself as admin. Recruit posts begin on the daily feed.
+Week 2  Letters to five institutions, one per faith you have a contact in.
+        Etsy download card goes out with new orders.
+Week 3  First applications arrive. Ring the organisations. Approve slowly —
+        the first hundred guides set the culture permanently.
+Week 4  First trust post. Review: how many guides per faith?
+        Three in any faith → set GUIDE_COUNTS and let that faith open.
+        Fewer → keep recruiting and say nothing else. That is not a delay,
+        it is the product working.
