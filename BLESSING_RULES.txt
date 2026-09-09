@@ -14,7 +14,13 @@ file, or reactions, Twin Track and Second Chance all stop working.
     // approved guide, never by the public, and never listed to anyone else.
     function isGuide() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid));
+        && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
+        && get(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
+             .data.suspended != true;
+    }
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/blessing/circle/admins/$(request.auth.uid));
     }
 
     match /blessing/circle/requests/{id} {
@@ -63,13 +69,41 @@ file, or reactions, Twin Track and Second Chance all stop working.
       // cannot approve themselves, because create is refused outright: the
       // document has to already exist, and only the console can make it.
       allow create: if false;
-      allow update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name','tradition','languages','experience','about','capacity','active','updatedAt'])
-        && request.resource.data.about is string
-        && request.resource.data.about.size() <= 400
-        && request.resource.data.name.size() <= 60;
+      allow update: if
+        // a guide edits their own profile — and cannot touch `suspended`
+        (request.auth != null && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['name','tradition','languages','experience','about','capacity','active','updatedAt'])
+          && request.resource.data.about is string
+          && request.resource.data.about.size() <= 400
+          && request.resource.data.name.size() <= 60)
+        // or an admin suspends them, and can do nothing else here
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['suspended','active','suspendedAt']));
       allow delete: if false;
+    }
+
+    // Reports. Anyone who received a blessing may file one, without an
+    // account — the person who most needs to report is the least likely to
+    // have signed up for anything.
+    match /blessing/circle/reports/{id} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['requestId','responseId','guideUid','reason','note','status','createdAt'])
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 16
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 500
+        && request.resource.data.status == 'open';
+      allow read: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','closedAt']);
+      allow delete: if false;
+    }
+
+    // Admins. Console-created, exactly like guides.
+    match /blessing/circle/admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
 
     // Applications go in; nothing comes back out through the client.
@@ -116,3 +150,33 @@ The person is told plainly to keep it.
 
 STILL YOUR JOB: an approved guide can read every open request. Approval is
 therefore a real trust decision, not a formality. Approve slowly.
+
+
+Moderation
+----------
+Three layers, in descending order of how much good they do.
+
+1. PREVENT. A reply is checked before it can be sent. Contact details, links,
+   requests for money, and anything telling a person to stop medical treatment
+   are refused outright — those are not judgement calls. Softer language
+   ("cure", "you deserve this", "I guarantee") warns once and sends on a
+   second press. Tested against fourteen cases including genuine replies that
+   mention a doctor or money worries, which pass clean.
+
+2. REPORT. One tap under any received blessing, seven reasons, no account.
+
+3. ACT. `blessing/circle/reports` is readable ONLY by an admin. Suspending
+   sets `suspended: true`, and isGuide() checks it — so access to the queue is
+   gone on the guide's very next request, not at some later cleanup.
+
+To make yourself an admin, create `blessing/circle/admins/<your UID>` in the
+console. Same as guides: there is no way to do it from inside the app.
+
+Note what a guide CANNOT do: touch their own `suspended` field. The rule lets
+them edit name, tradition, languages, experience, about, capacity and active —
+and nothing else. Only an admin writes `suspended`, and an admin can write
+nothing else on that document.
+
+Replies are immutable — no update, no delete, by rule. Whatever was actually
+written is still there when you come to look at it, which is the only reason a
+report is worth filing.

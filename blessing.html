@@ -308,6 +308,7 @@ async function showReplies(id){
         '<div class="from">— ' + esc(r.guideName || "a guide") + ', ' +
         esc((r.createdAt || "").slice(0, 10)) + '</div>';
       box.appendChild(el);
+      reportUI(el, id, d.id, r.guideUid);
     });
   } catch (e) {
     box.innerHTML = '<p class="muted">Could not open that: ' + esc(e.message) + '</p>';
@@ -385,6 +386,7 @@ function renderApply(){
 }
 
 async function renderQueue(){
+  await checkAdmin();
   guideShell('<div class="panelb"><h2>Open requests</h2><p class="lede">Reading…</p></div>');
   try {
     const q = query(collection(db, "blessing", "circle", "requests"),
@@ -392,7 +394,9 @@ async function renderQueue(){
     const snap = await getDocs(q);
     let html = '<div class="panelb"><h2>Open requests</h2>' +
       '<p class="lede">Signed in as ' + esc(me.displayName || me.email) +
-      ' · <a href="#" id="prof">your profile</a> · <a href="#" id="out">sign out</a></p>';
+      ' · <a href="#" id="prof">your profile</a>' +
+      (isAdmin ? ' · <a href="#" id="mod">reports</a>' : '') +
+      ' · <a href="#" id="out">sign out</a></p>';
     if (snap.empty) html += '<p class="muted">Nothing waiting right now. That is a good thing.</p>';
     // Anything addressed to me by the matcher comes first.
     const rows = [];
@@ -413,6 +417,7 @@ async function renderQueue(){
     html += '</div>';
     guideShell(html);
     $("out").onclick = (e) => { e.preventDefault(); signOut(auth); };
+    if (isAdmin && $("mod")) $("mod").onclick = (e) => { e.preventDefault(); renderModeration(); };
     $("prof").onclick = async (e) => {
       e.preventDefault();
       let cur = null;
@@ -443,6 +448,7 @@ function renderReply(id, tradition){
     '<label class="bf"><span>A few words of your own</span>' +
     '<textarea id="refl" maxlength="900" placeholder="Why this verse, for them."></textarea></label>' +
     '<label class="bf"><span>Sign it as</span><input type="text" id="gname" maxlength="60" placeholder="a first name, or how you would like to be known"></label>' +
+    '<div class="note" id="modwarn" style="display:none"></div>' +
     '<div class="rowx"><button class="btnb" id="sendrep">Send the blessing</button>' +
     '<button class="btnb ghost sm" id="backq">Back to the queue</button>' +
     '<span class="muted" id="repmsg" style="font-size:14px"></span></div></div>';
@@ -465,11 +471,33 @@ function renderReply(id, tradition){
     });
   }
   list(""); $("vq").oninput = () => list($("vq").value);
+  $("refl").addEventListener("input", () => {
+    delete $("sendrep").dataset.acked;              // re-check after any edit
+    const v = checkReply($("refl").value);
+    $("modwarn").style.display = v.level === "clear" ? "none" : "block";
+    if (v.level !== "clear") $("modwarn").innerHTML =
+      '<b>' + (v.level === "block" ? "This cannot be sent as written" : "Worth a second look") + '</b><p>' + esc(v.msg) + '</p>';
+  });
   $("backq").onclick = renderQueue;
   $("sendrep").onclick = async () => {
     if (!picked) { $("repmsg").textContent = "Choose a verse first."; return; }
     const refl = $("refl").value.trim();
     if (refl.length < 10) { $("repmsg").textContent = "A sentence or two of your own, please."; return; }
+    const verdict = checkReply(refl);
+    if (!verdict.ok) {
+      $("repmsg").textContent = "";
+      $("modwarn").className = "note";
+      $("modwarn").style.display = "block";
+      $("modwarn").innerHTML = '<b>This cannot be sent as written</b><p>' + esc(verdict.msg) + '</p>';
+      return;
+    }
+    if (verdict.level === "warn" && !$("sendrep").dataset.acked) {
+      $("modwarn").style.display = "block";
+      $("modwarn").innerHTML = '<b>Worth a second look</b><p>' + esc(verdict.msg) +
+        '</p><p style="margin-top:8px">Press send again if you are happy with it.</p>';
+      $("sendrep").dataset.acked = "1";
+      return;
+    }
     $("sendrep").disabled = true; $("repmsg").textContent = "Sending…";
     try {
       await addDoc(collection(db, "blessing", "circle", "requests", id, "responses"), {
@@ -744,6 +772,196 @@ async function showMatches(req, onPick){
       onPick(picked);
     };
   });
+}
+
+
+/* ==================================================================
+   MODERATION — three layers, in order of how much good they do.
+
+   1. PREVENT. A check before a reply is sent. This is worth more than
+      everything below it, because a blessing cannot be unsent and the
+      person reading it is already having a bad week.
+   2. REPORT. One tap on a received blessing, no account needed.
+   3. ACT. A queue where an admin reads the exchange and suspends.
+
+   Replies are immutable by rule — no edit, no delete — so whatever a
+   guide actually wrote is still there when someone comes to look.
+   ================================================================== */
+
+// Hard stops. These are not judgement calls: a volunteer guide has no
+// reason to send contact details, ask for money, or tell somebody to
+// come off their medication. Ever.
+const BLOCK = [
+  { re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
+    msg: "That looks like an email address. Guides never exchange contact details — everything stays on EverVerse, which is what keeps both of you safe." },
+  { re: /(?:^|\D)(\+?\d[\d\s().-]{8,}\d)(?:\D|$)/,
+    msg: "That looks like a phone number. Guides never exchange contact details." },
+  { re: /(https?:\/\/|www\.)\S+/i,
+    msg: "Please do not include links. If you want to point them to something, describe it in words." },
+  { re: /\b(whats ?app|telegram|instagram|snapchat|facebook|dm me|text me|call me|my number|add me)\b/i,
+    msg: "Please keep the conversation here. Moving someone to a private channel is the single most common way this kind of platform goes wrong." },
+  { re: /\b(paypal|venmo|cash ?app|zelle|gofundme|donate|donation|my fee|pay me|send money|\$\s?\d)/i,
+    msg: "Guides are volunteers and never ask for money. If this was about something else, please reword it." },
+  { re: /\b(stop|quit|come off|cease|don'?t take|do not take|throw away)\b[^.!?]{0,40}\b(medication|meds|medicine|pills|tablets|treatment|chemo|chemotherapy|therapy|insulin)\b/i,
+    msg: "This reads as telling someone to stop medical treatment. That can cost a life, and it is the one thing a guide must never do." },
+  { re: /\b(you (do not|don'?t) need|no need for|instead of)\b[^.!?]{0,30}\b(a doctor|doctors|medicine|hospital|therapy|treatment)\b/i,
+    msg: "This reads as steering someone away from medical care. Please remove it." },
+];
+
+// Worth a second look, but the guide may have a good reason.
+const WARN = [
+  { re: /\b(cure[sd]?|will heal|can heal|heal your)\b/i,
+    msg: "“cure” and “heal” read as promises about health. Consider saying what you are praying for rather than what will happen." },
+  { re: /\b(god is punishing|deserve this|your fault|because you sinned|lack of faith)\b/i,
+    msg: "This could land as blame on someone already in pain. Please read it once more as though you were them." },
+  { re: /\b(guarantee|i promise you will|definitely will)\b/i,
+    msg: "Try not to promise an outcome. You can promise to pray; you cannot promise the result." },
+];
+
+function checkReply(text){
+  const t = String(text || "");
+  const blocked = BLOCK.find((r) => r.re.test(t));
+  if (blocked) return { ok: false, level: "block", msg: blocked.msg };
+  const warned = WARN.find((r) => r.re.test(t));
+  if (warned) return { ok: true, level: "warn", msg: warned.msg };
+  return { ok: true, level: "clear", msg: "" };
+}
+
+const REPORT_REASONS = [
+  ["contact",  "Asked me for contact details or to move elsewhere"],
+  ["money",    "Asked me for money"],
+  ["medical",  "Gave medical advice, or told me to stop treatment"],
+  ["cruel",    "Unkind, blaming, or made me feel worse"],
+  ["pushy",    "Pushed a belief at me after I said no"],
+  ["sexual",   "Sexual or inappropriate"],
+  ["other",    "Something else"],
+];
+
+/* ---- 2. Report, from the person who received it ---- */
+function reportUI(host, requestId, responseId, guideUid){
+  const b = document.createElement("button");
+  b.className = "btnb ghost sm";
+  b.style.marginTop = "12px";
+  b.textContent = "Report this";
+  const panel = document.createElement("div");
+  panel.className = "note";
+  panel.style.display = "none";
+  panel.innerHTML = '<b>What went wrong?</b>' +
+    '<p style="margin-bottom:10px">This goes to a person, not a system. Nothing you write here goes back to the guide.</p>' +
+    '<div class="tagwrap" style="margin-bottom:10px">' +
+    REPORT_REASONS.map(([v, l]) =>
+      '<button type="button" class="tag2" data-r="' + v + '" aria-pressed="false">' + esc(l) + '</button>').join("") +
+    '</div><textarea class="rnote" maxlength="500" style="min-height:70px" placeholder="Anything you want to add (optional)"></textarea>' +
+    '<div class="rowx"><button class="btnb sm rsend">Send the report</button>' +
+    '<span class="muted rmsg" style="font-size:13.5px"></span></div>';
+  b.onclick = () => { panel.style.display = panel.style.display === "none" ? "block" : "none"; };
+
+  let reason = null;
+  panel.querySelectorAll(".tag2").forEach((t) => t.onclick = () => {
+    panel.querySelectorAll(".tag2").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    t.setAttribute("aria-pressed", "true");
+    reason = t.dataset.r;
+  });
+  panel.querySelector(".rsend").onclick = async () => {
+    if (!reason) { panel.querySelector(".rmsg").textContent = "Pick a reason first."; return; }
+    if (!db) { panel.querySelector(".rmsg").textContent = "Not connected."; return; }
+    panel.querySelector(".rsend").disabled = true;
+    try {
+      await addDoc(collection(db, "blessing", "circle", "reports"), {
+        requestId, responseId, guideUid: guideUid || "",
+        reason, note: panel.querySelector(".rnote").value.trim().slice(0, 500),
+        status: "open", createdAt: new Date().toISOString(),
+      });
+      panel.innerHTML = '<b>Thank you for telling us.</b><p>Someone will read this. ' +
+        'If a guide has behaved badly they will not be answering anyone else while it is looked at.</p>';
+    } catch (e) {
+      panel.querySelector(".rmsg").textContent = "Could not send: " + e.message;
+      panel.querySelector(".rsend").disabled = false;
+    }
+  };
+  host.appendChild(b); host.appendChild(panel);
+}
+
+/* ---- 3. The moderation queue ---- */
+let isAdmin = false;
+async function checkAdmin(){
+  if (!db || !me) { isAdmin = false; return false; }
+  try {
+    const d = await getDoc(doc(db, "blessing", "circle", "admins", me.uid));
+    isAdmin = d.exists();
+  } catch (e) { isAdmin = false; }
+  return isAdmin;
+}
+
+async function renderModeration(){
+  guideShell('<div class="panelb"><h2>Reports</h2><p class="lede">Reading…</p></div>');
+  try {
+    const snap = await getDocs(query(collection(db, "blessing", "circle", "reports"),
+                                     where("status", "==", "open"), limit(40)));
+    let html = '<div class="panelb"><h2>Reports</h2>' +
+      '<p class="lede">Every reply is permanent by rule, so what was actually written is still here. ' +
+      '<a href="#" id="mq-back">back to the queue</a></p>';
+    if (snap.empty) html += '<p class="muted">Nothing open. Good.</p>';
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, r: d.data() }));
+    html += items.map(({ id, r }) =>
+      '<div class="req" id="rep-' + id + '">' +
+      '<div class="meta"><span class="chipb" style="background:#fdf1ef;color:#9c3427">' +
+        esc((REPORT_REASONS.find((x) => x[0] === r.reason) || ["", r.reason])[1]) + '</span>' +
+      '<span class="when">' + esc((r.createdAt || "").slice(0, 10)) + '</span></div>' +
+      (r.note ? '<div class="body">' + esc(r.note) + '</div>' : '') +
+      '<div class="rowx">' +
+      '<button class="btnb ghost sm" data-see="' + esc(r.requestId) + '" data-rid="' + esc(r.responseId || "") + '">Read what was sent</button>' +
+      (r.guideUid ? '<button class="btnb ghost sm" data-susp="' + esc(r.guideUid) + '">Suspend this guide</button>' : '') +
+      '<button class="btnb ghost sm" data-close="' + id + '">Close, no action</button>' +
+      '<span class="muted" data-msg="' + id + '" style="font-size:13px"></span></div>' +
+      '<div data-shown="' + id + '"></div></div>').join("");
+    html += '</div>';
+    guideShell(html);
+    $("mq-back").onclick = (e) => { e.preventDefault(); renderQueue(); };
+
+    document.querySelectorAll("[data-see]").forEach((b) => b.onclick = async () => {
+      const host = b.closest(".req").querySelector("[data-shown]");
+      host.innerHTML = '<p class="muted">Loading…</p>';
+      try {
+        const rs = await getDocs(collection(db, "blessing", "circle", "requests", b.dataset.see, "responses"));
+        host.innerHTML = "";
+        rs.forEach((d) => {
+          const v = d.data();
+          const el = document.createElement("div");
+          el.className = "blessing";
+          el.style.marginTop = "10px";
+          el.innerHTML = '<div class="v">“' + esc(v.verseText) + '”</div><div class="ref">' + esc(v.verseRef) +
+            '</div><div class="refl">' + esc(v.reflection) + '</div>' +
+            '<div class="from">— ' + esc(v.guideName) + ' · ' + esc(v.guideUid || "") + '</div>';
+          host.appendChild(el);
+        });
+        if (!rs.size) host.innerHTML = '<p class="muted">No replies found on that request.</p>';
+      } catch (e) { host.innerHTML = '<p class="muted">Could not load: ' + esc(e.message) + '</p>'; }
+    });
+
+    document.querySelectorAll("[data-susp]").forEach((b) => b.onclick = async () => {
+      if (!confirm("Suspend this guide? They lose access to the queue immediately and stop being matched.")) return;
+      const msg = b.closest(".req").querySelector("[data-msg]");
+      try {
+        await updateDoc(doc(db, "blessing", "circle", "guides", b.dataset.susp),
+                        { suspended: true, active: false, suspendedAt: new Date().toISOString() });
+        msg.textContent = "suspended ✓";
+        msg.style.color = "#9c3427";
+      } catch (e) { msg.textContent = "Failed: " + e.message; }
+    });
+
+    document.querySelectorAll("[data-close]").forEach((b) => b.onclick = async () => {
+      const msg = b.closest(".req").querySelector("[data-msg]");
+      try {
+        await updateDoc(doc(db, "blessing", "circle", "reports", b.dataset.close),
+                        { status: "closed", closedAt: new Date().toISOString() });
+        msg.textContent = "closed";
+      } catch (e) { msg.textContent = "Failed: " + e.message; }
+    });
+  } catch (e) {
+    guideShell('<div class="panelb"><h2>Reports</h2><p class="muted">Could not load: ' + esc(e.message) + '</p></div>');
+  }
 }
 
 /* ---- tabs ---- */
