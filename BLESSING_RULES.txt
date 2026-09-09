@@ -29,6 +29,25 @@ file, or reactions, Twin Track and Second Chance all stop working.
       return res.data.forGuide == request.auth.uid || res.data.forGuide == '';
     }
 
+    // Standing. Derived from facts a human recorded in the console, never
+    // stored as an opinion and never writable by the guide themselves.
+    // The same four facts, in the same order, as tierOf() in the app —
+    // keep them in step if you change either.
+    //   1 listener   in the circle
+    //   2 companion  + identity confirmed + two stewards vouched
+    //   3 steward    + an affiliation confirmed + a background check
+    function gdoc(uid) {
+      return get(/databases/$(database)/documents/blessing/circle/guides/$(uid)).data;
+    }
+    function tierOfDoc(g) {
+      return g.get('suspended', false) == true ? 0
+        : (g.get('idVerifiedAt', '') != '' && g.get('vouchCount', 0) >= 2
+           && g.get('affiliationsConfirmed', 0) >= 1 && g.get('backgroundCheckAt', '') != '') ? 3
+        : (g.get('idVerifiedAt', '') != '' && g.get('vouchCount', 0) >= 2) ? 2
+        : 1;
+    }
+    function myTier() { return tierOfDoc(gdoc(request.auth.uid)); }
+
     match /blessing/circle/requests/{id} {
       // Anyone may ask for a blessing, without an account.
       allow create: if
@@ -40,7 +59,18 @@ file, or reactions, Twin Track and Second Chance all stop working.
         && request.resource.data.tradition.size() <= 24
         && request.resource.data.category is string
         && request.resource.data.category.size() <= 24
-        && request.resource.data.status == 'open';
+        && request.resource.data.status == 'open'
+        // A request that tripped the crisis check may not be written at all
+        // unless it names a guide who is cleared to receive it. It can never
+        // go to the whole circle, and never to someone who joined last week.
+        // If nobody is available the app says so and points at 988, which is
+        // the honest answer rather than a worse guide.
+        && (request.resource.data.flagged != true
+            || (request.resource.data.forGuide is string
+                && request.resource.data.forGuide.size() > 0
+                && request.resource.data.forGuide.size() < 64
+                && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.resource.data.forGuide))
+                && tierOfDoc(gdoc(request.resource.data.forGuide)) >= 2));
 
       // A guide reads the ones matched to them, and the ones the person
       // chose to send to the whole circle. Nothing else. A query that asks
@@ -96,10 +126,32 @@ file, or reactions, Twin Track and Second Chance all stop working.
           && request.resource.data.about is string
           && request.resource.data.about.size() <= 400
           && request.resource.data.name.size() <= 60)
-        // or an admin suspends them, and can do nothing else here
+        // or an admin records a standing fact, and can do nothing else here.
+        // Note what is NOT in the guide's own list above: every one of these.
+        // A guide cannot verify themselves, vouch for themselves, or claim an
+        // affiliation — those are the only inputs to standing, on purpose.
         || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['suspended','active','suspendedAt']));
+              .hasOnly(['suspended','active','suspendedAt','approvedAt',
+                        'idVerifiedAt','vouchCount','affiliations',
+                        'affiliationsConfirmed','backgroundCheckAt']));
       allow delete: if false;
+
+      // A steward puts their own name behind a newcomer. The document id is
+      // the voucher's uid, and there is no update and no delete — a vouch
+      // cannot be quietly withdrawn once the person is in. If that guide is
+      // later suspended for cause, the record of who let them in is still
+      // here. That is the whole point: vouching has to cost something.
+      match /vouches/{voucher} {
+        allow read: if isAdmin();
+        allow create: if isGuide()
+          && voucher == request.auth.uid
+          && voucher != uid
+          && myTier() >= 3
+          && request.resource.data.keys().hasOnly(['note','createdAt'])
+          && request.resource.data.note is string
+          && request.resource.data.note.size() <= 500;
+        allow update, delete: if false;
+      }
     }
 
     // Anyone barred from the circle, keyed by their sign-in email in
@@ -179,6 +231,46 @@ Note the asymmetry: a guide can edit their profile but can never CREATE the
 document, so approval is impossible from inside the app. Only the console
 grants it. There is no way to do step 4 from inside the app, on purpose.
 
+Standing — what a guide is cleared to do
+---------------------------------------
+Not a rating. A ladder of capability, derived from facts you record in the
+console. A guide climbing it is not "better"; they are cleared to carry
+more. A person asking for help never sees which rung anyone is on.
+
+  LISTENER    the guide document exists. Can send one blessing.
+  COMPANION   + 'idVerifiedAt' set, and 'vouchCount' >= 2.
+              Can also be routed a request that tripped the crisis check,
+              and can hold a conversation rather than a single reply.
+  STEWARD     + 'affiliationsConfirmed' >= 1, and 'backgroundCheckAt' set.
+              Can vouch for a newcomer and supervise a companion.
+
+To promote someone, record the fact — not the tier:
+
+  idVerifiedAt          "2026-09-20"   you saw their ID on a video call
+  vouchCount            2              two stewards vouched (see the
+                                       vouches subcollection for who)
+  affiliations          [{ org: "St Mary's Hospice",
+                           role: "Chaplaincy volunteer",
+                           confirmedAt: "2026-09-22" }]
+  affiliationsConfirmed 1              how many of the above YOU confirmed
+                                       with the institution directly
+  backgroundCheckAt     "2026-09-25"
+
+The tier follows automatically, in the app and in these rules, from the
+same four facts. There is no tier field to set and no way to grant standing
+without doing the underlying work.
+
+CONFIRM AFFILIATIONS WITH THE INSTITUTION, NOT THE PERSON. An affiliation
+only appears to a requester once 'confirmedAt' is set, and it appears as
+"confirmed with St Mary's Hospice" — which is a promise you are making on
+their behalf. Ring the hospice.
+
+'vouchCount' is maintained by hand today: a steward writes a vouch document
+from inside the app, you read it, and you set the number. That is the one
+place a Cloud Function would earn its keep later. Until then it is a human
+step, which is consistent with everything else here.
+
+
 How to bar someone
 ------------------
 Suspending (`suspended: true` on their guide doc) stops them immediately.
@@ -201,6 +293,11 @@ PROTECTED
     actually said is still there when someone comes to look.
   · A suspended guide loses access on their very next request, not at some
     later cleanup, because isGuide() reads the flag every time.
+  · A request that tripped the crisis check cannot be written to the
+    database at all unless it names a guide cleared to receive it. Not a
+    routing preference — the write itself is refused.
+  · A guide cannot verify themselves, vouch for themselves, or claim an
+    affiliation. Those are the only inputs to standing.
 
 NOT PROTECTED, by design
   · Anyone holding a request's link can read the replies to it. That is the

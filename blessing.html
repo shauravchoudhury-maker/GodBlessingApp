@@ -84,6 +84,17 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 .gname{font-weight:700;font-size:15.5px}
 .gwhy{font-size:13.5px;color:var(--accent);margin-top:2px}
 .gabout{font-size:13.5px;color:var(--muted);margin-top:6px}
+.gfacts{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.fact{font-size:12.5px;background:#f4f6f9;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:#41506b}
+.fact em{font-style:normal;color:var(--muted)}
+.standing{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;margin:14px 0 18px;background:#fbfbfe}
+.standing b{font-size:15px}
+.standing p{font-size:13.5px;margin:4px 0 0}
+.promise{margin-top:22px}
+.promise h3{font-size:15px;margin:0 0 4px}
+.promise ul{margin:8px 0 0;padding-left:0;list-style:none}
+.promise li{font-size:13.5px;color:#41506b;padding:7px 0 7px 26px;position:relative;border-top:1px solid var(--line)}
+.promise li:before{content:"—";position:absolute;left:6px;color:var(--accent);font-weight:700}
 .hiddenb{display:none!important}
 .foot{border-top:1px solid var(--line);margin-top:44px;padding:22px 0 50px;color:var(--muted);font-size:13.5px}
 .foot p{max-width:62ch}
@@ -181,6 +192,26 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
       <b>What happens next</b>
       <p>Guides are volunteers who apply and are approved by hand. Someone usually replies within a day or two, though nobody is on a rota — this is people giving their time, not a service you have bought.</p>
     </div>
+
+    <!-- The trust signal here is not a rating. It is the list of things
+         that are structurally impossible, which is worth more than any
+         number of testimonials and is the only claim we can actually keep. -->
+    <div class="note promise">
+      <h3>What a guide can never do</h3>
+      <p style="font-size:13.5px;margin:0">Not "should not". These are refused by the system itself, whatever anyone intends.</p>
+      <ul>
+        <li>Write to you more than once. One guide, one blessing — unless you ask for more.</li>
+        <li>Edit or delete what they sent you, ever. What was written stays written.</li>
+        <li>Give you contact details, a link, or a way to reach them anywhere else.</li>
+        <li>Ask you for money, a donation, or anything at all.</li>
+        <li>Tell you to stop taking medication or to skip a doctor.</li>
+        <li>Read anyone's request but the ones matched to them. Nobody browses the queue.</li>
+        <li>Sign with a title like "Dr." or "Therapist" — we cannot verify those, so we do not allow them.</li>
+        <li>Know whether you gave anything. Donations never reach a guide and are never shown to one.</li>
+      </ul>
+      <p style="font-size:13.5px;margin:12px 0 0">You need no account, we never ask for your email, and nothing will follow you afterwards.
+        If a guide does any of the above, there is a <b>Report this</b> button under every blessing and a person reads it.</p>
+    </div>
   </section>
 
   <!-- ============ READ ============ -->
@@ -266,7 +297,8 @@ $("findmatch").onclick = async () => {
   if (note.length < 10) { $("sendmsg").textContent = "Write a little first, so the match means something."; return; }
   if (!db) { $("sendmsg").textContent = "Not connected yet."; return; }
   $("sendmsg").textContent = "";
-  await showMatches({ tradition: $("trad").value, category: $("cat").value, note, language: "en" },
+  await showMatches({ tradition: $("trad").value, category: $("cat").value, note, language: "en",
+                      flagged: risky(note) },
                     (uid) => { pickedGuide = uid; });
 };
 
@@ -282,6 +314,22 @@ $("send").onclick = async () => {
   }
   const rq = checkRequest(note);
   if (!rq.ok) { $("sendmsg").textContent = rq.msg; return; }
+
+  // A crisis request must be assigned to a named companion or steward
+  // before it can be written at all. If the person never pressed "find
+  // someone", do it for them now rather than quietly sending it wide.
+  const flagged = risky(note);
+  if (flagged && !pickedGuide) {
+    $("sendmsg").textContent = "Finding the right person…";
+    await showMatches({ tradition: $("trad").value, category: $("cat").value, note, language: "en", flagged: true },
+                      (uid) => { pickedGuide = uid; });
+    $("sendmsg").textContent = "";
+  }
+  if (flagged && !pickedGuide) {
+    $("sendmsg").textContent = "Please read the message above before sending.";
+    $("matches").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   if (!db) { $("sendmsg").textContent = "Not connected yet — the backend rules still need publishing."; return; }
   $("send").disabled = true; $("sendmsg").textContent = "Sending…";
   try {
@@ -289,7 +337,7 @@ $("send").onclick = async () => {
       tradition: $("trad").value, category: $("cat").value,
       note: note.slice(0, 1200), status: "open", replies: 0,
       forGuide: pickedGuide || "",
-      flagged: risky(note), createdAt: new Date().toISOString(),
+      flagged, createdAt: new Date().toISOString(),
     });
     const url = location.origin + location.pathname + "?r=" + ref.id;
     $("link").textContent = url;
@@ -584,6 +632,121 @@ if (auth) {
 
 
 /* ==================================================================
+   STANDING
+   Four platforms solved four different halves of this problem, and each
+   one also carries the thing that would wreck it here.
+
+     Shaadi    take vouching, gated introduction, no open browsing
+               refuse paying to reach more people
+     LinkedIn  take affiliation confirmed WITH the institution
+               refuse self-declared credentials and endorsements
+     Naukri    take the structured supply-side profile
+               refuse the searchable, sortable directory
+     Airbnb    take verification that unlocks capability, and a real
+               trust-and-safety function
+               refuse reviews, ratings and Superhost
+
+   What is left is a ladder of capability rather than a ranking of
+   people. Standing decides what a guide is CLEARED TO DO. It never
+   decides who is better, it is never a number, and a person asking for
+   help never sees a rank — only whether this guide was matched to them
+   and what has actually been confirmed about them.
+   ================================================================== */
+
+/* The rungs. Named for what they do, never for how good anyone is —
+   "Companion" is a job, "4.8 stars" is a verdict. */
+var TIERS = [
+  { n: 0, key: "applicant", label: "Not yet in the circle",
+    blurb: "You have signed in, but nobody has let you in yet." },
+  { n: 1, key: "listener", label: "Listener",
+    blurb: "You can answer a request with one blessing." },
+  { n: 2, key: "companion", label: "Companion",
+    blurb: "You can also answer people writing in real distress, and stay in a conversation." },
+  { n: 3, key: "steward", label: "Steward",
+    blurb: "You can carry someone over time, vouch for a new guide, and supervise a companion." },
+];
+
+/* Standing is DERIVED, never stored as an opinion. Every input is a fact
+   a human recorded in the console — identity checked, two people who put
+   their own name behind you, an affiliation confirmed with the
+   institution itself, a background check. A guide cannot write any of
+   these fields, and neither can a well-meaning bug. */
+function tierOf(g){
+  if (!g || g.suspended === true) return 0;
+  var idOk    = !!g.idVerifiedAt;
+  var vouched = (g.vouchCount || 0) >= 2;
+  var affil   = (g.affiliationsConfirmed || 0) >= 1;
+  var checked = !!g.backgroundCheckAt;
+  if (idOk && vouched && affil && checked) return 3;
+  if (idOk && vouched) return 2;
+  return 1;
+}
+
+var ABILITY = {
+  reply:     1,   // send one blessing
+  crisis:    2,   // be routed a request that tripped the crisis check
+  converse:  2,   // hold a thread rather than a single reply
+  vouch:     3,   // put your own standing behind a newcomer
+  supervise: 3,   // be the named third person in someone else's thread
+};
+function can(g, ability){
+  return tierOf(g) >= (ABILITY[ability] || 99);
+}
+
+/* What the guide themselves is told. Deliberately concrete: not "level
+   2 of 3" but "here is the thing you cannot do yet, and here is the
+   human step that changes it". */
+function nextStep(g){
+  var t = tierOf(g);
+  if (t === 0) return null;
+  if (t >= 3) return null;
+  var missing = [];
+  if (!g.idVerifiedAt) missing.push("your identity confirmed with us — one call, ten minutes");
+  if ((g.vouchCount || 0) < 2) missing.push("two stewards who will put their own standing behind you");
+  if (t === 2) {
+    if ((g.affiliationsConfirmed || 0) < 1) missing.push("one affiliation we can confirm with the institution itself");
+    if (!g.backgroundCheckAt) missing.push("a background check");
+  }
+  return { to: TIERS[t + 1], missing: missing };
+}
+
+/* ---- What a person asking for help actually sees -------------------
+   Never a tier name, never a count, never anything sortable. Only
+   things that are true and checkable: what we confirmed, with whom, and
+   when — plus how long they have been here. A requester who could see
+   "Steward" would read it as "better", and then we would have built a
+   ranking after all. */
+function publicFacts(g){
+  var out = [];
+  (g.affiliations || []).forEach(function(a){
+    if (!a || !a.confirmedAt) return;             // unconfirmed never shows
+    out.push({ kind: "affiliation",
+      text: a.role + " at " + a.org,
+      note: "confirmed with " + a.org + ", " + String(a.confirmedAt).slice(0, 7) });
+  });
+  if (g.approvedAt) out.push({ kind: "tenure",
+      text: "In the circle since " + String(g.approvedAt).slice(0, 4), note: "" });
+  if (g.idVerifiedAt) out.push({ kind: "identity",
+      text: "Identity confirmed by EverVerse", note: "" });
+  return out;
+}
+
+/* ---- Routing -------------------------------------------------------
+   The one place standing changes who gets what. A request that tripped
+   the crisis check is never broadcast to the whole circle and never
+   goes to a brand-new guide: it is assigned to a named companion or
+   steward, or it is not accepted at all. Refusing is the honest
+   outcome — someone in real danger needs 988, not a volunteer who
+   happened to be free. */
+function routableFor(guides, flagged){
+  return (guides || []).filter(function(g){
+    if (g.suspended === true || g.active === false) return false;
+    return flagged ? can(g, "crisis") : can(g, "reply");
+  });
+}
+function needsAssignment(flagged){ return !!flagged; }
+
+/* ==================================================================
    MATCHING
    Airbnb and Rover match on what a provider can DO. The strongest
    signal here is different and much simpler: has this person been
@@ -694,7 +857,10 @@ function scoreGuide(g, req, want){
    distress should not be handed a directory to browse. */
 function matchGuides(guides, req, n){
   const want = neededExperience(req.category, req.note);
-  return guides
+  // Standing decides who is even eligible, before fit decides who is best.
+  // A request that tripped the crisis check can only reach a companion or
+  // a steward — never a guide who joined last week.
+  return routableFor(guides, req.flagged)
     .map((g) => scoreGuide(g, req, want))
     .filter(Boolean)
     .sort((a, b) => b.score - a.score)
@@ -713,9 +879,16 @@ function renderProfile(existing){
   const langs = new Set(g.languages || ["en"]);
   const trads = new Set(g.tradition || []);
 
+  const tier = TIERS[tierOf(g)], step = nextStep(g);
   let html = '<div class="panelb"><h2>Your profile</h2>' +
     '<p class="lede">This is what the matcher uses. It is not an advertisement, and nobody is ranked against anybody — ' +
     'it exists so that a person writing about their mother\'s funeral reaches someone who has stood at one.</p>' +
+    '<div class="standing"><b>' + esc(tier.label) + '</b><p>' + esc(tier.blurb) + '</p>' +
+    (step ? '<p class="muted" style="margin-bottom:0">To become a ' + esc(step.to.label.toLowerCase()) + ' you would need ' +
+       step.missing.map((m) => esc(m)).join("; and ") + '. There is no hurry, and no league table — ' +
+       'it only changes what you are allowed to carry.</p>'
+     : '<p class="muted" style="margin-bottom:0">Nothing further to unlock. Thank you for staying.</p>') +
+    '</div>' +
     '<label class="bf"><span>Sign your blessings as</span>' +
     '<input type="text" id="p-name" maxlength="60" value="' + esc(g.name || "") + '" placeholder="a first name is plenty"></label>' +
     '<label class="bf"><span>Traditions you can answer from</span><div id="p-trad" class="tagwrap"></div></label>' +
@@ -807,23 +980,45 @@ async function showMatches(req, onPick){
 
   const top = matchGuides(guides, req, 3);
   if (!top.length) {
-    box.innerHTML = '<div class="note"><b>We will send it to the circle.</b>' +
-      '<p>Nobody is free in that tradition at this moment, so your request goes to everyone who can answer it. ' +
-      'That usually works just as well — it simply takes a little longer.</p></div>';
-    onPick(null);
+    // A crisis request is never broadcast to the circle and never sent to
+    // whoever happens to be free. If no vetted guide can take it, saying so
+    // is the honest answer — a volunteer is not what this person needs.
+    box.innerHTML = req.flagged
+      ? '<div class="crisis on"><h3>We cannot take this one right now.</h3>' +
+        '<p>Requests like yours only go to guides we have checked carefully, and none of them is free at this moment. ' +
+        'We are not going to hand it to whoever happens to be available instead.</p>' +
+        '<p><b>Please call or text 988</b> — the Suicide &amp; Crisis Lifeline, free, right now, any reason. ' +
+        '<span class="num">988</span></p>' +
+        '<p style="margin-bottom:0">Come back to us afterwards. We will still be here.</p></div>'
+      : '<div class="note"><b>We will send it to the circle.</b>' +
+        '<p>Nobody is free in that tradition at this moment, so your request goes to everyone who can answer it. ' +
+        'That usually works just as well — it simply takes a little longer.</p></div>';
+    onPick(req.flagged ? false : null);      // false means "do not send at all"
     return;
   }
-  box.innerHTML = '<p class="lede" style="margin-bottom:12px">Three people who could hold this. ' +
-    'Pick one, or let whoever is free reply.</p>' +
+  box.innerHTML = '<p class="lede" style="margin-bottom:12px">' +
+    (req.flagged
+      ? 'These guides have been checked more carefully than most, because of what you have written. Pick one.'
+      : 'Three people who could hold this. Pick one, or let whoever is free reply.') + '</p>' +
     top.map((m, i) =>
       '<div class="gcard" data-uid="' + esc(m.guide.uid) + '" role="button" tabindex="0" aria-pressed="' + (i===0?"true":"false") + '">' +
       '<div class="gname">' + esc(m.guide.name || "a guide") + '</div>' +
       '<div class="gwhy">' + esc(m.why.join(", and ")) + '</div>' +
       (m.guide.about ? '<div class="gabout">' + esc(m.guide.about) + '</div>' : '') +
+      // Only what has actually been confirmed, and who confirmed it. No
+      // tier, no rank, no count — a person choosing between two guides
+      // should be choosing on fit, never on who scored higher.
+      (publicFacts(m.guide).length
+        ? '<div class="gfacts">' + publicFacts(m.guide).map((f) =>
+            '<span class="fact">' + esc(f.text) + (f.note ? ' <em>· ' + esc(f.note) + '</em>' : '') + '</span>').join("") +
+          '</div>' : '') +
       '</div>').join("") +
-    '<div class="gcard" data-uid="" role="button" tabindex="0" aria-pressed="false">' +
-    '<div class="gname">Whoever is free</div>' +
-    '<div class="gwhy">Send it to the whole circle — often the quickest</div></div>';
+    // "whoever is free" is not offered for a crisis request: those are
+    // always assigned to a named person.
+    (req.flagged ? '' :
+      '<div class="gcard" data-uid="" role="button" tabindex="0" aria-pressed="false">' +
+      '<div class="gname">Whoever is free</div>' +
+      '<div class="gwhy">Send it to the whole circle — often the quickest</div></div>');
 
   let picked = top[0].guide.uid;
   onPick(picked);
