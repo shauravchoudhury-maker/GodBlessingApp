@@ -10,17 +10,23 @@ file, or reactions, Twin Track and Second Chance all stop working.
 
 
     // ---- Blessing Circle ----
-    // A request contains someone's private burden. It is readable ONLY by an
-    // approved guide, never by the public, and never listed to anyone else.
+    // A request contains someone's private burden. It is readable ONLY by
+    // the guide it was matched to, never by the public, and never listed
+    // in bulk by anyone.
     function isGuide() {
       return request.auth != null
+        && request.auth.token.email != null
         && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
         && get(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
-             .data.suspended != true;
+             .data.suspended != true
+        && !exists(/databases/$(database)/documents/blessing/circle/banned/$(request.auth.token.email));
     }
     function isAdmin() {
       return request.auth != null
         && exists(/databases/$(database)/documents/blessing/circle/admins/$(request.auth.uid));
+    }
+    function mine(res) {
+      return res.data.forGuide == request.auth.uid || res.data.forGuide == '';
     }
 
     match /blessing/circle/requests/{id} {
@@ -36,38 +42,51 @@ file, or reactions, Twin Track and Second Chance all stop working.
         && request.resource.data.category.size() <= 24
         && request.resource.data.status == 'open';
 
-      // Only approved guides can read what people have written.
-      allow read: if isGuide();
+      // A guide reads the ones matched to them, and the ones the person
+      // chose to send to the whole circle. Nothing else. A query that asks
+      // for more than that is refused outright — see the note below.
+      allow get:  if isAdmin() || (isGuide() && mine(resource));
+      allow list: if isGuide() && mine(resource);
 
       // A guide may mark it answered, and nothing else.
-      allow update: if isGuide()
+      allow update: if isGuide() && mine(resource)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','replies']);
 
       allow delete: if false;
 
-      // Replies are readable by whoever holds the request's secret id — that
-      // is how the person who asked gets back to their blessing without an
-      // account and without giving us an email address.
+      // Replies are readable by whoever holds the request's secret id —
+      // that is how the person who asked gets back to their blessing
+      // without an account and without giving us an email address.
+      //
+      // NOTE THE DOCUMENT ID. It is the guide's own uid, and update and
+      // delete are both refused. One guide therefore gets exactly ONE
+      // message to any given person, ever. This is the most important
+      // line in the file: every grooming pattern worth the name needs a
+      // second message, and there is no second message.
       match /responses/{rid} {
         allow read: if true;
         allow create: if isGuide()
+          && rid == request.auth.uid
           && request.resource.data.keys().hasOnly(['verseRef','verseText','reflection','guideName','guideUid','createdAt'])
           && request.resource.data.reflection is string
           && request.resource.data.reflection.size() <= 900
+          && request.resource.data.guideName is string
+          && request.resource.data.guideName.size() <= 60
           && request.resource.data.guideUid == request.auth.uid;
         allow update, delete: if false;
       }
     }
 
     // The approved-guide list, which doubles as the guide directory the
-    // matcher reads. Profiles are meant to be seen, so they are public — but
-    // APPROVAL itself can only be granted from the Firebase console.
+    // matcher reads. Profiles are meant to be seen, so they are public —
+    // but APPROVAL itself can only be granted from the Firebase console.
     match /blessing/circle/guides/{uid} {
       allow read: if true;
 
-      // An approved guide may edit their own profile, and nothing else. They
-      // cannot approve themselves, because create is refused outright: the
-      // document has to already exist, and only the console can make it.
+      // An approved guide may edit their own profile, and nothing else.
+      // They cannot approve themselves, because create is refused
+      // outright: the document has to already exist, and only the console
+      // can make it.
       allow create: if false;
       allow update: if
         // a guide edits their own profile — and cannot touch `suspended`
@@ -83,14 +102,23 @@ file, or reactions, Twin Track and Second Chance all stop working.
       allow delete: if false;
     }
 
+    // Anyone barred from the circle, keyed by their sign-in email in
+    // lower case. Console-only, like every other trust decision here.
+    match /blessing/circle/banned/{email} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Reports. Anyone who received a blessing may file one, without an
-    // account — the person who most needs to report is the least likely to
-    // have signed up for anything.
+    // account — the person who most needs to report is the least likely
+    // to have signed up for anything. Guides file them too, against
+    // requests: `kind` says which way round it is.
     match /blessing/circle/reports/{id} {
       allow create: if
-        request.resource.data.keys().hasOnly(['requestId','responseId','guideUid','reason','note','status','createdAt'])
+        request.resource.data.keys().hasOnly(['requestId','responseId','guideUid','kind','reason','note','status','createdAt'])
         && request.resource.data.reason is string
         && request.resource.data.reason.size() <= 16
+        && request.resource.data.kind in ['reply','request']
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 500
         && request.resource.data.status == 'open';
@@ -117,12 +145,30 @@ file, or reactions, Twin Track and Second Chance all stop working.
     }
 
 
+Why the queue query looks the way it does
+-----------------------------------------
+Firestore checks `allow list` against every document a query returns. If a
+single one fails, the whole query fails — it does not quietly drop rows. So
+`allow list: if isGuide() && mine(resource)` does not merely hide other
+people's requests: it makes the broad query impossible. The client must ask
+
+    where("forGuide", "in", [me.uid, ""])
+
+or get nothing at all. A guide with the developer console open cannot widen
+it, because widening it is exactly what the rule refuses.
+
+This closes the hole flagged in the first version of this file, which said a
+guide could read every open request the moment they were approved. They no
+longer can. Approval is still a real trust decision — but it is no longer a
+key to everybody's private life.
+
+
 How to approve a guide
 ----------------------
 1. Read the application in Firestore → `blessing/circle/applications`.
 2. Ask them to sign in once at /blessing.html → "For guides" → Sign in with
-   Google. They will see "this account is not on the approved-guide list yet"
-   — that is expected, and it registers their account.
+   Google. They will see "this account is not on the approved-guide list
+   yet" — that is expected, and it registers their account.
 3. Find their UID in Firebase console → Authentication → Users.
 4. Create `blessing/circle/guides/<that UID>` with, say,
    { name: "…", tradition: ["Bible"], approvedAt: "2026-09-09" }.
@@ -131,52 +177,112 @@ How to approve a guide
 
 Note the asymmetry: a guide can edit their profile but can never CREATE the
 document, so approval is impossible from inside the app. Only the console
-grants it.
+grants it. There is no way to do step 4 from inside the app, on purpose.
 
-There is no way to do step 4 from inside the app, on purpose. Adding a guide
-should require deliberately opening the console.
+How to bar someone
+------------------
+Suspending (`suspended: true` on their guide doc) stops them immediately.
+It does not stop them signing up again with a second Google account — and
+nothing here can, short of asking everyone for government ID. What it does
+stop is the same person walking back in on the same email: create
+`blessing/circle/banned/<their email, lower case>` with any contents, and
+isGuide() refuses them at every rule. Do both.
 
 
 What this protects, and what it does not
 ----------------------------------------
-PROTECTED: nobody without an approved guide account can read a single
-request. The collection cannot be listed, searched or enumerated by the
-public, and requests can never be deleted or edited after the fact.
+PROTECTED
+  · Nobody without an approved guide account reads a single request.
+  · An approved guide reads only what was matched to them, or offered to
+    the whole circle. The collection cannot be enumerated by anyone.
+  · One guide gets one message to one person. There is no second message,
+    no editing the first, and no deleting it afterwards.
+  · Requests can never be deleted or edited after the fact, so what was
+    actually said is still there when someone comes to look.
+  · A suspended guide loses access on their very next request, not at some
+    later cleanup, because isGuide() reads the flag every time.
 
-NOT PROTECTED, by design: anyone holding a request's link can read the
-replies to it. That is the trade for not collecting email addresses — the
-secret link IS the credential, exactly as it is for a password-reset URL.
-The person is told plainly to keep it.
+NOT PROTECTED, by design
+  · Anyone holding a request's link can read the replies to it. That is the
+    trade for not collecting email addresses — the secret link IS the
+    credential, exactly as it is for a password-reset URL. The person is
+    told plainly to keep it.
 
-STILL YOUR JOB: an approved guide can read every open request. Approval is
-therefore a real trust decision, not a formality. Approve slowly.
+STILL A HUMAN JOB
+  · Someone barred can return under a fresh Google account with a fresh
+    email. Watch the reports queue.
+  · Age is inferred from what people write, never verified. It cannot be.
 
 
-Moderation
-----------
-Three layers, in descending order of how much good they do.
+Moderation and guard rails
+--------------------------
+1. PREVENT, on the way out. Before a reply can be sent it is checked
+   against contact details, links, requests for money, and anything telling
+   a person to stop medical treatment — refused outright, not judgement
+   calls. Then against the ways people hand over a contact WITHOUT typing
+   one: "j o h n dot smith at gmail dot com", "(at)", zero-width
+   characters, Cyrillic lookalikes, spaced-out phone numbers, "look me up,
+   same name on instagram", "let's talk privately", "our little secret",
+   "you're special to me", "send me a photo". Softer language ("cure",
+   "you deserve this", "I guarantee") warns once and sends on a second
+   press, and the warning re-arms on any edit.
 
-1. PREVENT. A reply is checked before it can be sent. Contact details, links,
-   requests for money, and anything telling a person to stop medical treatment
-   are refused outright — those are not judgement calls. Softer language
-   ("cure", "you deserve this", "I guarantee") warns once and sends on a
-   second press. Tested against fourteen cases including genuine replies that
-   mention a doctor or money worries, which pass clean.
+   Fifty-one cases are tested, including the ones that must NOT fire:
+   "Come to me, all you who are weary" (Matthew 11:28), "keep talking to
+   your doctor", "this is not your fault", "I am 16 years sober".
 
-2. REPORT. One tap under any received blessing, seven reasons, no account.
+2. PREVENT, on the way in. A request is checked for a third party's
+   address or contact details, links, and threats before it is accepted.
 
-3. ACT. `blessing/circle/reports` is readable ONLY by an admin. Suspending
-   sets `suspended: true`, and isGuide() checks it — so access to the queue is
-   gone on the guide's very next request, not at some later cleanup.
+3. NOT AT ALL, for children. If a request reads as coming from someone
+   under 18 — "i'm 15", "i'm in 8th grade", "my mom won't let me" — it is
+   not posted. The person is shown Teen Line and 988 instead. There is no
+   "I'm really an adult" override, deliberately: an override is a checkbox,
+   and a checkbox is what we already know does not work. Matching is
+   first-person only, so "my daughter is 14" is a parent asking for help
+   and goes through untouched.
 
-To make yourself an admin, create `blessing/circle/admins/<your UID>` in the
-console. Same as guides: there is no way to do it from inside the app.
+4. VOLUME. Twelve blessings per guide per day, held on the device. A
+   guide with developer tools can lift it; the optional block below makes
+   it server-side if the circle ever grows enough to need it.
 
-Note what a guide CANNOT do: touch their own `suspended` field. The rule lets
-them edit name, tradition, languages, experience, about, capacity and active —
-and nothing else. Only an admin writes `suspended`, and an admin can write
-nothing else on that document.
+5. NO CREDENTIALS IN THE SIGNATURE. "Dr.", "Pastor", "Therapist", "LCSW"
+   and the rest are refused in the name a guide signs with, because to
+   someone frightened they read as verified, and we verify nothing. They
+   are welcome to say what they do in their description.
 
-Replies are immutable — no update, no delete, by rule. Whatever was actually
-written is still there when you come to look at it, which is the only reason a
-report is worth filing.
+6. REPORT, both ways. One tap under any received blessing, seven reasons,
+   no account. And a guide can report a request — for abuse, for something
+   aimed at a named third party, or for somebody working the queue looking
+   for a mark.
+
+7. ACT. `blessing/circle/reports` is readable ONLY by an admin.
+
+To make yourself an admin, create `blessing/circle/admins/<your UID>` in
+the console. Same as guides: there is no way to do it from inside the app.
+
+
+OPTIONAL — a server-enforced daily cap
+--------------------------------------
+Only add this once the circle is big enough to need it, and test it with
+one guide before relying on it: if it is wrong, nobody can reply at all.
+
+Add to the guides match, as a third alternative in `allow update`:
+
+        || (request.auth != null && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['d','n'])
+            && request.resource.data.d == int(request.time.toMillis() / 86400000)
+            && ((resource.data.get('d', 0) == request.resource.data.d
+                 && request.resource.data.n == resource.data.get('n', 0) + 1)
+                || (resource.data.get('d', 0) != request.resource.data.d
+                    && request.resource.data.n == 1)))
+
+and to the responses `allow create`, one more condition:
+
+          && get(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
+               .data.get('n', 0) <= 12
+
+The counter can only be incremented by one, can only carry today's day
+number, and resets only when the day itself changes — so a guide cannot
+zero it to keep going. The client must bump `d`/`n` on the guide document
+immediately before writing the reply.

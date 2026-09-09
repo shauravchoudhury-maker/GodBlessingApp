@@ -146,6 +146,17 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
         <p style="margin-bottom:0">You are welcome to send your request as well — a guide will still read it. But please make the call first.</p>
       </div>
 
+      <div class="crisis" id="youngbox" style="display:none">
+        <h3>We are not the right place for this — but there is one.</h3>
+        <p>What you have written suggests you may be under 18. The Blessing Circle is answered by adult volunteers
+          we cannot fully vet, so we do not pass on messages from young people. That is not a judgement about you.
+          It is the one rule we will not bend, because you deserve someone trained rather than someone willing.</p>
+        <p><b>Teen Line — text TEEN to 839863</b>, or call <span class="num">800‑852‑8336</span>, 6–10pm PT, answered by other teenagers.</p>
+        <p><b>988</b> — the Suicide &amp; Crisis Lifeline, free, any hour, any reason. You do not have to be in danger to call.
+          <a href="https://988lifeline.org/chat/" target="_blank" rel="noopener">Chat online →</a></p>
+        <p style="margin-bottom:0">And please tell one adult you trust — a teacher, a school counsellor, an aunt. Out loud, to a real person.</p>
+      </div>
+
       <div class="checkline"><input type="checkbox" id="ok18">
         <label for="ok18">I am 18 or older, and I understand a guide offers prayer and reflection — never medical, legal or mental-health advice.</label></div>
 
@@ -263,6 +274,14 @@ $("send").onclick = async () => {
   const note = $("note").value.trim();
   if (note.length < 10) { $("sendmsg").textContent = "A sentence or two, so a guide knows what to hold."; return; }
   if (!$("ok18").checked) { $("sendmsg").textContent = "Please tick the box above first."; return; }
+  if (looksLikeMinor(note)) {
+    $("youngbox").style.display = "block";
+    $("youngbox").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("sendmsg").textContent = "";
+    return;                                  // deliberately no override
+  }
+  const rq = checkRequest(note);
+  if (!rq.ok) { $("sendmsg").textContent = rq.msg; return; }
   if (!db) { $("sendmsg").textContent = "Not connected yet — the backend rules still need publishing."; return; }
   $("send").disabled = true; $("sendmsg").textContent = "Sending…";
   try {
@@ -325,6 +344,17 @@ $("fetch").onclick = () => {
 let me = null, approved = false;
 
 function guideShell(inner){ $("g-out").innerHTML = inner; }
+
+/* A ceiling on how many blessings one guide sends in a day. It is kept on
+   the device, so a determined person with developer tools can lift it —
+   the rules file carries a server-enforced version to switch on when the
+   circle is big enough to need it. What it does reliably is stop a
+   well-meaning volunteer from answering thirty people at one sitting,
+   which is its own kind of harm. */
+const DAY_CAP = 12;
+function dayKey(){ return "bc-sent-" + new Date().toISOString().slice(0, 10); }
+function sentToday(){ try { return +localStorage.getItem(dayKey()) || 0; } catch (e) { return 0; } }
+function bumpSent(){ try { localStorage.setItem(dayKey(), sentToday() + 1); } catch (e) {} }
 
 function renderGuideSignedOut(){
   guideShell(
@@ -390,18 +420,20 @@ async function renderQueue(){
   guideShell('<div class="panelb"><h2>Open requests</h2><p class="lede">Reading…</p></div>');
   try {
     const q = query(collection(db, "blessing", "circle", "requests"),
-                    where("status", "==", "open"), limit(25));
+                    where("forGuide", "in", [me.uid, ""]), limit(40));
     const snap = await getDocs(q);
     let html = '<div class="panelb"><h2>Open requests</h2>' +
       '<p class="lede">Signed in as ' + esc(me.displayName || me.email) +
       ' · <a href="#" id="prof">your profile</a>' +
       (isAdmin ? ' · <a href="#" id="mod">reports</a>' : '') +
       ' · <a href="#" id="out">sign out</a></p>';
-    if (snap.empty) html += '<p class="muted">Nothing waiting right now. That is a good thing.</p>';
     // Anything addressed to me by the matcher comes first.
     const rows = [];
-    snap.forEach((d) => rows.push({ id: d.id, r: d.data() }));
+    snap.forEach((d) => { const r = d.data(); if (r.status === "open") rows.push({ id: d.id, r }); });
     rows.sort((a, b) => (b.r.forGuide === me.uid ? 1 : 0) - (a.r.forGuide === me.uid ? 1 : 0));
+    if (!rows.length) html += '<p class="muted">Nothing waiting for you right now. That is a good thing.</p>';
+    html += '<p class="muted" style="font-size:13px">' + sentToday() + ' of ' + DAY_CAP +
+      ' blessings sent today. You see requests matched to you, and those sent to the whole circle — not everyone else\'s.</p>';
     rows.forEach(({ id: rowId, r }) => {
       const d = { id: rowId };
       html += '<div class="req"><div class="meta">' +
@@ -411,7 +443,9 @@ async function renderQueue(){
         (r.flagged ? '<span class="chipb" style="background:#fdf1ef;color:#9c3427">flagged — read with care</span>' : '') +
         '<span class="when">' + esc((r.createdAt||"").slice(0,10)) + '</span></div>' +
         '<div class="body">' + esc(r.note) + '</div>' +
-        '<div class="rowx"><button class="btnb sm" data-reply="' + d.id + '" data-trad="' + esc(r.tradition) + '">Reply with a verse</button></div>' +
+        '<div class="rowx"><button class="btnb sm" data-reply="' + d.id + '" data-trad="' + esc(r.tradition) + '">Reply with a verse</button>' +
+        '<button class="btnb ghost sm" data-flag="' + d.id + '">Report this request</button>' +
+        '<span class="muted" data-fmsg="' + d.id + '" style="font-size:13px"></span></div>' +
         '</div>';
     });
     html += '</div>';
@@ -427,6 +461,25 @@ async function renderQueue(){
     };
     document.querySelectorAll("[data-reply]").forEach((b) => {
       b.onclick = () => renderReply(b.dataset.reply, b.dataset.trad);
+    });
+
+    // Guides need a way to raise a hand too. A request can be abusive, can
+    // be aimed at a named third party, or can be somebody working through
+    // the queue looking for a mark.
+    document.querySelectorAll("[data-flag]").forEach((b) => b.onclick = async () => {
+      const id = b.dataset.flag;
+      const msg = document.querySelector('[data-fmsg="' + id + '"]');
+      const why = prompt("What is wrong with this request? A line is enough — it goes to a person, not a system.");
+      if (why === null) return;
+      b.disabled = true; msg.textContent = "sending…";
+      try {
+        await addDoc(collection(db, "blessing", "circle", "reports"), {
+          requestId: id, responseId: "", guideUid: me.uid, kind: "request",
+          reason: "requester", note: String(why).trim().slice(0, 500),
+          status: "open", createdAt: new Date().toISOString(),
+        });
+        msg.textContent = "reported ✓ — thank you";
+      } catch (e) { msg.textContent = "failed: " + e.message; b.disabled = false; }
     });
   } catch (e) {
     guideShell('<div class="panelb"><h2>Open requests</h2><p class="muted">Could not load: ' +
@@ -473,7 +526,7 @@ function renderReply(id, tradition){
   list(""); $("vq").oninput = () => list($("vq").value);
   $("refl").addEventListener("input", () => {
     delete $("sendrep").dataset.acked;              // re-check after any edit
-    const v = checkReply($("refl").value);
+    const v = checkReplyStrict($("refl").value);
     $("modwarn").style.display = v.level === "clear" ? "none" : "block";
     if (v.level !== "clear") $("modwarn").innerHTML =
       '<b>' + (v.level === "block" ? "This cannot be sent as written" : "Worth a second look") + '</b><p>' + esc(v.msg) + '</p>';
@@ -481,9 +534,14 @@ function renderReply(id, tradition){
   $("backq").onclick = renderQueue;
   $("sendrep").onclick = async () => {
     if (!picked) { $("repmsg").textContent = "Choose a verse first."; return; }
+    if (sentToday() >= DAY_CAP) {
+      $("repmsg").textContent = "That is " + DAY_CAP + " blessings today — the daily limit. " +
+        "Please come back tomorrow; this work does not go well when it is rushed.";
+      return;
+    }
     const refl = $("refl").value.trim();
     if (refl.length < 10) { $("repmsg").textContent = "A sentence or two of your own, please."; return; }
-    const verdict = checkReply(refl);
+    const verdict = checkReplyStrict(refl);
     if (!verdict.ok) {
       $("repmsg").textContent = "";
       $("modwarn").className = "note";
@@ -500,11 +558,12 @@ function renderReply(id, tradition){
     }
     $("sendrep").disabled = true; $("repmsg").textContent = "Sending…";
     try {
-      await addDoc(collection(db, "blessing", "circle", "requests", id, "responses"), {
+      await setDoc(doc(db, "blessing", "circle", "requests", id, "responses", me.uid), {
         verseRef: picked.ref, verseText: picked.text, reflection: refl.slice(0,900),
         guideName: ($("gname").value.trim() || "a guide").slice(0,60),
         guideUid: me.uid, createdAt: new Date().toISOString(),
       });
+      bumpSent();
       await updateDoc(doc(db, "blessing", "circle", "requests", id), { status: "answered" });
       guideShell('<div class="panelb"><h2>Sent.</h2><p class="lede">They will find it on their link. Thank you for the time.</p>' +
         '<button class="btnb" id="backq2">Back to the queue</button></div>');
@@ -714,12 +773,16 @@ function renderProfile(existing){
 
   $("p-save").onclick = async () => {
     const about = $("p-about").value.trim();
+    const nm = $("p-name").value.trim();
+    const tw = titleWarning(nm);
+    if (tw) { $("p-warntext").textContent = tw; $("p-warn").style.display = "block";
+              $("p-msg").textContent = "Please change how you sign your blessings."; return; }
     if (!claimCheck(about)) { $("p-msg").textContent = "Please reword the description first."; return; }
     if (!trads.size) { $("p-msg").textContent = "Choose at least one tradition."; return; }
     $("p-save").disabled = true; $("p-msg").textContent = "Saving…";
     try {
       await setDoc(doc(db, "blessing", "circle", "guides", me.uid), {
-        name: ($("p-name").value.trim() || "a guide").slice(0, 60),
+        name: (nm || "a guide").slice(0, 60),
         tradition: [...trads], languages: [...langs], experience: [...chosen],
         about: about.slice(0, 400), capacity: +$("p-cap").value || 3,
         active: $("p-active").checked, updatedAt: new Date().toISOString(),
@@ -818,13 +881,130 @@ const WARN = [
     msg: "Try not to promise an outcome. You can promise to pray; you cannot promise the result." },
 ];
 
-function checkReply(text){
-  const t = String(text || "");
-  const blocked = BLOCK.find((r) => r.re.test(t));
-  if (blocked) return { ok: false, level: "block", msg: blocked.msg };
-  const warned = WARN.find((r) => r.re.test(t));
-  if (warned) return { ok: true, level: "warn", msg: warned.msg };
+/* ==================================================================
+   GUARD RAILS
+   The moderation layer assumed people write plainly. Anyone setting out
+   to exploit somebody does not. Everything here exists because the
+   first version was too easy to walk around.
+   ================================================================== */
+
+/* ---- 1. Normalise before matching --------------------------------
+   "j o h n dot smith at gmail dot com" is one thing to a human eye and
+   a different string to a regex. Flatten the tricks first: spelled-out
+   punctuation, spaced digits, zero-width characters, and the lookalike
+   glyphs that let "gmaıl" walk past a naive check. */
+function normaliseForCheck(s){
+  var t = String(s || "").toLowerCase();
+  t = t.replace(/[​-‍⁠﻿­]/g, "");        // zero-width, soft hyphen
+  t = t.replace(/[ıі]/g, "i").replace(/[а]/g, "a") // dotless i, Cyrillic i/a
+       .replace(/[оο]/g, "o").replace(/[е]/g, "e");
+  t = t.replace(/\s*[\(\[\{]\s*at\s*[\)\]\}]\s*/g, "@");
+  t = t.replace(/\s+at\s+(?=[a-z0-9-]+\s*(?:\.|\(dot\)|dot)\s*[a-z]{2,})/g, "@");
+  t = t.replace(/\s*[\(\[\{]\s*dot\s*[\)\]\}]\s*/g, ".");
+  t = t.replace(/\s+dot\s+/g, ".");
+  // "5 5 5 - 1 2 3 4" should read as one number, not as scattered digits
+  t = t.replace(/(?:\d[\s.–—-]{0,2}){7,}/g, function(m){ return m.replace(/[\s.–—-]/g, ""); });
+  return t.replace(/\s+/g, " ");
+}
+
+/* Intent, not just format. A contact can be handed over without ever
+   typing one: "look me up, same name on instagram". Each of these is
+   written narrowly, because a guide quoting Matthew 11:28 ("come to me,
+   all you who are weary") must never trip a grooming filter. */
+var CONTACT_INTENT = [
+  { re: /\b(?:find|look|search)\s+(?:me|for me)\s+(?:up|on|at)\b/,
+    msg: "This reads as pointing someone to you somewhere else. Everything stays on EverVerse — that is what protects both of you." },
+  { re: /\b(?:same name|my handle|my username|my profile|my page|my channel|my account)\s+(?:on|is|at)\b/,
+    msg: "Please do not point someone to another account of yours." },
+  { re: /\b(?:reach|contact|message|write to|follow)\s+me\s+(?:on|at|through|via)\b/,
+    msg: "Guides never move a conversation off EverVerse." },
+  { re: /\b(?:let'?s|lets|we can|we could|why don'?t we)\s+(?:talk|chat|speak|meet)\s+(?:privately|in private|offline|elsewhere|one[\s-]on[\s-]one|somewhere else)\b/,
+    msg: "A private channel is not something a guide arranges. Please keep it here, where it can be seen." },
+  { re: /\b(?:meet|see)\s+(?:me|us)\s+(?:in person|at my|at the|for coffee|for a coffee|for lunch|in real life|irl)\b/,
+    msg: "Guides never arrange to meet the people they write to." },
+  { re: /\b(?:our (?:little )?secret|just between us|between you and me|keep this between)\b/,
+    msg: "Asking someone to keep a message secret is never appropriate here, whatever was meant by it." },
+  { re: /\b(?:you'?re|you are)\s+(?:so |very |really )?special to me\b|\byou'?re not like (?:the )?others\b/,
+    msg: "This is a known grooming pattern and cannot be sent. If you meant it warmly, say it about how God sees them rather than how you do." },
+  { re: /\b(?:send|show)\s+me\s+(?:a|your)\s+(?:photo|photos|pic|pics|picture|selfie)\b/,
+    msg: "Guides never ask for photographs." },
+];
+
+/* ---- 2. Signals that the person writing is a child ---------------
+   Age cannot be verified and a self-declared 18+ box protects nobody.
+   What CAN be done is notice when someone is plainly a child, and stop
+   before their private distress lands in a queue read by adult
+   strangers. Matching is deliberately first-person: "my daughter is 14"
+   is a parent asking for help and must pass through untouched. */
+var MINOR_SIGNALS = [
+  // "i'm 15", "i am only 13" - with the units that make it an adult stripped out
+  /\b(?:i'?m|i am)\s+(?:only\s+|just\s+)?(?:[89]|1[0-7])(?!\d)(?!\s*[,.]\d)(?!\s+(?:months?|weeks?|days?|hours?|minutes?|stone|pounds?|lbs|kg|kids|children|grandchildren|years?\s+(?:into|sober|clean|married|older|younger|ago)))\b/,
+  /\b(?:i'?m|i am)\s+(?:only\s+|just\s+)?(?:eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)\s+years?\s+old\b/,
+  /\b(?:i'?m|i am)\s+in\s+(?:the\s+)?(?:[6-9]|1[0-2])(?:st|nd|rd|th)\s+grade\b/,
+  /\b(?:i'?m|i am)\s+in\s+(?:the\s+)?(?:sixth|seventh|eighth|ninth|tenth|eleventh|twelfth)\s+grade\b/,
+  /\b(?:i'?m|i am)\s+in\s+(?:middle school|high school|year\s+(?:[7-9]|1[01]))\b/,
+  /\bmy\s+(?:mom|mum|dad|parents?)\s+(?:won'?t|wont|will not|does ?n'?t|do ?n'?t)\s+(?:let|allow)\s+me\b/,
+  /\b(?:i'?m|i am)\s+(?:still\s+)?a\s+(?:kid|child|teen|teenager|minor|schoolgirl|schoolboy)\b/,
+];
+function looksLikeMinor(text){
+  var t = " " + String(text || "").toLowerCase().replace(/\s+/g, " ") + " ";
+  for (var i = 0; i < MINOR_SIGNALS.length; i++) if (MINOR_SIGNALS[i].test(t)) return true;
+  return false;
+}
+
+/* ---- 3. Abuse aimed outward, in an inbound request ----------------
+   The request box is the one field anyone on earth can write into
+   without an account. It is therefore the obvious place to try to use
+   the platform to reach somebody, or to publish something about them. */
+var REQUEST_BLOCK = [
+  { re: /\b(?:his|her|their|the)\s+(?:address|phone number|home address|workplace|school)\s+is\b/i,
+    msg: "Please do not include somebody else’s address or contact details, even to explain the situation." },
+  { re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
+    msg: "Please leave out email addresses — yours or anyone else’s. You do not need one to receive your blessing." },
+  { re: /(?:https?:\/\/|www\.)\S+/i,
+    msg: "Please describe things in words rather than linking to them." },
+  { re: /\b(?:i(?:'| a)?m going to|i will|i'?ll)\s+(?:kill|hurt|find|destroy|ruin)\s+(?:him|her|them|you)\b/i,
+    msg: "We cannot pass on a message that threatens someone. If you are in danger, or someone else is, please call 911." },
+];
+function checkRequest(text){
+  var raw = String(text || ""), norm = normaliseForCheck(raw);
+  for (var i = 0; i < REQUEST_BLOCK.length; i++) {
+    if (REQUEST_BLOCK[i].re.test(raw) || REQUEST_BLOCK[i].re.test(norm))
+      return { ok: false, msg: REQUEST_BLOCK[i].msg };
+  }
+  return { ok: true, msg: "" };
+}
+
+/* Negations, stripped before the soft rules run. "This is not your
+   fault" is the single most useful sentence anyone can write to a
+   person in distress, and the blame rule was flagging it. */
+var NEGATED = /\b(?:not|never|is ?n'?t|are ?n'?t|was ?n'?t|do ?n'?t|does ?n'?t|did ?n'?t)\s+(?:\w+\s+){0,4}(?:your fault|to blame|deserve this|being punished|punishing you)\b|\bnone of (?:this|it|that) (?:is|was) your fault\b/g;
+
+/* ---- 4. The strengthened reply check ------------------------------ */
+function checkReplyStrict(text){
+  var raw = String(text || ""), norm = normaliseForCheck(raw), i;
+  for (i = 0; i < BLOCK.length; i++)
+    if (BLOCK[i].re.test(raw) || BLOCK[i].re.test(norm))
+      return { ok: false, level: "block", msg: BLOCK[i].msg };
+  for (i = 0; i < CONTACT_INTENT.length; i++)
+    if (CONTACT_INTENT[i].re.test(norm))
+      return { ok: false, level: "block", msg: CONTACT_INTENT[i].msg };
+  var soft = norm.replace(NEGATED, " ");
+  for (i = 0; i < WARN.length; i++)
+    if (WARN[i].re.test(soft))
+      return { ok: true, level: "warn", msg: WARN[i].msg };
   return { ok: true, level: "clear", msg: "" };
+}
+
+/* ---- 5. Titles a stranger reads as a credential -------------------
+   "Dr. Sarah" in a directory of volunteers is a claim we cannot check,
+   read by someone frightened enough to believe it. */
+var TITLE_RE = /(?:^|\s)(?:dr|doctor|prof|professor|rev|reverend|pastor|bishop|rabbi|imam|sheikh|swami|guru|pandit|monk|therapist|counsell?or|psychologist|psychiatrist|healer|md|phd|lcsw|lmft)\b\.?/i;
+function titleWarning(name){
+  return TITLE_RE.test(String(name || ""))
+    ? "A title reads as a verified credential to someone in distress, and we cannot verify it. Please sign with your name alone — " +
+      "you are very welcome to say what you do in the paragraph below."
+    : "";
 }
 
 const REPORT_REASONS = [
@@ -868,7 +1048,7 @@ function reportUI(host, requestId, responseId, guideUid){
     panel.querySelector(".rsend").disabled = true;
     try {
       await addDoc(collection(db, "blessing", "circle", "reports"), {
-        requestId, responseId, guideUid: guideUid || "",
+        requestId, responseId, guideUid: guideUid || "", kind: "reply",
         reason, note: panel.querySelector(".rnote").value.trim().slice(0, 500),
         status: "open", createdAt: new Date().toISOString(),
       });
@@ -906,13 +1086,16 @@ async function renderModeration(){
     snap.forEach((d) => items.push({ id: d.id, r: d.data() }));
     html += items.map(({ id, r }) =>
       '<div class="req" id="rep-' + id + '">' +
-      '<div class="meta"><span class="chipb" style="background:#fdf1ef;color:#9c3427">' +
+      '<div class="meta">' +
+      (r.kind === "request" ? '<span class="chipb">about a request</span>' : '') +
+      '<span class="chipb" style="background:#fdf1ef;color:#9c3427">' +
         esc((REPORT_REASONS.find((x) => x[0] === r.reason) || ["", r.reason])[1]) + '</span>' +
       '<span class="when">' + esc((r.createdAt || "").slice(0, 10)) + '</span></div>' +
       (r.note ? '<div class="body">' + esc(r.note) + '</div>' : '') +
       '<div class="rowx">' +
       '<button class="btnb ghost sm" data-see="' + esc(r.requestId) + '" data-rid="' + esc(r.responseId || "") + '">Read what was sent</button>' +
-      (r.guideUid ? '<button class="btnb ghost sm" data-susp="' + esc(r.guideUid) + '">Suspend this guide</button>' : '') +
+      (r.guideUid && r.kind !== "request"
+        ? '<button class="btnb ghost sm" data-susp="' + esc(r.guideUid) + '">Suspend this guide</button>' : '') +
       '<button class="btnb ghost sm" data-close="' + id + '">Close, no action</button>' +
       '<span class="muted" data-msg="' + id + '" style="font-size:13px"></span></div>' +
       '<div data-shown="' + id + '"></div></div>').join("");

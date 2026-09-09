@@ -15,7 +15,7 @@
 // installed worker could precache TEN-MINUTE-OLD files under a brand new
 // cache name — the app would look stale even after the worker updated.
 
-const CACHE = "eververse-v77";
+const CACHE = "eververse-v78";
 
 // How long a slow network gets before the cached copy is served instead.
 const NET_TIMEOUT_MS = 3000;
