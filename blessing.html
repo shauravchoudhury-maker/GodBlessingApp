@@ -169,17 +169,18 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
       <div id="cat" class="pickwrap" role="radiogroup" aria-label="What it is about"></div>
 
       <div class="step"><span class="stepn">3</span><span>Tell them in your own words</span></div>
+      <label class="bf"><span>Which language will you write in?</span>
+        <select id="lang"></select></label>
+      <p class="hint">You will be matched to a guide who can write back in the same language.
+        If nobody can, we will tell you rather than answer you in one you did not ask for.</p>
       <label class="bf"><span class="vh">In your own words</span>
-        <textarea id="note" placeholder="I have been carrying…" maxlength="1200"></textarea></label>
+        <textarea id="note" placeholder="I have been carrying…" maxlength="1200" dir="auto"></textarea></label>
       <div class="muted" style="font-size:12.5px;margin:-9px 0 14px"><span id="count">0</span> / 1200</div>
 
       <div class="crisis" id="crisis">
         <h3>Please read this first.</h3>
         <p>Some of what you have written suggests you may be in real danger right now. A verse is not enough, and waiting for a volunteer is not enough. Please talk to someone trained, today.</p>
-        <p><b>In the US, call or text 988</b> — the Suicide &amp; Crisis Lifeline, free, 24 hours.
-          <span class="num">988</span>
-          <a href="https://988lifeline.org/chat/" target="_blank" rel="noopener">Or chat with them online →</a></p>
-        <p>If someone is in immediate danger, call 911.</p>
+        <div id="crisis-help"></div>
         <p style="margin-bottom:0">You are welcome to send your request as well — a guide will still read it. But please make the call first.</p>
       </div>
 
@@ -188,9 +189,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
         <p>What you have written suggests you may be under 18. The Blessing Circle is answered by adult volunteers
           we cannot fully vet, so we do not pass on messages from young people. That is not a judgement about you.
           It is the one rule we will not bend, because you deserve someone trained rather than someone willing.</p>
-        <p><b>Teen Line — text TEEN to 839863</b>, or call <span class="num">800‑852‑8336</span>, 6–10pm PT, answered by other teenagers.</p>
-        <p><b>988</b> — the Suicide &amp; Crisis Lifeline, free, any hour, any reason. You do not have to be in danger to call.
-          <a href="https://988lifeline.org/chat/" target="_blank" rel="noopener">Chat online →</a></p>
+        <div id="young-help"></div>
         <p style="margin-bottom:0">And please tell one adult you trust — a teacher, a school counsellor, an aunt. Out loud, to a real person.</p>
       </div>
 
@@ -258,12 +257,13 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 
   <footer class="foot">
     <p><b>EverVerse guides offer prayer, scripture and reflection.</b> They are volunteers, not clinicians. Nothing here is medical, psychological or legal advice, and nothing here treats or cures any condition. If you are unwell, please also speak to a doctor.</p>
-    <p style="margin-top:10px">In the US, the Suicide &amp; Crisis Lifeline is <b>988</b>, free and 24 hours.</p>
+    <p style="margin-top:10px" id="foot-help"></p>
   </footer>
 </div>
 
 <script src="firebase-config.js"></script>
 <script src="verses.js"></script>
+<script src="world.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -397,6 +397,63 @@ function tradCtx(){
 }
 tradCtx();
 
+/* ---- Wherever this person is ------------------------------------
+   The Circle was written US-first without anyone deciding to. A person
+   in Delhi in real danger was being handed 988, which does not connect.
+   Timezone is enough to pick a helpline and never leaves the device —
+   no location prompt, no IP lookup, nothing stored. And the
+   international directory is shown every time regardless, because our
+   numbers are compiled, not verified, and a stale number in a crisis is
+   worse than no number at all. */
+const HERE = (typeof countryOf === "function") ? countryOf() : null;
+function helpBlock(opts){
+  if (typeof crisisHelp !== "function") return "";
+  const h = crisisHelp(HERE), o = opts || {};
+  let out = "";
+  if (h.line) {
+    out += '<p><b>' + esc(h.name) + '</b>' + (h.note ? " — " + esc(h.note) : "") +
+           '<span class="num">' + esc(h.line) + '</span>' +
+           (h.chat ? '<a href="' + esc(h.chat) + '" target="_blank" rel="noopener">Or chat with them online →</a>' : '') +
+           '</p>';
+    out += '<p>If that number does not connect, or you are somewhere else, ' +
+           '<a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">' +
+           esc(HELP_DIRECTORY.label) + '</a>.</p>';
+  } else {
+    out += '<p><b>Free, confidential help, in your country.</b>' +
+           '<a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">' +
+           esc(HELP_DIRECTORY.label) + '</a></p>';
+  }
+  if (h.emergency && !o.noEmergency)
+    out += '<p>If someone is in immediate danger, call ' + esc(h.emergency) + '.</p>';
+  return out;
+}
+if ($("crisis-help")) $("crisis-help").innerHTML = helpBlock();
+if ($("young-help"))  $("young-help").innerHTML  = helpBlock();
+if ($("foot-help"))   $("foot-help").innerHTML   =
+  (typeof crisisHelp === "function" && crisisHelp(HERE).line
+    ? "Wherever you are, free and confidential help exists. " +
+      esc(crisisHelp(HERE).name) + ": " + esc(crisisHelp(HERE).line) + ". "
+    : "Wherever you are, free and confidential help exists. ") +
+  '<a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">Find a line in your country →</a>';
+
+/* ---- Language ---------------------------------------------------
+   This used to be hard-coded to "en" on every request, which quietly
+   broke the matcher: a guide who cannot write the requester's language
+   is refused outright, so every non-English speaker was being matched
+   as though they wanted English. */
+let chosenLang = (typeof guessLanguage === "function") ? guessLanguage() : "en";
+if ($("lang") && typeof UI_LANGS !== "undefined") {
+  UI_LANGS.forEach(([v, l]) => $("lang").add(new Option(l, v)));
+  $("lang").value = chosenLang;
+  const applyDir = () => {
+    const rtl = typeof isRTL === "function" && isRTL(chosenLang);
+    $("note").setAttribute("dir", rtl ? "rtl" : "auto");
+    $("note").style.textAlign = rtl ? "right" : "";
+  };
+  applyDir();
+  $("lang").onchange = () => { chosenLang = $("lang").value; applyDir(); };
+}
+
 /* ---- ask ---- */
 $("note").addEventListener("input", () => {
   const t = $("note").value;
@@ -410,7 +467,7 @@ $("findmatch").onclick = async () => {
   if (note.length < 10) { $("sendmsg").textContent = "Write a little first, so the match means something."; return; }
   if (!db) { $("sendmsg").textContent = "Not connected yet."; return; }
   $("sendmsg").textContent = "";
-  await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: "en",
+  await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: chosenLang,
                       flagged: risky(note) },
                     (uid) => { pickedGuide = uid; });
 };
@@ -434,7 +491,7 @@ $("send").onclick = async () => {
   const flagged = risky(note);
   if (flagged && !pickedGuide) {
     $("sendmsg").textContent = "Finding the right person…";
-    await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: "en", flagged: true },
+    await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: chosenLang, flagged: true },
                       (uid) => { pickedGuide = uid; });
     $("sendmsg").textContent = "";
   }
@@ -447,7 +504,7 @@ $("send").onclick = async () => {
   $("send").disabled = true; $("sendmsg").textContent = "Sending…";
   try {
     const ref = await addDoc(collection(db, "blessing", "circle", "requests"), {
-      tradition: chosenReligion, category: chosenCat,
+      tradition: chosenReligion, category: chosenCat, language: chosenLang,
       note: note.slice(0, 1200), status: "open", replies: 0,
       forGuide: pickedGuide || "",
       flagged, createdAt: new Date().toISOString(),
@@ -484,7 +541,7 @@ async function showReplies(id){
       el.className = "blessing";
       el.innerHTML = '<div class="v">“' + esc(r.verseText) + '”</div>' +
         '<div class="ref">' + esc(r.verseRef) + '</div>' +
-        '<div class="refl">' + esc(r.reflection) + '</div>' +
+        '<div class="refl" dir="auto">' + esc(r.reflection) + '</div>' +
         '<div class="from">— ' + esc(r.guideName || "a guide") + ', ' +
         esc((r.createdAt || "").slice(0, 10)) + '</div>';
       box.appendChild(el);
@@ -650,9 +707,12 @@ async function renderQueue(){
         (r.forGuide === me.uid ? '<span class="chipb" style="background:#eafafb;color:#2b8f99">matched to you</span>' : '') +
         '<span class="chipb t">' + esc(r.tradition) + '</span>' +
         '<span class="chipb">' + esc(r.category) + '</span>' +
+        (r.language && r.language !== "en"
+          ? '<span class="chipb" style="background:#eef7ee;color:#2f6b3a">answer in ' +
+            esc((UI_LANGS.find((x) => x[0] === r.language) || [r.language, r.language])[1]) + '</span>' : '') +
         (r.flagged ? '<span class="chipb" style="background:#fdf1ef;color:#9c3427">flagged — read with care</span>' : '') +
         '<span class="when">' + esc((r.createdAt||"").slice(0,10)) + '</span></div>' +
-        '<div class="body">' + esc(r.note) + '</div>' +
+        '<div class="body" dir="' + (isRTL(r.language) ? "rtl" : "auto") + '">' + esc(r.note) + '</div>' +
         '<div class="rowx"><button class="btnb sm" data-reply="' + d.id + '" data-trad="' + esc(r.tradition) + '">Reply with a verse</button>' +
         '<button class="btnb ghost sm" data-flag="' + d.id + '">Report this request</button>' +
         '<span class="muted" data-fmsg="' + d.id + '" style="font-size:13px"></span></div>' +
@@ -713,7 +773,7 @@ function renderReply(id, tradition){
     '<label class="bf"><span>Search</span><input type="text" id="vq" placeholder="a word, a theme, a reference"></label>' +
     '<div class="vpick" id="vlist"></div>' +
     '<label class="bf"><span>A few words of your own</span>' +
-    '<textarea id="refl" maxlength="900" placeholder="Why this verse, for them."></textarea></label>' +
+    '<textarea id="refl" maxlength="900" dir="auto" placeholder="Why this verse, for them."></textarea></label>' +
     '<label class="bf"><span>Sign it as</span><input type="text" id="gname" maxlength="60" placeholder="a first name, or how you would like to be known"></label>' +
     '<div class="note" id="modwarn" style="display:none"></div>' +
     '<div class="rowx"><button class="btnb" id="sendrep">Send the blessing</button>' +
@@ -1144,8 +1204,7 @@ async function showMatches(req, onPick){
       ? '<div class="crisis on"><h3>We cannot take this one right now.</h3>' +
         '<p>Requests like yours only go to guides we have checked carefully, and none of them is free at this moment. ' +
         'We are not going to hand it to whoever happens to be available instead.</p>' +
-        '<p><b>Please call or text 988</b> — the Suicide &amp; Crisis Lifeline, free, right now, any reason. ' +
-        '<span class="num">988</span></p>' +
+        helpBlock({ noEmergency: true }) +
         '<p style="margin-bottom:0">Come back to us afterwards. We will still be here.</p></div>'
       : '<div class="note"><b>We will send it to the circle.</b>' +
         '<p>Nobody is free in that tradition at this moment, so your request goes to everyone who can answer it. ' +
@@ -1316,7 +1375,8 @@ var REQUEST_BLOCK = [
   { re: /(?:https?:\/\/|www\.)\S+/i,
     msg: "Please describe things in words rather than linking to them." },
   { re: /\b(?:i(?:'| a)?m going to|i will|i'?ll)\s+(?:kill|hurt|find|destroy|ruin)\s+(?:him|her|them|you)\b/i,
-    msg: "We cannot pass on a message that threatens someone. If you are in danger, or someone else is, please call 911." },
+    msg: "We cannot pass on a message that threatens someone. If you are in danger, or someone else is, " +
+         "please call your local emergency number." },
 ];
 function checkRequest(text){
   var raw = String(text || ""), norm = normaliseForCheck(raw);
@@ -1528,7 +1588,7 @@ async function renderModeration(){
           el.className = "blessing";
           el.style.marginTop = "10px";
           el.innerHTML = '<div class="v">“' + esc(v.verseText) + '”</div><div class="ref">' + esc(v.verseRef) +
-            '</div><div class="refl">' + esc(v.reflection) + '</div>' +
+            '</div><div class="refl" dir="auto">' + esc(v.reflection) + '</div>' +
             '<div class="from">— ' + esc(v.guideName) + ' · ' + esc(v.guideUid || "") + '</div>';
           host.appendChild(el);
         });

@@ -51,7 +51,9 @@ file, or reactions, Twin Track and Second Chance all stop working.
     match /blessing/circle/requests/{id} {
       // Anyone may ask for a blessing, without an account.
       allow create: if
-        request.resource.data.keys().hasOnly(['tradition','category','note','status','replies','flagged','forGuide','createdAt'])
+        request.resource.data.keys().hasOnly(['tradition','category','language','note','status','replies','flagged','forGuide','createdAt'])
+        && request.resource.data.language is string
+        && request.resource.data.language.size() <= 8
         && request.resource.data.note is string
         && request.resource.data.note.size() > 0
         && request.resource.data.note.size() <= 1200
@@ -255,6 +257,46 @@ grant anyone access; the applications screen only saves you the retyping.
 Note the asymmetry: a guide can edit their profile but can never CREATE the
 document, so approval is impossible from inside the app. Only the console
 grants it. There is no way to do step 4 from inside the app, on purpose.
+
+Working outside the United States
+---------------------------------
+The Circle was written US-first without anyone deciding to. Every crisis
+panel hard-coded 988, 911 and a Los Angeles teen line, and every request was
+tagged language "en" whatever the person actually wrote. Someone in Delhi in
+real trouble was handed a number that does not connect; a woman writing in
+Urdu was matched as though she needed English.
+
+world.js now picks a helpline from the browser's own timezone. No location
+prompt, no IP lookup, nothing stored or sent. 33 countries have a local line,
+another 36 have at least a verified-by-nobody emergency number, and every
+country on earth gets findahelpline.com.
+
+  THE NUMBERS ARE NOT VERIFIED. They were compiled from a model's training
+  data. Helpline numbers change and services close, and a wrong number given
+  to someone in crisis is worse than no number. Every row in CRISIS carries
+  a `checked` field, every one of them is null, and a person must confirm
+  each against the provider's own site before this ships outside the US.
+
+  That is also why findahelpline.com appears ALONGSIDE the local line every
+  single time rather than as a fallback. If our number is stale, the person
+  still has a working route in the same breath. Do not "tidy" that away.
+
+Requests now carry `language`, which the rules accept and cap at 8
+characters. This matters more than it looks: scoreGuide() refuses a guide
+who cannot write the requester's language, so with the field hard-coded to
+"en" every non-English speaker was silently matched as an English speaker.
+
+Right-to-left is handled by dir="auto" on the request box, the reply box and
+the blessing as it is read back, plus an explicit dir="rtl" when the chosen
+language is Arabic, Urdu, Persian or Hebrew. The guide's queue shows an
+"answer in ..." chip whenever the request is not in English.
+
+STILL ENGLISH-ONLY, and worth knowing: the interface itself. A Spanish
+speaker picks Spanish, writes in Spanish and is answered in Spanish, but the
+labels around them stay English. Worse, the under-18 detection is English
+only — a child writing "tengo 15 anos" is not caught. Do not promote the
+Circle in a language before that language's minor patterns exist.
+
 
 The seven faiths
 ----------------
