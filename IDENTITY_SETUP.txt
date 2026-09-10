@@ -1,0 +1,99 @@
+EverVerse — turning on identity verification
+============================================
+
+identity-worker.js is a Cloudflare Worker, deployed separately from the
+site, the same way tts-proxy-worker.js already is.
+
+It exists because a browser cannot be trusted to report that it passed its
+own identity check. That claim has to arrive from Stripe, signed, on a
+channel the guide does not control.
+
+WHAT IT IS ALLOWED TO DO
+------------------------
+It writes exactly two fields on one document: idVerifiedAt and
+idVerificationId. It never writes standing, never writes vouchCount, never
+approves anybody. Becoming a companion still needs two stewards to vouch
+and a human to have spoken to them. This automates the paperwork so that a
+person is free to do the judgement, which is the half no vendor can do.
+
+IT NEVER SEES A DOCUMENT. Stripe holds the passport image and the selfie;
+we keep a session id and a date. If EverVerse is ever breached there is no
+identity document in it to lose. That is the entire reason to use a vendor
+rather than build a form.
+
+SETTING IT UP
+-------------
+1. Stripe dashboard -> Identity -> activate. Then Developers -> API keys.
+
+2. Create a Firebase service account:
+   Firebase console -> Project settings -> Service accounts ->
+   Generate new private key. Keep the JSON; you need two fields from it.
+
+3. Deploy:
+     wrangler deploy identity-worker.js --name eververse-identity
+     wrangler secret put STRIPE_SECRET_KEY        # sk_live_...
+     wrangler secret put STRIPE_WEBHOOK_SECRET    # filled in at step 4
+     wrangler secret put FIREBASE_PROJECT_ID      # eververse2117
+     wrangler secret put FIREBASE_SA_EMAIL        # client_email from the JSON
+     wrangler secret put FIREBASE_SA_KEY          # private_key, newlines intact
+
+4. Stripe dashboard -> Developers -> Webhooks -> add endpoint:
+     https://eververse-identity.<your-subdomain>.workers.dev/webhook
+   Send these two events, and only these:
+     identity.verification_session.verified
+     identity.verification_session.requires_input
+   Copy the signing secret into STRIPE_WEBHOOK_SECRET and redeploy.
+
+5. Put the worker URL into IDENTITY_WORKER at the top of blessing.html.
+   Until you do, the button in a guide's profile says so plainly rather
+   than failing.
+
+6. Test with Stripe's test mode first. Use a test key and the sample
+   documents in Stripe's docs, and confirm idVerifiedAt appears on your own
+   guide document before switching to live keys.
+
+COST
+----
+About $1.50 per verification, and EverVerse pays it — charging someone to
+volunteer selects for the wrong people. 100 guides is roughly $150.
+
+Background checks ($30-60 each, jurisdiction-specific) are DEFERRED for
+now. See the note below, because that has a consequence.
+
+THE CONSEQUENCE OF DEFERRING BACKGROUND CHECKS
+----------------------------------------------
+Steward requires backgroundCheckAt. No background checks means no
+stewards. And a Tier 2 conversation cannot open without someone to
+supervise it — so conversations would be built and permanently unusable.
+
+Rather than weaken the steward bar, there is a named exemption:
+`supervisor: true` on a guide document, console-only, for the people who
+actually run EverVerse. They are already accountable for the platform, so
+asking them to background-check themselves proves nothing.
+
+  This is NOT a general exemption. Never put it on an ordinary volunteer.
+  The whole point of the steward bar is that somebody independent has been
+  checked, and handing this flag out would quietly delete that.
+
+To open Tier 2 today: set supervisor: true on your own guide document.
+When you are ready to run real background checks, create actual stewards
+and take the flag off.
+
+WHEN A CHECK FAILS
+------------------
+It never auto-rejects. Documents fail for glare on a laminate, a worn
+passport, a name transliterated differently across two documents, or a
+document type Stripe never trained on. Auto-rejecting would quietly
+exclude immigrants, older people and the poor — exactly the lived
+experience the Circle needs most.
+
+The worker logs a failure for a person to pick up and writes nothing. The
+guide is told, in the app, that nobody is rejected for this and that we
+will do it on a call instead. Honour that.
+
+RE-CHECKING
+-----------
+An ID check is a photograph, not a state. identity.js expires background
+checks after a year and affiliations after two. Document checks do not
+expire, which is a judgement call worth revisiting: it confirms who
+somebody is, not who they have become.

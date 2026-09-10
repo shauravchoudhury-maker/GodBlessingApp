@@ -567,7 +567,7 @@ async function renderThreadUI(id, host){
       snap.forEach((d) => guides.push(Object.assign({ uid: d.id }, d.data())));
     } catch (e) {}
     const g = guides.find((x) => x.uid === lastGuideUid);
-    const steward = guides.find((x) => tierOf(x) >= 3 && x.active !== false && x.uid !== lastGuideUid);
+    const steward = guides.find((x) => canSupervise(x, can) && x.uid !== lastGuideUid);
     const gate = canOpenThread(req, g, steward ? steward.uid : null, can);
     if (!gate.ok) {
       wrap.innerHTML = '<p class="turnnote">' + esc(gate.why) + '</p>';
@@ -704,6 +704,11 @@ function guideShell(inner){ $("g-out").innerHTML = inner; }
    circle is big enough to need it. What it does reliably is stop a
    well-meaning volunteer from answering thirty people at one sitting,
    which is its own kind of harm. */
+// The Cloudflare Worker that talks to Stripe Identity. Deploy
+// identity-worker.js and put its URL here. While it is the placeholder the
+// button explains itself rather than failing.
+const IDENTITY_WORKER = "https://eververse-identity.workers.dev";
+
 const DAY_CAP = 12;
 function dayKey(){ return "bc-sent-" + new Date().toISOString().slice(0, 10); }
 function sentToday(){ try { return +localStorage.getItem(dayKey()) || 0; } catch (e) { return 0; } }
@@ -1273,10 +1278,18 @@ function renderProfile(existing){
     '<p class="lede">This is what the matcher uses. It is not an advertisement, and nobody is ranked against anybody — ' +
     'it exists so that a person writing about their mother\'s funeral reaches someone who has stood at one.</p>' +
     '<div class="standing"><b>' + esc(tier.label) + '</b><p>' + esc(tier.blurb) + '</p>' +
-    (step ? '<p class="muted" style="margin-bottom:0">To become a ' + esc(step.to.label.toLowerCase()) + ' you would need ' +
+    (step ? '<p class="muted">To become a ' + esc(step.to.label.toLowerCase()) + ' you would need ' +
        step.missing.map((m) => esc(m)).join("; and ") + '. There is no hurry, and no league table — ' +
        'it only changes what you are allowed to carry.</p>'
-     : '<p class="muted" style="margin-bottom:0">Nothing further to unlock. Thank you for staying.</p>') +
+     : '<p class="muted">Nothing further to unlock. Thank you for staying.</p>') +
+    // The one step a guide can take on their own. Everything else on the
+    // ladder needs another person, deliberately.
+    (g.idVerifiedAt
+      ? '<p class="muted" style="margin-bottom:0">Identity confirmed ' + esc(String(g.idVerifiedAt).slice(0, 10)) +
+        '. We hold a reference number and a date — never your document.</p>'
+      : '<div class="rowx" style="margin-bottom:0"><button class="btnb sm" id="p-verify">Verify my identity</button>' +
+        '<span class="muted" id="p-vmsg" style="font-size:13px">' +
+        'Ten minutes, a passport or driving licence, and a selfie. EverVerse pays.</span></div>') +
     '</div>' +
     '<label class="bf"><span>Sign your blessings as</span>' +
     '<input type="text" id="p-name" maxlength="60" value="' + esc(g.name || "") + '" placeholder="a first name is plenty"></label>' +
@@ -1308,6 +1321,31 @@ function renderProfile(existing){
   multiPick("p-exp", LIVED, chosen);
   $("p-cap").value = String(g.capacity || 3);
   $("p-back").onclick = renderQueue;
+
+  if ($("p-verify")) $("p-verify").onclick = async () => {
+    const say = (m) => { $("p-vmsg").textContent = m; };
+    if (IDENTITY_WORKER.indexOf("eververse-identity.workers.dev") !== -1) {
+      say("Identity checks are not switched on yet — the worker has not been deployed.");
+      return;
+    }
+    $("p-verify").disabled = true; say("Opening Stripe…");
+    try {
+      // Stripe holds the document and the selfie. We never see either; what
+      // comes back to us is a session id and a date, and it arrives from
+      // Stripe rather than from this browser.
+      const token = await me.getIdToken();
+      const r = await fetch(IDENTITY_WORKER + "/start", {
+        method: "POST", headers: { Authorization: "Bearer " + token },
+      });
+      const out = await r.json();
+      if (!r.ok || !out.url) throw new Error(out.error || "could not start");
+      say("Continue in the window that opens.");
+      window.open(out.url, "_blank", "noopener");
+    } catch (e) {
+      say("Could not start: " + e.message + ". Nobody is rejected for this — tell us and we will do it on a call.");
+      $("p-verify").disabled = false;
+    }
+  };
 
   // A soft guardrail on the one free-text field. Not censorship — the
   // guide is told plainly what the problem is and can rewrite it.

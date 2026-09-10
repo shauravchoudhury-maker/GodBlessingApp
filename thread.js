@@ -79,8 +79,26 @@ function canWrite(req, who, uid, today) {
   return { ok: true, why: "" };
 }
 
+/* Who is allowed to sit in on a conversation.
+
+   A steward qualifies by standing. So does anyone carrying supervisor:true,
+   which is set from the console only and is meant for the people who
+   actually run EverVerse — they are accountable for the platform already,
+   so requiring them to background-check themselves proves nothing. It is
+   NOT a general exemption and must never be handed to an ordinary
+   volunteer: the whole point of the steward bar is that somebody
+   independent has been checked.
+
+   It exists because a background check is deferred, and without it Tier 2
+   would be built and permanently unusable. */
+function canSupervise(g, can) {
+  if (!g || g.suspended === true || g.active === false) return false;
+  if (g.supervisor === true) return true;
+  return !!(can && can(g, "supervise"));
+}
+
 /* The asker's side of the door. A thread needs a guide who is cleared to
-   hold one AND a steward willing to watch it. Both, or nothing. */
+   hold one AND someone willing to watch it. Both, or nothing. */
 function canOpenThread(req, guide, supervisorUid, can) {
   const r = req || {};
   if (r.threadOpen) return { ok: false, why: "A conversation is already open." };
@@ -125,5 +143,5 @@ function closeReasonFor(who) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { THREAD_CAP, THREAD_DAYS, whoseTurn, threadState, canWrite,
-                     canOpenThread, turnId, SUPERVISION_NOTICE, closeReasonFor };
+                     canOpenThread, canSupervise, turnId, SUPERVISION_NOTICE, closeReasonFor };
 }

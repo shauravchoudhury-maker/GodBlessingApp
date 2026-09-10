@@ -209,8 +209,8 @@ file, or reactions, Twin Track and Second Chance all stop working.
         // affiliation — those are the only inputs to standing, on purpose.
         || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['suspended','active','suspendedAt','approvedAt',
-                        'idVerifiedAt','vouchCount','affiliations',
-                        'affiliationsConfirmed','backgroundCheckAt']));
+                        'idVerifiedAt','idVerificationId','vouchCount','affiliations',
+                        'affiliationsConfirmed','backgroundCheckAt','supervisor']));
       allow delete: if false;
 
       // A steward puts their own name behind a newcomer. The document id is
