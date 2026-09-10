@@ -291,11 +291,37 @@ the blessing as it is read back, plus an explicit dir="rtl" when the chosen
 language is Arabic, Urdu, Persian or Hebrew. The guide's queue shows an
 "answer in ..." chip whenever the request is not in English.
 
-STILL ENGLISH-ONLY, and worth knowing: the interface itself. A Spanish
-speaker picks Spanish, writes in Spanish and is answered in Spanish, but the
-labels around them stay English. Worse, the under-18 detection is English
-only — a child writing "tengo 15 anos" is not caught. Do not promote the
-Circle in a language before that language's minor patterns exist.
+Crisis and under-18 detection now run in all 24 offered languages
+(safety-lang.js). Fourteen are "full" — crisis phrases and first-person age
+patterns: en, es, pt, fr, de, it, id, tl, ru, pl, hi, ur, ar, bn. Ten are
+"basic" — the unambiguous words for suicide plus one age pattern: fa, he,
+vi, ko, zh-CN, ta, te, pa, gu, sw.
+
+  NO LANGUAGE HAS BEEN READ BY A NATIVE SPEAKER. A model wrote them and a
+  missed crisis phrase is the most expensive bug in this codebase. Each
+  language carries a `checked` field naming its reviewer; every one is null.
+  Do not promote the Circle in a language until a native speaker has read
+  that language's list.
+
+Two properties worth preserving if anyone edits them:
+
+  Crisis patterns are PRECISE, not merely sensitive. A flagged request can
+  only go to a companion or steward, and if none is free it is refused. So a
+  false positive does not waste a panel — it turns someone away. General
+  distress ("no aguanto mas", "je n'en peux plus") is deliberately absent.
+
+  Minor patterns are FIRST PERSON. "mi hija tiene 14 anos" is a mother
+  asking for help and must pass; "tengo 14 anos" must not. Indonesian needed
+  an explicit exclusion because it marks possession after the noun, so "anak
+  saya 15 tahun" contains "saya 15 tahun" word for word.
+
+English always runs alongside the chosen language, and script detection adds
+a third opinion: Devanagari in the text checks Hindi whatever the picker
+says, because people choose English and then write in their own tongue.
+
+STILL ENGLISH-ONLY: the interface itself. A Spanish speaker picks Spanish,
+writes in Spanish and is answered in Spanish, but the labels around them
+stay English.
 
 
 The seven faiths

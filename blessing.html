@@ -273,6 +273,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 <script src="verses.js"></script>
 <script src="world.js"></script>
 <script src="identity.js"></script>
+<script src="safety-lang.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -477,7 +478,7 @@ $("findmatch").onclick = async () => {
   if (!db) { $("sendmsg").textContent = "Not connected yet."; return; }
   $("sendmsg").textContent = "";
   await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: chosenLang,
-                      flagged: risky(note) },
+                      flagged: riskyMulti(note, chosenLang, risky) },
                     (uid) => { pickedGuide = uid; });
 };
 
@@ -485,7 +486,7 @@ $("send").onclick = async () => {
   const note = $("note").value.trim();
   if (note.length < 10) { $("sendmsg").textContent = "A sentence or two, so a guide knows what to hold."; return; }
   if (!$("ok18").checked) { $("sendmsg").textContent = "Please tick the box above first."; return; }
-  if (looksLikeMinor(note)) {
+  if (minorMulti(note, chosenLang, looksLikeMinor)) {
     $("youngbox").style.display = "block";
     $("youngbox").scrollIntoView({ behavior: "smooth", block: "center" });
     $("sendmsg").textContent = "";
@@ -497,7 +498,7 @@ $("send").onclick = async () => {
   // A crisis request must be assigned to a named companion or steward
   // before it can be written at all. If the person never pressed "find
   // someone", do it for them now rather than quietly sending it wide.
-  const flagged = risky(note);
+  const flagged = riskyMulti(note, chosenLang, risky);
   if (flagged && !pickedGuide) {
     $("sendmsg").textContent = "Finding the right person…";
     await showMatches({ tradition: chosenReligion, category: chosenCat, note, language: chosenLang, flagged: true },
