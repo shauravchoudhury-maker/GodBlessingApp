@@ -77,12 +77,45 @@ file, or reactions, Twin Track and Second Chance all stop working.
       // A guide reads the ones matched to them, and the ones the person
       // chose to send to the whole circle. Nothing else. A query that asks
       // for more than that is refused outright — see the note below.
-      allow get:  if isAdmin() || (isGuide() && mine(resource));
+      // A single get is open to whoever holds the secret link — they wrote
+      // it, and they need the conversation's state to read it back. This is
+      // the same trade as responses. LIST is what stays locked: the
+      // collection can still never be enumerated, searched or browsed, which
+      // is the property that actually matters.
+      allow get:  if true;
       allow list: if isGuide() && mine(resource);
 
       // A guide may mark it answered, and nothing else.
-      allow update: if isGuide() && mine(resource)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','replies']);
+      allow update: if
+        (isGuide() && mine(resource)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','replies']))
+
+        // ---- Tier 2: the asker opens a conversation ----
+        // Only ever the person holding the link, never a guide. It can only
+        // point at a guide who actually replied to them, and it cannot open
+        // at all without a named steward to read alongside.
+        || (resource.data.get('threadOpen', false) == false
+            && !('threadClosedAt' in resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['threadOpen','threadGuide','threadSupervisor','threadOpenedAt','threadCount'])
+            && request.resource.data.threadOpen == true
+            && request.resource.data.threadCount == 0
+            && exists(/databases/$(database)/documents/blessing/circle/requests/$(id)/responses/$(request.resource.data.threadGuide))
+            && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.resource.data.threadSupervisor)))
+
+        // ---- the turn counter advances ----
+        // ONLY by one, and ONLY once the current slot is actually filled.
+        // This is what stops a guide skipping the asker's turn: to reach
+        // their next odd slot they need the even one to exist, and an even
+        // slot cannot be written by the guide the thread belongs to.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['threadCount'])
+            && request.resource.data.threadCount == resource.data.threadCount + 1
+            && exists(/databases/$(database)/documents/blessing/circle/requests/$(id)/thread/$(string(resource.data.threadCount))))
+
+        // ---- either side ends it ----
+        // No explanation required, from anybody, ever.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['threadOpen','threadClosedAt'])
+            && request.resource.data.threadOpen == false);
 
       allow delete: if false;
 
@@ -105,6 +138,48 @@ file, or reactions, Twin Track and Second Chance all stop working.
           && request.resource.data.guideName is string
           && request.resource.data.guideName.size() <= 60
           && request.resource.data.guideUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      // ---- Tier 2: the conversation ----
+      // The document id IS the turn number and must equal the request's
+      // current threadCount. Creates cannot overwrite, so no slot is ever
+      // claimed twice. Even turns belong to the person who asked, odd turns
+      // to the one guide the thread belongs to — which means a guide can
+      // only ever speak when the asker has just spoken. A guide who is
+      // ignored cannot write again. That is not a policy; it is arithmetic.
+      match /thread/{turn} {
+        // Same trade as responses: whoever holds the secret link can read.
+        allow read: if true;
+
+        allow create: if
+          resource == null
+          && get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadOpen', false) == true
+          && get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadCount', 0) < 12
+          && turn == string(get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount)
+          && request.resource.data.keys().hasOnly(['from','text','guideUid','turn','createdAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 900
+          && request.resource.data.turn == get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount
+          && (
+              // EVEN turn — the person who asked. No account, no auth. The
+              // one thing refused is the thread's own guide writing as them.
+              (get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount % 2 == 0
+                && request.resource.data.from == 'asker'
+                && (request.auth == null
+                    || request.auth.uid != get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadGuide', '')))
+
+              // ODD turn — only the guide this thread belongs to.
+              || (get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount % 2 == 1
+                && request.resource.data.from == 'guide'
+                && isGuide()
+                && request.auth.uid == get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadGuide', '')
+                && request.resource.data.guideUid == request.auth.uid)
+             );
+
+        // Nothing written in a conversation is ever edited or removed,
+        // by anyone, including us.
         allow update, delete: if false;
       }
     }
@@ -343,6 +418,57 @@ Muslim guide had nothing to reply with.
 A request stores one of these keys in `tradition`; a guide stores a list of
 them. The verse pool a guide replies from is every text of that religion, so
 a Buddhist guide sees both books.
+
+
+Tier 2 — conversations, and why they are safe
+---------------------------------------------
+One reply per guide, immutable, was the strongest property in this system.
+Every grooming pattern worth the name needs a second message, and there was
+no second message. Tier 2 hands that back, so it is not "the one-reply rule
+relaxed" — it is a different structure with four properties, none of which
+anyone has to remember:
+
+1. THE ASKER OPENS THE DOOR. The button to continue exists only on the page
+   the person who asked holds the link to. There is no equivalent anywhere
+   in the guide's interface. "Let me check in on you" is the move, and it is
+   unavailable.
+
+2. STRICT ALTERNATION, ASKER FIRST. The message document id IS the turn
+   number and must equal the request's threadCount. Creates cannot
+   overwrite, so no slot is ever claimed twice. Even turns belong to the
+   asker, odd turns to the one guide. A guide can only speak when the asker
+   has just spoken; a guide who is ignored cannot write again.
+
+   The counter is what makes this hold against a guide with the console
+   open. It may only advance by one, and only when the current slot is
+   already filled — so to reach their next odd turn a guide needs the even
+   one to exist, and an even turn cannot be written by the thread's own
+   guide. Failing to advance the counter BLOCKS the thread rather than
+   opening it, which is the right way round for a bug to fail.
+
+3. A STEWARD IS IN THE ROOM. threadSupervisor must name an existing guide
+   before a thread can open, and both sides are told in plain words.
+   Supervision nobody knows about is surveillance. If no steward is free,
+   conversations are simply off.
+
+4. IT ENDS. Twelve turns, six each, thirty days. Either side closes it
+   instantly with no explanation, and the guide is told only that it ended.
+
+Every message is held to the same moderation as the first blessing —
+contact details, money, meeting, medical advice, all refused — and the
+under-18 check runs on the asker's messages too.
+
+RESIDUAL RISK, stated plainly: a guide who signs out could write an even
+turn posing as the asker, because even turns need no account. The rule
+refuses it while they are signed in as the thread's guide, and the forged
+message is visible to both the asker and the steward, so it is detectable
+rather than silent. Closing it completely would mean giving the asker an
+account, which is the one thing this design refuses.
+
+Note also that `allow get` on a request is now open to whoever holds the
+link — they wrote it, and they need the conversation's state. `allow list`
+stays locked to guides, which is the property that actually matters: the
+collection can never be enumerated, searched or browsed.
 
 
 Standing — what a guide is cleared to do

@@ -117,6 +117,13 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 .appcard pre{background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:10px;
   font-size:12px;overflow-x:auto;white-space:pre;margin:10px 0 0}
 
+.msg{border-radius:12px;padding:11px 14px;margin:8px 0;max-width:82%;font-size:14.5px;line-height:1.55}
+.msg.asker{background:#f0ecff;margin-left:auto;border:1px solid #ded5ff}
+.msg.guide{background:#fff;border:1px solid var(--line)}
+.msg .who{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px}
+.thwrap{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.supnote{font-size:13px;color:#41506b;background:#f4f6f9;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.turnnote{font-size:13px;color:var(--muted);margin:8px 0}
 .trust{margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
 .tline{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-bottom:5px}
 .tline:last-child{margin-bottom:0}
@@ -274,6 +281,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 <script src="world.js"></script>
 <script src="identity.js"></script>
 <script src="safety-lang.js"></script>
+<script src="thread.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -533,6 +541,121 @@ $("send").onclick = async () => {
 };
 
 /* ---- read a reply ---- */
+let lastGuideUid = null;
+
+/* ---- Tier 2, the asker's side --------------------------------------
+   The button to continue exists ONLY here, on the page the person who
+   asked holds the link to. There is no equivalent anywhere in the guide's
+   interface, and that asymmetry is the entire anti-grooming design: "let
+   me check in on you" is the move, and it is not available. */
+async function renderThreadUI(id, host){
+  let req = null;
+  try { const d = await getDoc(doc(db, "blessing", "circle", "requests", id)); if (d.exists()) req = d.data(); }
+  catch (e) { return; }
+  if (!req) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "thwrap";
+  host.appendChild(wrap);
+  const state = threadState(req, new Date().toISOString());
+
+  if (state === "none") {
+    // Offer it only if the guide is cleared to hold one and a steward is free.
+    let guides = [];
+    try {
+      const snap = await getDocs(collection(db, "blessing", "circle", "guides"));
+      snap.forEach((d) => guides.push(Object.assign({ uid: d.id }, d.data())));
+    } catch (e) {}
+    const g = guides.find((x) => x.uid === lastGuideUid);
+    const steward = guides.find((x) => tierOf(x) >= 3 && x.active !== false && x.uid !== lastGuideUid);
+    const gate = canOpenThread(req, g, steward ? steward.uid : null, can);
+    if (!gate.ok) {
+      wrap.innerHTML = '<p class="turnnote">' + esc(gate.why) + '</p>';
+      return;
+    }
+    wrap.innerHTML = '<p class="turnnote">If one blessing was not enough, you can write back and keep talking — ' +
+      'up to six messages each, over thirty days.</p>' +
+      '<div class="supnote">' + esc(SUPERVISION_NOTICE.asker) + '</div>' +
+      '<button class="btnb sm" id="th-open">Continue this conversation</button> ' +
+      '<span class="muted" id="th-msg" style="font-size:13px"></span>';
+    $("th-open").onclick = async () => {
+      $("th-open").disabled = true; $("th-msg").textContent = "Opening…";
+      try {
+        await updateDoc(doc(db, "blessing", "circle", "requests", id), {
+          threadOpen: true, threadGuide: g.uid, threadSupervisor: steward.uid,
+          threadOpenedAt: new Date().toISOString(), threadCount: 0,
+        });
+        wrap.remove(); await renderThreadUI(id, host);
+      } catch (e) { $("th-msg").textContent = "Could not open: " + e.message; $("th-open").disabled = false; }
+    };
+    return;
+  }
+
+  // Render the conversation itself.
+  let msgs = [];
+  try {
+    const snap = await getDocs(collection(db, "blessing", "circle", "requests", id, "thread"));
+    snap.forEach((d) => msgs.push(d.data()));
+  } catch (e) {}
+  msgs.sort((a, b) => (a.turn || 0) - (b.turn || 0));
+
+  let h = '<div class="supnote">' + esc(SUPERVISION_NOTICE.asker) + '</div>';
+  h += msgs.map((m) => '<div class="msg ' + (m.from === "asker" ? "asker" : "guide") + '" dir="auto">' +
+    '<div class="who">' + (m.from === "asker" ? "you" : "your guide") + '</div>' + esc(m.text) + '</div>').join("");
+
+  const mayWrite = canWrite(req, "asker", null, new Date().toISOString());
+  if (mayWrite.ok) {
+    h += '<label class="bf" style="margin-top:10px"><span class="vh">Write back</span>' +
+      '<textarea id="th-text" maxlength="900" dir="auto" placeholder="Write back…"></textarea></label>' +
+      '<div class="note" id="th-warn" style="display:none"></div>' +
+      '<div class="rowx"><button class="btnb sm" id="th-send">Send</button>' +
+      '<button class="btnb ghost sm" id="th-end">End this conversation</button>' +
+      '<span class="muted" id="th-msg" style="font-size:13px"></span></div>';
+  } else {
+    h += '<p class="turnnote">' + esc(mayWrite.why) + '</p>';
+    if (threadState(req, new Date().toISOString()) === "open")
+      h += '<button class="btnb ghost sm" id="th-end">End this conversation</button>';
+  }
+  wrap.innerHTML = h;
+
+  if ($("th-send")) {
+    $("th-text").addEventListener("input", () => {
+      const v = checkReplyStrict($("th-text").value);
+      $("th-warn").style.display = v.level === "clear" ? "none" : "block";
+      if (v.level !== "clear") $("th-warn").innerHTML =
+        '<b>' + (v.level === "block" ? "This cannot be sent as written" : "Worth a second look") + '</b><p>' + esc(v.msg) + '</p>';
+    });
+    $("th-send").onclick = async () => {
+      const text = $("th-text").value.trim();
+      if (text.length < 2) { $("th-msg").textContent = "Write something first."; return; }
+      // every message is held to the same rules as the first blessing
+      const v = checkReplyStrict(text);
+      if (!v.ok) { $("th-warn").style.display = "block";
+        $("th-warn").innerHTML = '<b>This cannot be sent as written</b><p>' + esc(v.msg) + '</p>'; return; }
+      if (minorMulti(text, chosenLang, looksLikeMinor)) {
+        $("th-warn").style.display = "block";
+        $("th-warn").innerHTML = '<b>We cannot carry this on.</b><p>What you have written suggests you may be under 18. ' +
+          'Please look at the help above instead.</p>'; return; }
+      $("th-send").disabled = true; $("th-msg").textContent = "Sending…";
+      const n = req.threadCount || 0;
+      try {
+        await setDoc(doc(db, "blessing", "circle", "requests", id, "thread", turnId(n)),
+          { from: "asker", text: text.slice(0, 900), guideUid: "", turn: n, createdAt: new Date().toISOString() });
+        await updateDoc(doc(db, "blessing", "circle", "requests", id), { threadCount: n + 1 });
+        wrap.remove(); await renderThreadUI(id, host);
+      } catch (e) { $("th-msg").textContent = "Could not send: " + e.message; $("th-send").disabled = false; }
+    };
+  }
+  if ($("th-end")) $("th-end").onclick = async () => {
+    if (!confirm("End this conversation? You cannot reopen it, but you can always ask for a new blessing.")) return;
+    try {
+      await updateDoc(doc(db, "blessing", "circle", "requests", id),
+        { threadOpen: false, threadClosedAt: new Date().toISOString() });
+      wrap.remove(); await renderThreadUI(id, host);
+    } catch (e) { $("th-msg").textContent = "Could not end it: " + e.message; }
+  };
+}
+
 async function showReplies(id){
   const box = $("replies");
   box.innerHTML = '<p class="muted">Looking…</p>';
@@ -556,7 +679,9 @@ async function showReplies(id){
         esc((r.createdAt || "").slice(0, 10)) + '</div>';
       box.appendChild(el);
       reportUI(el, id, d.id, r.guideUid);
+      lastGuideUid = r.guideUid;
     });
+    await renderThreadUI(id, box);
   } catch (e) {
     box.innerHTML = '<p class="muted">Could not open that: ' + esc(e.message) + '</p>';
   }
@@ -692,8 +817,19 @@ function renderApply(){
   };
 }
 
+let myGuide = null;
+async function loadMyGuide(){
+  if (!db || !me) return null;
+  try {
+    const d = await getDoc(doc(db, "blessing", "circle", "guides", me.uid));
+    myGuide = d.exists() ? Object.assign({ uid: me.uid }, d.data()) : null;
+  } catch (e) { myGuide = null; }
+  return myGuide;
+}
+
 async function renderQueue(){
   await checkAdmin();
+  await loadMyGuide();
   guideShell('<div class="panelb"><h2>Open requests</h2><p class="lede">Reading…</p></div>');
   try {
     const q = query(collection(db, "blessing", "circle", "requests"),
@@ -702,6 +838,7 @@ async function renderQueue(){
     let html = '<div class="panelb"><h2>Open requests</h2>' +
       '<p class="lede">Signed in as ' + esc(me.displayName || me.email) +
       ' · <a href="#" id="prof">your profile</a>' +
+      (myGuide && can(myGuide, "converse") ? ' · <a href="#" id="convs">conversations</a>' : '') +
       (isAdmin ? ' · <a href="#" id="mod">reports</a> · <a href="#" id="apps">applications</a>' : '') +
       ' · <a href="#" id="out">sign out</a></p>';
     // Anything addressed to me by the matcher comes first.
@@ -733,13 +870,8 @@ async function renderQueue(){
     $("out").onclick = (e) => { e.preventDefault(); signOut(auth); };
     if (isAdmin && $("mod")) $("mod").onclick = (e) => { e.preventDefault(); renderModeration(); };
     if (isAdmin && $("apps")) $("apps").onclick = (e) => { e.preventDefault(); renderApplications(); };
-    $("prof").onclick = async (e) => {
-      e.preventDefault();
-      let cur = null;
-      try { const d = await getDoc(doc(db, "blessing", "circle", "guides", me.uid)); if (d.exists()) cur = d.data(); }
-      catch (err) {}
-      renderProfile(cur);
-    };
+    if ($("convs")) $("convs").onclick = (e) => { e.preventDefault(); renderConversations(); };
+    $("prof").onclick = (e) => { e.preventDefault(); renderProfile(myGuide); };
     document.querySelectorAll("[data-reply]").forEach((b) => {
       b.onclick = () => renderReply(b.dataset.reply, b.dataset.trad);
     });
@@ -1564,6 +1696,124 @@ async function renderApplications(){
   } catch (e) {
     guideShell('<div class="panelb"><h2>Applications</h2><p class="muted">Could not load: ' + esc(e.message) +
       '</p><p class="muted">Admins can only read these once the updated rules are published.</p></div>');
+  }
+}
+
+/* ---- Tier 2, the guide's side --------------------------------------
+   A list of conversations where the other person has written and is
+   waiting. There is deliberately no "start a conversation" anywhere in
+   this interface, and no way to write out of turn — the rules would
+   refuse it, but it is not offered either, which is the better failure. */
+async function renderConversations(){
+  guideShell('<div class="panelb"><h2>Conversations</h2><p class="lede">Reading…</p></div>');
+  try {
+    const snap = await getDocs(query(collection(db, "blessing", "circle", "requests"),
+                                     where("threadGuide", "==", me.uid), limit(25)));
+    const rows = [];
+    snap.forEach((d) => rows.push({ id: d.id, r: d.data() }));
+    const now = new Date().toISOString();
+    const mine = rows.filter(({ r }) => canWrite(r, "guide", me.uid, now).ok);
+    const waiting = rows.filter(({ r }) => !canWrite(r, "guide", me.uid, now).ok && threadState(r, now) === "open");
+
+    let html = '<div class="panelb"><h2>Conversations</h2>' +
+      '<p class="lede">' + (mine.length ? mine.length + ' waiting for you.' : 'Nobody is waiting.') +
+      ' <a href="#" id="cv-back">back to the queue</a></p>' +
+      '<div class="supnote">' + esc(SUPERVISION_NOTICE.guide) + '</div>';
+    if (!rows.length) html += '<p class="muted">No conversations yet. They only start when someone asks for one.</p>';
+
+    html += mine.concat(waiting).map(({ id, r }) => {
+      const turn = canWrite(r, "guide", me.uid, now);
+      return '<div class="req" id="cv-' + id + '">' +
+        '<div class="meta">' +
+        '<span class="chipb t">' + esc(religionLabel(r.tradition)) + '</span>' +
+        '<span class="chipb">' + (r.threadCount || 0) + ' of ' + THREAD_CAP + ' messages</span>' +
+        (turn.ok ? '<span class="chipb" style="background:#eafafb;color:#2b8f99">your turn</span>'
+                 : '<span class="chipb">waiting on them</span>') + '</div>' +
+        '<div class="body" dir="auto">' + esc((r.note || "").slice(0, 180)) + '</div>' +
+        '<div class="rowx"><button class="btnb ghost sm" data-open="' + id + '">Open</button>' +
+        '<span class="muted" data-cmsg="' + id + '" style="font-size:13px"></span></div>' +
+        '<div data-th="' + id + '"></div></div>';
+    }).join("");
+    html += '</div>';
+    guideShell(html);
+    $("cv-back").onclick = (e) => { e.preventDefault(); renderQueue(); };
+
+    document.querySelectorAll("[data-open]").forEach((b) => b.onclick = async () => {
+      const id = b.dataset.open;
+      const host = document.querySelector('[data-th="' + id + '"]');
+      host.innerHTML = '<p class="muted">Loading…</p>';
+      let req = null, msgs = [];
+      try {
+        const rd = await getDoc(doc(db, "blessing", "circle", "requests", id));
+        req = rd.data();
+        const ms = await getDocs(collection(db, "blessing", "circle", "requests", id, "thread"));
+        ms.forEach((d) => msgs.push(d.data()));
+      } catch (e) { host.innerHTML = '<p class="muted">Could not load: ' + esc(e.message) + '</p>'; return; }
+      msgs.sort((a, b) => (a.turn || 0) - (b.turn || 0));
+
+      const now2 = new Date().toISOString();
+      const turn = canWrite(req, "guide", me.uid, now2);
+      let h = msgs.map((m) => '<div class="msg ' + (m.from === "asker" ? "asker" : "guide") + '" dir="auto">' +
+        '<div class="who">' + (m.from === "asker" ? "them" : "you") + '</div>' + esc(m.text) + '</div>').join("");
+      if (turn.ok) {
+        h += '<label class="bf" style="margin-top:10px"><span class="vh">Write back</span>' +
+          '<textarea class="cv-text" maxlength="900" dir="auto" placeholder="Write back…"></textarea></label>' +
+          '<div class="note cv-warn" style="display:none"></div>' +
+          '<div class="rowx"><button class="btnb sm cv-send">Send</button>' +
+          '<button class="btnb ghost sm cv-end">End this conversation</button>' +
+          '<span class="muted cv-msg" style="font-size:13px"></span></div>';
+      } else {
+        h += '<p class="turnnote">' + esc(turn.why) + '</p>';
+        if (threadState(req, now2) === "open")
+          h += '<button class="btnb ghost sm cv-end">End this conversation</button>';
+      }
+      host.innerHTML = h;
+
+      const txt = host.querySelector(".cv-text"), warn = host.querySelector(".cv-warn"),
+            msg = host.querySelector(".cv-msg");
+      if (txt) {
+        txt.addEventListener("input", () => {
+          const v = checkReplyStrict(txt.value);
+          warn.style.display = v.level === "clear" ? "none" : "block";
+          if (v.level !== "clear") warn.innerHTML =
+            '<b>' + (v.level === "block" ? "This cannot be sent as written" : "Worth a second look") +
+            '</b><p>' + esc(v.msg) + '</p>';
+        });
+        host.querySelector(".cv-send").onclick = async () => {
+          const text = txt.value.trim();
+          if (text.length < 2) { msg.textContent = "Write something first."; return; }
+          // Every message in a conversation is held to exactly the rules the
+          // first blessing was. Nothing relaxes because you have spoken before.
+          const v = checkReplyStrict(text);
+          if (!v.ok) { warn.style.display = "block";
+            warn.innerHTML = '<b>This cannot be sent as written</b><p>' + esc(v.msg) + '</p>'; return; }
+          if (sentToday() >= DAY_CAP) { msg.textContent = "That is the daily limit. Come back tomorrow."; return; }
+          host.querySelector(".cv-send").disabled = true; msg.textContent = "Sending…";
+          const n = req.threadCount || 0;
+          try {
+            await setDoc(doc(db, "blessing", "circle", "requests", id, "thread", turnId(n)),
+              { from: "guide", text: text.slice(0, 900), guideUid: me.uid, turn: n,
+                createdAt: new Date().toISOString() });
+            await updateDoc(doc(db, "blessing", "circle", "requests", id), { threadCount: n + 1 });
+            bumpSent();
+            renderConversations();
+          } catch (e) { msg.textContent = "Could not send: " + e.message;
+                        host.querySelector(".cv-send").disabled = false; }
+        };
+      }
+      const endb = host.querySelector(".cv-end");
+      if (endb) endb.onclick = async () => {
+        if (!confirm("End this conversation? Neither of you can reopen it.")) return;
+        try {
+          await updateDoc(doc(db, "blessing", "circle", "requests", id),
+            { threadOpen: false, threadClosedAt: new Date().toISOString() });
+          renderConversations();
+        } catch (e) { msg && (msg.textContent = "Could not end it: " + e.message); }
+      };
+    });
+  } catch (e) {
+    guideShell('<div class="panelb"><h2>Conversations</h2><p class="muted">Could not load: ' +
+      esc(e.message) + '</p></div>');
   }
 }
 
