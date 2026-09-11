@@ -82,6 +82,12 @@ NOT GATES, BUT SOON AFTER
     can reach companion, and the trust cards say so honestly.
   · Sign the first partner charity. The giving page stays "being
     confirmed" until a name is on paper.
+  · When the card processor is signed (Stripe or PayPal), set PROCESSING
+    in giving.js to the REAL rate on the agreement — the giving page
+    prints it in the sentence a giver reads before pressing the button,
+    and a wrong number there is worse than none. Nonprofit rates are
+    lower than the 2.9% + 30c placeholder; ask for them. Re-check the
+    constant whenever the processor changes its pricing.
   · One call with an accountant and one with a charity lawyer about the
     501(c)(3) question before the first gift is taken.
 
@@ -190,6 +196,21 @@ Not a mail merge. Name the specific thing you want.
 Do not mention the giving model in the first letter. That conversation
 comes after they have seen their people answer real requests, and it
 should come from them asking.
+
+
+THE GIVING MODEL
+----------------
+EverVerse takes NOTHING from a gift. All of it, less the card fee (which
+the giver can cover), goes to a charity of the giver's faith. Separately
+and optionally, the giver may add a tip to EverVerse — never taken from the
+gift, never preselected, its purpose listed. Decided 11 September 2026,
+after 10% and 1% were both considered: zero is the strongest true sentence
+a giving page can carry, it is what raises more (GoFundMe's model since
+2017), and a voluntary tip is not a cut of a donation, which lifts most of
+the fundraising-platform registration burden. No percentage of gifts was
+going to fund year one anyway — that is the Etsy business, partner
+institutions covering their own guides' checks, and grants once there is a
+501(c)(3). Revisit once real gift volume exists.
 
 
 THE LIBRARY, AND WHY IT IS FREE
