@@ -159,7 +159,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 
 <div class="bwrap">
   <div class="bhero">
-    <h1>Tell someone what you are carrying.</h1>
+    <h1>Tell someone what you are carrying — or what you are celebrating.</h1>
     <p>A guide reads it, chooses a verse for you from your own tradition, and writes back.
       Seven faiths, and a door for people who have none. No charge, no account, and you can stay anonymous.</p>
   </div>
@@ -173,7 +173,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
   <!-- ============ ASK ============ -->
   <section id="v-ask">
     <div class="panelb">
-      <h2>What would you like held?</h2>
+      <h2>What would you like held — or shared?</h2>
       <p class="lede">Write as much or as little as you want. Please leave out full names, addresses and anything that identifies you — a guide does not need them to pray for you.</p>
 
       <div class="step"><span class="stepn">1</span><span>Which faith should your blessing come from?</span></div>
@@ -181,6 +181,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
       <p class="ctx" id="tradctx"></p>
 
       <div class="step"><span class="stepn">2</span><span>What is it about?</span></div>
+      <div id="mood" class="pickgrid" role="radiogroup" aria-label="Carrying or celebrating" style="grid-template-columns:1fr 1fr;margin-bottom:10px"></div>
       <div id="cat" class="pickwrap" role="radiogroup" aria-label="What it is about"></div>
 
       <div class="step"><span class="stepn">3</span><span>Tell them in your own words</span></div>
@@ -367,17 +368,37 @@ const FAITHS = RELIGIONS.map((r) => [r.key, r.label]);
 /* A picker of cards rather than a select. On a phone a native select hides
    every option behind a tap, which is a poor way to ask someone what they
    believe — and it hid the fact that we serve seven faiths at all. */
-const CATEGORIES = [
-  ["grief",   "Grief or loss",       "Since they died I have been…"],
-  ["illness", "Illness",             "The diagnosis came last week and…"],
-  ["worry",   "Worry or fear",       "I lie awake worrying that…"],
-  ["family",  "Family",              "Things at home have been…"],
-  ["work",    "Work or money",       "I lost my job and I have not been able to…"],
-  ["faith",   "Faith and doubt",     "I have prayed for months and heard nothing…"],
-  ["thanks",  "Giving thanks",       "Something good happened and I wanted to…"],
-  ["other",   "Something else",      "I have been carrying…"],
+/* Two doors. A platform that only ever hears pain becomes heavy, guides
+   burn out on it, and the first request a new guide answers should not be
+   somebody's darkest night. So joy is a first-class door, not a category
+   buried among the hard ones — and a celebration request is the natural
+   on-ramp for a guide's first reply. */
+const MOODS = [
+  ["carry",     "Something I am carrying",  "grief, illness, worry, a hard season"],
+  ["celebrate", "Something to celebrate",   "a birth, a wedding, good news, thanks"],
 ];
-let chosenReligion = "christian", chosenCat = "grief";
+const CATEGORIES = [
+  // carrying
+  ["grief",   "Grief or loss",       "Since they died I have been…",                          "carry"],
+  ["illness", "Illness",             "The diagnosis came last week and…",                     "carry"],
+  ["worry",   "Worry or fear",       "I lie awake worrying that…",                            "carry"],
+  ["family",  "Family",              "Things at home have been…",                             "carry"],
+  ["work",    "Work or money",       "I lost my job and I have not been able to…",            "carry"],
+  ["faith",   "Faith and doubt",     "I have prayed for months and heard nothing…",           "carry"],
+  ["other",   "Something else",      "I have been carrying…",                                 "carry"],
+  // celebrating
+  ["newbaby", "A new baby",          "She arrived on Tuesday and I keep looking at her…",     "celebrate"],
+  ["wedding", "A wedding or engagement", "We are getting married in June and…",               "celebrate"],
+  ["recovery","Good news about health", "The scan came back clear and I…",                   "celebrate"],
+  ["milestone","A new job, a degree, a step forward", "After three years of trying, I…",     "celebrate"],
+  ["home",    "A new home, a new start", "We got the keys today and…",                       "celebrate"],
+  ["anniv",   "An anniversary or birthday", "Forty years this Saturday, and I wanted…",       "celebrate"],
+  ["mended",  "Something mended",    "My brother and I spoke for the first time in years…",  "celebrate"],
+  ["thanks",  "Simply giving thanks", "Something good happened and I wanted to…",            "celebrate"],
+];
+const CELEBRATE = new Set(CATEGORIES.filter((c) => c[3] === "celebrate").map((c) => c[0]));
+function isCelebration(cat){ return CELEBRATE.has(cat); }
+let chosenReligion = "christian", chosenCat = "grief", chosenMood = "carry";
 
 function pickerBuild(host, items, initial, onPick){
   $(host).innerHTML = items;
@@ -398,14 +419,24 @@ pickerBuild("trad", RELIGIONS.map((r) =>
   '<span class="pb">' + esc(r.book) + '</span></button>').join(""),
   chosenReligion, (v) => { chosenReligion = v; tradCtx(); });
 
-pickerBuild("cat", CATEGORIES.map(([v, l]) =>
-  '<button type="button" class="chip" data-v="' + v + '">' + esc(l) + '</button>').join(""),
-  chosenCat, (v) => {
-    chosenCat = v;
-    // the prompt follows the subject, so the empty box is never a blank wall
-    const c = CATEGORIES.find((x) => x[0] === v);
-    if (c) $("note").placeholder = c[2];
-  });
+function drawCats(){
+  const list = CATEGORIES.filter((c) => c[3] === chosenMood);
+  if (!list.some((c) => c[0] === chosenCat)) chosenCat = list[0][0];
+  pickerBuild("cat", list.map(([v, l]) =>
+    '<button type="button" class="chip" data-v="' + v + '">' + esc(l) + '</button>').join(""),
+    chosenCat, (v) => {
+      chosenCat = v;
+      // the prompt follows the subject, so the empty box is never a blank wall
+      const c = CATEGORIES.find((x) => x[0] === v);
+      if (c) $("note").placeholder = c[2];
+    });
+  const c = CATEGORIES.find((x) => x[0] === chosenCat);
+  if (c) $("note").placeholder = c[2];
+}
+pickerBuild("mood", MOODS.map(([v, l, sub]) =>
+  '<button type="button" class="pick" data-v="' + v + '"><span class="pl">' + esc(l) + '</span><span class="pb">' + esc(sub) + '</span></button>').join(""),
+  chosenMood, (v) => { chosenMood = v; drawCats(); });
+drawCats();
 
 // Say plainly what they are going to get. This is the whole "in context"
 // promise: which book, and who will be holding it.
@@ -673,8 +704,11 @@ async function renderThreadUI(id, host){
   };
 }
 
+let reqCategory = "";
 async function showReplies(id){
   const box = $("replies");
+  try { const rd = await getDoc(doc(db, "blessing", "circle", "requests", id)); if (rd.exists()) reqCategory = rd.data().category || ""; }
+  catch (e) { reqCategory = ""; }
   box.innerHTML = '<p class="muted">Looking…</p>';
   if (!db) { box.innerHTML = '<p class="muted">Not connected yet.</p>'; return; }
   try {
@@ -698,6 +732,18 @@ async function showReplies(id){
       box.appendChild(el);
       reportUI(el, id, d.id, r.guideUid);
       lastGuideUid = r.guideUid;
+      // Good news wants sharing. The Library's card maker takes the verse
+      // and the occasion; the guide's words and your request stay here.
+      if (isCelebration(reqCategory)) {
+        const occ = { newbaby:"newbaby", wedding:"wedding", recovery:"getwell", milestone:"congrats",
+                      home:"congrats", anniv:"birthday", mended:"encouragement", thanks:"thankyou" }[reqCategory] || "encouragement";
+        const a = document.createElement("a");
+        a.className = "btnb ghost sm";
+        a.style.marginTop = "10px"; a.style.display = "inline-block"; a.style.textDecoration = "none";
+        a.href = "library.html?occ=" + encodeURIComponent(occ) + "&ref=" + encodeURIComponent(r.verseRef || "") + "#cards";
+        a.textContent = "Make this verse a card to share →";
+        el.appendChild(a);
+      }
     });
     await renderThreadUI(id, box);
   } catch (e) {
@@ -882,8 +928,10 @@ async function renderQueue(){
       const d = { id: rowId };
       html += '<div class="req"><div class="meta">' +
         (r.forGuide === me.uid ? '<span class="chipb" style="background:#eafafb;color:#2b8f99">matched to you</span>' : '') +
-        '<span class="chipb t">' + esc(r.tradition) + '</span>' +
-        '<span class="chipb">' + esc(r.category) + '</span>' +
+        '<span class="chipb t">' + esc(religionLabel(r.tradition)) + '</span>' +
+        (isCelebration(r.category)
+          ? '<span class="chipb" style="background:#fff4e0;color:#8a5a00">celebration · ' + esc(r.category) + '</span>'
+          : '<span class="chipb">' + esc(r.category) + '</span>') +
         (r.language && r.language !== "en"
           ? '<span class="chipb" style="background:#eef7ee;color:#2f6b3a">answer in ' +
             esc((UI_LANGS.find((x) => x[0] === r.language) || [r.language, r.language])[1]) + '</span>' : '') +
@@ -1237,6 +1285,16 @@ const CAT_HINT = {
   faith:   ["doubt"],
   thanks:  [],
   other:   [],
+  // Celebrations. A wedding does not need a guide who has been bereaved;
+  // any guide of the tradition can bless it. Where a lived tag genuinely
+  // fits — a recovery, a new baby, a mended family — it still helps.
+  newbaby:   ["parenting"],
+  wedding:   [],
+  recovery:  ["illness-own", "illness-carer"],
+  milestone: ["money"],
+  home:      ["migration"],
+  anniv:     [],
+  mended:    ["divorce", "parenting"],
 };
 
 // And what the person's own words point at. Kept small and obvious on
