@@ -13,6 +13,11 @@
   <link rel="stylesheet" href="site.css" />
 </head>
 <body>
+<!-- Decide app-mode vs browser-mode BEFORE anything paints. Doing it in
+     site.js after DOMContentLoaded meant all eight content tabs painted and
+     then seven vanished, a few hundred milliseconds later, on every arrival.
+     This runs synchronously while the body is being parsed. -->
+<script>document.body.classList.add((window.matchMedia&&(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||matchMedia("(display-mode: minimal-ui)").matches))||navigator.standalone===true?"app-mode":"browser-mode");</script>
   <header class="site">
     <div class="wrap bar">
       <div class="logo" data-go="today"><span class="mark">✦</span> EverVerse</div>
