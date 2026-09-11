@@ -8,11 +8,16 @@
 //
 // WHAT IT IS ALLOWED TO DO, AND NOTHING MORE.
 //
-// It writes exactly two fields on one document: idVerifiedAt and
-// idVerificationId. It never writes standing, never writes vouchCount, never
-// approves anybody. Tier 2 still needs two stewards to vouch and a human to
-// have spoken to them — this automates the paperwork so a person is free to
-// do the judgement, which is the half no vendor can do.
+// On a verified identity it does ONE of two things. If the guide document
+// already exists, it writes idVerifiedAt and idVerificationId and nothing
+// else. If it does not — the person applied and then verified — it creates
+// the guide document from their application, with probation: true. That is
+// the whole of interview-free approval: they can now answer celebrations,
+// and nothing harder, until a person has read their first replies.
+//
+// It never writes vouchCount, never grants supervisor, never clears
+// probation. Standing still needs stewards to vouch; probation still needs
+// a human to have read the work.
 //
 // IT NEVER SEES OR STORES A DOCUMENT. Stripe holds the passport image and the
 // selfie; we keep a session id and a date. If EverVerse is ever breached
@@ -28,6 +33,7 @@
 //
 // ROUTES
 //   POST /start     Authorization: Bearer <firebase id token>  -> { url }
+//                   (403 "apply first" unless a guide doc or an application exists)
 //   POST /webhook   Stripe-Signature: ...                      -> 200
 
 const ALLOWED_ORIGIN = "https://eververse.org";
@@ -179,6 +185,71 @@ async function markVerified(env, uid, sessionId, when) {
   if (!r.ok) throw new Error("firestore write failed: " + r.status + " " + await r.text());
 }
 
+// The most recent application from this email, if any. Applications are
+// written before sign-in, so email is the only join.
+async function findApplication(env, email) {
+  if (!email) return null;
+  const tok = await accessToken(env);
+  const r = await fetch("https://firestore.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID +
+    "/databases/(default)/documents/blessing/circle:runQuery", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json" },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: "applications" }],
+      where: { fieldFilter: { field: { fieldPath: "email" }, op: "EQUAL", value: { stringValue: email } } },
+      limit: 10,
+    } }),
+  });
+  if (!r.ok) return null;
+  const rows = await r.json();
+  // newest first, without needing a composite index in Firestore
+  const docs = rows.filter((x) => x.document).map((x) => x.document)
+    .sort((p, q) => String((q.fields.createdAt || {}).stringValue || "").localeCompare(String((p.fields.createdAt || {}).stringValue || "")));
+  const doc = docs[0];
+  if (!doc) return null;
+  const f = doc.fields || {};
+  const str = (k) => (f[k] && f[k].stringValue) || "";
+  const arr = (k) => ((f[k] && f[k].arrayValue && f[k].arrayValue.values) || []).map((v) => v.stringValue).filter(Boolean);
+  return { name: str("name"), religions: arr("religions"), experience: arr("experience"), languages: arr("languages"), why: str("why") };
+}
+
+// Create the guide document from the application. probation: true is the
+// entire safety property of doing this without a human in the loop.
+async function createGuideOnProbation(env, uid, app, sessionId, when) {
+  const tok = await accessToken(env);
+  const url = "https://firestore.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID +
+    "/databases/(default)/documents/blessing/circle/guides?documentId=" + encodeURIComponent(uid);
+  const s = (v) => ({ stringValue: v });
+  const a = (vs) => ({ arrayValue: { values: vs.map((v) => ({ stringValue: v })) } });
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: {
+      name: s((app.name || "").slice(0, 60)),
+      tradition: a(app.religions.length ? app.religions : ["none"]),
+      languages: a(app.languages.length ? app.languages : ["en"]),
+      experience: a(app.experience),
+      about: s(""),
+      capacity: { integerValue: "3" },
+      active: { booleanValue: true },
+      probation: { booleanValue: true },
+      approvedAt: s(when),
+      idVerifiedAt: s(when),
+      idVerificationId: s(sessionId),
+    } }),
+  });
+  // 409 means it already exists — a race with the other branch; that is fine.
+  if (!r.ok && r.status !== 409) throw new Error("guide create failed: " + r.status + " " + await r.text());
+}
+
+async function guideExists(env, uid) {
+  const tok = await accessToken(env);
+  const r = await fetch("https://firestore.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID +
+    "/databases/(default)/documents/blessing/circle/guides/" + encodeURIComponent(uid) + "?mask.fieldPaths=approvedAt",
+    { headers: { Authorization: "Bearer " + tok } });
+  return r.status === 200;
+}
+
 /* ---------------------------------------------------------------- */
 /*  Stripe                                                          */
 /* ---------------------------------------------------------------- */
@@ -186,6 +257,7 @@ async function createSession(env, uid, email) {
   const body = new URLSearchParams();
   body.set("type", "document");
   body.set("metadata[guideUid]", uid);
+  body.set("metadata[email]", (email || "").toLowerCase());   // to find their application
   body.set("options[document][require_live_capture]", "true");   // a selfie, not a photo of a photo
   body.set("options[document][require_matching_selfie]", "true");
   body.set("return_url", ALLOWED_ORIGIN + "/blessing.html?verified=1");
@@ -229,7 +301,14 @@ export default {
       try {
         const auth = request.headers.get("Authorization") || "";
         const claims = await verifyFirebaseToken(auth.replace(/^Bearer\s+/i, ""), env.FIREBASE_PROJECT_ID);
-        const session = await createSession(env, claims.sub, claims.email || "");
+        // Only for people we know — a guide, or someone who has applied.
+        // Each session costs money; a stranger with a Google account must
+        // not be able to spend it, and a verified stranger would be useless
+        // anyway: no application, no guide document.
+        const email = String(claims.email || "").toLowerCase();
+        const known = (await guideExists(env, claims.sub)) || !!(await findApplication(env, email));
+        if (!known) return json({ error: "apply first" }, 403, origin);
+        const session = await createSession(env, claims.sub, email);
         return json({ url: session.url }, 200, origin);
       } catch (e) {
         // Deliberately vague to the caller, specific in the log.
@@ -251,7 +330,20 @@ export default {
 
       if (event.type === "identity.verification_session.verified" && uid) {
         try {
-          await markVerified(env, uid, obj.id || "", new Date().toISOString().slice(0, 10));
+          const when = new Date().toISOString().slice(0, 10);
+          if (await guideExists(env, uid)) {
+            await markVerified(env, uid, obj.id || "", when);
+          } else {
+            const email = (obj.metadata && obj.metadata.email) || "";
+            const app = await findApplication(env, email);
+            if (!app) {
+              // Verified but never applied. Do nothing; a person can approve
+              // by hand if they turn up. Never create a guide from thin air.
+              console.log("verified without application: " + uid);
+            } else {
+              await createGuideOnProbation(env, uid, app, obj.id || "", when);
+            }
+          }
         } catch (e) {
           // 500 so Stripe retries rather than dropping a real verification.
           console.log("write failed for " + uid + ": " + e.message);

@@ -231,7 +231,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 
     <div class="note">
       <b>What happens next</b>
-      <p>Guides are volunteers who apply and are approved by hand. Someone usually replies within a day or two, though nobody is on a rota — this is people giving their time, not a service you have bought.</p>
+      <p>Guides are volunteers who apply, prove who they are, and have their first replies read by a person. Someone usually replies within a day or two, though nobody is on a rota — this is people giving their time, not a service you have bought.</p>
     </div>
 
     <!-- The trust signal here is not a rating. It is the list of things
@@ -813,7 +813,7 @@ function renderGuideSignedOut(){
   guideShell(
     '<div class="panelb"><h2>For guides</h2>' +
     '<p class="lede">Guides are volunteers who read what someone has written and send back a verse from their tradition, ' +
-    'with a few words of their own. Everyone is approved by hand.</p>' +
+    'with a few words of their own. Every guide proves who they are, and a person reads their first replies before they are shown anything hard.</p>' +
     '<div class="note"><b>What a guide does, and does not do</b>' +
     '<p>You offer scripture, prayer and reflection. You never diagnose, never advise on medicine or treatment, never tell ' +
     'someone to stop seeing a doctor, and never ask for money or personal contact details. If something frightens you, ' +
@@ -886,7 +886,7 @@ function renderApply(){
   $("a-back").onclick = renderGuideSignedOut;
 
   $("a-send").onclick = async () => {
-    const name = $("a-name").value.trim(), mail = $("a-mail").value.trim();
+    const name = $("a-name").value.trim(), mail = $("a-mail").value.trim().toLowerCase();   // lower-case: the identity worker matches on it
     const say = (m) => { $("a-msg").textContent = m; };
     if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return say("Your name and a valid email, please.");
     const tw = titleWarning(name);
@@ -932,8 +932,13 @@ async function renderQueue(){
   await loadMyGuide();
   guideShell('<div class="panelb"><h2>Open requests</h2><p class="lede">Reading…</p></div>');
   try {
-    const q = query(collection(db, "blessing", "circle", "requests"),
-                    where("forGuide", "in", [me.uid, ""]), limit(40));
+    // A guide on probation must ask ONLY for celebrations — the rules refuse
+    // a broader query outright, so this is not a courtesy filter.
+    const q = onProbation(myGuide)
+      ? query(collection(db, "blessing", "circle", "requests"),
+              where("forGuide", "in", [me.uid, ""]), where("category", "in", [...CELEBRATE]), limit(40))
+      : query(collection(db, "blessing", "circle", "requests"),
+              where("forGuide", "in", [me.uid, ""]), limit(40));
     const snap = await getDocs(q);
     // Real buttons, not inline links. "Your profile" is the first thing a
     // newly approved guide has to find, and a grey text link in a sentence
@@ -945,14 +950,25 @@ async function renderQueue(){
       '<button class="btnb sm' + (missingName ? '' : ' ghost') + '" id="prof">Your profile' +
         (missingName ? ' — set your name' : '') + '</button>' +
       (myGuide && can(myGuide, "converse") ? '<button class="btnb ghost sm" id="convs">Conversations</button>' : '') +
+      (isAdmin || (myGuide && canSupervise(myGuide, can))
+        ? '<button class="btnb ghost sm" id="newg">New guides</button>' : '') +
       (isAdmin ? '<button class="btnb ghost sm" id="mod">Reports</button>' +
                  '<button class="btnb ghost sm" id="apps">Applications</button>' : '') +
       '<button class="btnb ghost sm" id="out">Sign out</button></div>';
     // Anything addressed to me by the matcher comes first.
     const rows = [];
-    snap.forEach((d) => { const r = d.data(); if (r.status === "open") rows.push({ id: d.id, r }); });
+    snap.forEach((d) => {
+      const r = d.data();
+      if (r.status !== "open") return;
+      if (onProbation(myGuide) && !isCelebration(r.category)) return;   // the rules refuse these too; this keeps the list honest
+      rows.push({ id: d.id, r });
+    });
     rows.sort((a, b) => (b.r.forGuide === me.uid ? 1 : 0) - (a.r.forGuide === me.uid ? 1 : 0));
     if (!rows.length) html += '<p class="muted">Nothing waiting for you right now. That is a good thing.</p>';
+    if (onProbation(myGuide)) html +=
+      '<div class="standing" style="margin-top:0"><b>Your first three</b><p>While a person reads your first ' + PROBATION_REPLIES +
+      ' replies, you are shown celebrations only — a birth, a wedding, good news. Those are real requests from real people, ' +
+      'and they are the gentlest possible start. Grief and crisis requests reach you once your replies have been read.</p></div>';
     html += '<p class="muted" style="font-size:13px">' + sentToday() + ' of ' + DAY_CAP +
       ' blessings sent today. You see requests matched to you, and those sent to the whole circle — not everyone else\'s.</p>';
     rows.forEach(({ id: rowId, r }) => {
@@ -980,6 +996,7 @@ async function renderQueue(){
     if (isAdmin && $("mod")) $("mod").onclick = (e) => { e.preventDefault(); renderModeration(); };
     if (isAdmin && $("apps")) $("apps").onclick = (e) => { e.preventDefault(); renderApplications(); };
     if ($("convs")) $("convs").onclick = (e) => { e.preventDefault(); renderConversations(); };
+    if ($("newg")) $("newg").onclick = (e) => { e.preventDefault(); renderNewGuides(); };
     $("prof").onclick = (e) => { e.preventDefault(); renderProfile(myGuide); };
     document.querySelectorAll("[data-reply]").forEach((b) => {
       b.onclick = () => renderReply(b.dataset.reply, b.dataset.trad);
@@ -1010,18 +1027,50 @@ async function renderQueue(){
     const notYet = e.code === "permission-denied";
     guideShell('<div class="panelb"><h2>' + (notYet ? "You are signed in." : "Open requests") + '</h2>' +
       (notYet
-        ? '<p class="lede">This account is not on the approved-guide list yet. That is normal — ' +
-          'every guide is approved by hand, and it can take a few days.</p>' +
-          '<p class="muted">If you have applied, there is nothing more to do. If you are the person doing the ' +
-          'approving, this is the id you need:</p>' +
+        ? '<p class="lede">This account is not on the guide list yet.</p>' +
+          (identityLive()
+            ? '<p class="muted">If you have applied, one step remains: confirm who you are. A passport or licence and a selfie, ' +
+              'through Stripe. We never see the document — we keep a date and a reference — and EverVerse pays for it. ' +
+              'When it comes back verified, your queue opens straight away, with celebrations first.</p>' +
+              '<div class="rowx"><button class="btnb" id="ny-verify">Confirm who you are</button>' +
+              '<span class="muted" id="ny-vmsg" style="font-size:13px"></span></div>' +
+              '<p class="muted" style="font-size:13px">Already done it? Verification can take a minute or two to arrive — sign out and back in.</p>'
+            : '<p class="muted">That is normal — every guide is added by hand at the moment, and it can take a few days. ' +
+              'If you have applied, there is nothing more to do.</p>') +
+          '<p class="muted">If you are the person doing the approving, this is the id you need:</p>' +
           '<p><code id="myuid" style="font-size:13px;user-select:all">' + esc(me.uid) + '</code> ' +
           '<button class="btnb ghost sm" id="copyuid">Copy</button> <span class="muted" id="uidmsg" style="font-size:13px"></span></p>' +
           '<p class="muted" style="font-size:13px">Signed in as ' + esc(me.email || "") + '</p>'
         : '<p class="muted">Could not load: ' + esc(e.message) + '</p>') +
       '<div class="rowx"><button class="btnb ghost sm" id="out2">Sign out</button></div></div>');
     const o = $("out2"); if (o) o.onclick = () => signOut(auth);
+    const v = $("ny-verify"); if (v) v.onclick = () => startIdentity(v, $("ny-vmsg"));
     const c = $("copyuid"); if (c) c.onclick = () => navigator.clipboard?.writeText(me.uid)
       .then(() => { $("uidmsg").textContent = "copied ✓"; }).catch(() => { $("uidmsg").textContent = "select and copy the id above"; });
+  }
+}
+
+/* Start a Stripe Identity session. Stripe holds the document and the
+   selfie. We never see either; what comes back to us is a session id and a
+   date, and it arrives from Stripe rather than from this browser. Used from
+   the profile (an approved guide adding identity) and from the not-yet
+   screen (an applicant — on a verified identity the worker creates their
+   guide document, on probation). */
+function identityLive(){ return IDENTITY_WORKER.indexOf("eververse-identity.workers.dev") === -1; }
+async function startIdentity(btn, msgEl){
+  const say = (m) => { msgEl.textContent = m; };
+  if (!identityLive()) { say("Identity checks are not switched on yet — the worker has not been deployed."); return; }
+  btn.disabled = true; say("Opening Stripe…");
+  try {
+    const token = await me.getIdToken();
+    const r = await fetch(IDENTITY_WORKER + "/start", { method: "POST", headers: { Authorization: "Bearer " + token } });
+    const out = await r.json();
+    if (!r.ok || !out.url) throw new Error(out.error || "could not start");
+    say("Continue in the window that opens.");
+    window.open(out.url, "_blank", "noopener");
+  } catch (e) {
+    say("Could not start: " + e.message + ". Nobody is rejected for this — tell us and we will do it on a call.");
+    btn.disabled = false;
   }
 }
 
@@ -1265,9 +1314,20 @@ function guideTrust(g, tierKey){
    steward, or it is not accepted at all. Refusing is the honest
    outcome — someone in real danger needs 988, not a volunteer who
    happened to be free. */
-function routableFor(guides, flagged){
+/* Probation. A guide who passed identity and completed the application is
+   approved automatically — as a listener who can see and answer ONLY
+   celebrations until a person has read their first three replies. The
+   interview used to stand in for one question, "is this person right for
+   this?", and the honest answer is that their actual first replies are
+   better evidence than a call. Grief and crisis never reach them until
+   someone has read their work. The database enforces the same rule. */
+var PROBATION_REPLIES = 3;
+function onProbation(g){ return !!(g && g.probation === true); }
+
+function routableFor(guides, flagged, celebration){
   return (guides || []).filter(function(g){
     if (g.suspended === true || g.active === false) return false;
+    if (onProbation(g) && !celebration) return false;      // hard days wait for a graduated guide
     return flagged ? can(g, "crisis") : can(g, "reply");
   });
 }
@@ -1397,7 +1457,7 @@ function matchGuides(guides, req, n){
   // Standing decides who is even eligible, before fit decides who is best.
   // A request that tripped the crisis check can only reach a companion or
   // a steward — never a guide who joined last week.
-  return routableFor(guides, req.flagged)
+  return routableFor(guides, req.flagged, isCelebration(req.category))
     .map((g) => scoreGuide(g, req, want))
     .filter(Boolean)
     .sort((a, b) => b.score - a.score)
@@ -1420,7 +1480,7 @@ function renderProfile(existing){
   let html = '<div class="panelb"><h2>Your profile</h2>' +
     '<p class="lede">This is what the matcher uses. It is not an advertisement, and nobody is ranked against anybody — ' +
     'it exists so that a person writing about their mother\'s funeral reaches someone who has stood at one.</p>' +
-    '<div class="standing"><b>' + esc(tier.label) + '</b><p>' + esc(tier.blurb) + '</p>' +
+    '<div class="standing"><b>' + esc(tier.label) + (onProbation(g) ? ' · first replies being read' : '') + '</b><p>' + esc(tier.blurb) + '</p>' +
     (step ? '<p class="muted">To become a ' + esc(step.to.label.toLowerCase()) + ' you would need ' +
        step.missing.map((m) => esc(m)).join("; and ") + '. There is no hurry, and no league table — ' +
        'it only changes what you are allowed to carry.</p>'
@@ -1465,30 +1525,7 @@ function renderProfile(existing){
   $("p-cap").value = String(g.capacity || 3);
   $("p-back").onclick = renderQueue;
 
-  if ($("p-verify")) $("p-verify").onclick = async () => {
-    const say = (m) => { $("p-vmsg").textContent = m; };
-    if (IDENTITY_WORKER.indexOf("eververse-identity.workers.dev") !== -1) {
-      say("Identity checks are not switched on yet — the worker has not been deployed.");
-      return;
-    }
-    $("p-verify").disabled = true; say("Opening Stripe…");
-    try {
-      // Stripe holds the document and the selfie. We never see either; what
-      // comes back to us is a session id and a date, and it arrives from
-      // Stripe rather than from this browser.
-      const token = await me.getIdToken();
-      const r = await fetch(IDENTITY_WORKER + "/start", {
-        method: "POST", headers: { Authorization: "Bearer " + token },
-      });
-      const out = await r.json();
-      if (!r.ok || !out.url) throw new Error(out.error || "could not start");
-      say("Continue in the window that opens.");
-      window.open(out.url, "_blank", "noopener");
-    } catch (e) {
-      say("Could not start: " + e.message + ". Nobody is rejected for this — tell us and we will do it on a call.");
-      $("p-verify").disabled = false;
-    }
-  };
+  if ($("p-verify")) $("p-verify").onclick = () => startIdentity($("p-verify"), $("p-vmsg"));
 
   // A soft guardrail on the one free-text field. Not censorship — the
   // guide is told plainly what the problem is and can rewrite it.
@@ -1896,6 +1933,7 @@ async function renderApplications(){
         name: a.name || "", tradition: a.religions || [],
         languages: a.languages || ["en"], experience: a.experience || [],
         about: "", capacity: 3, active: true,
+        probation: true,          // celebrations only until someone has read their first replies
         approvedAt: new Date().toISOString().slice(0, 10),
       };
       return '<div class="appcard">' +
@@ -2048,6 +2086,75 @@ async function renderConversations(){
   } catch (e) {
     guideShell('<div class="panelb"><h2>Conversations</h2><p class="muted">Could not load: ' +
       esc(e.message) + '</p></div>');
+  }
+}
+
+/* ---- New guides: read their first replies, then let them through ------
+   This replaced the interview. Two minutes per guide, whenever suits, on
+   the evidence that actually matters. Stewards can do it too, so it does
+   not bottleneck on one person. */
+async function renderNewGuides(){
+  guideShell('<div class="panelb"><h2>New guides</h2><p class="lede">Reading…</p></div>');
+  try {
+    const snap = await getDocs(query(collection(db, "blessing", "circle", "guides"), where("probation", "==", true), limit(40)));
+    const rows = []; snap.forEach((d) => rows.push({ uid: d.id, g: d.data() }));
+    let html = '<div class="panelb"><h2>New guides</h2>' +
+      '<p class="lede">Each one can answer celebrations only until you have read their first ' + PROBATION_REPLIES +
+      ' replies. Read them here, then let them through — or not. <a href="#" id="ng-back">back to the queue</a></p>';
+    if (!rows.length) html += '<p class="muted">Nobody on probation.</p>';
+    html += rows.map(({ uid, g }) =>
+      '<div class="req" id="ng-' + uid + '"><div class="meta">' +
+      '<span class="chipb t">' + esc((g.tradition || []).map(religionLabel).join(", ") || "—") + '</span>' +
+      '<span class="chipb">' + esc(g.name || "no name yet") + '</span>' +
+      '<span class="chipb">joined ' + esc(String(g.approvedAt || "").slice(0, 10)) + '</span>' +
+      (g.idVerifiedAt ? '<span class="chipb" style="background:#eef7ee;color:#2f6b3a">ID checked</span>' : '') + '</div>' +
+      (g.about ? '<div class="body">' + esc(g.about) + '</div>' : '') +
+      '<div class="rowx"><button class="btnb ghost sm" data-ngread="' + uid + '">Read their replies</button>' +
+      '<button class="btnb sm" data-nggrad="' + uid + '">Let them through</button>' +
+      '<button class="btnb ghost sm" data-ngsusp="' + uid + '">Suspend</button>' +
+      '<span class="muted" data-ngmsg="' + uid + '" style="font-size:13px"></span></div>' +
+      '<div data-ngshown="' + uid + '"></div></div>').join("");
+    html += '</div>';
+    guideShell(html);
+    $("ng-back").onclick = (e) => { e.preventDefault(); renderQueue(); };
+
+    document.querySelectorAll("[data-ngread]").forEach((b) => b.onclick = async () => {
+      const uid = b.dataset.ngread, host = document.querySelector('[data-ngshown="' + uid + '"]');
+      host.innerHTML = '<p class="muted">Loading…</p>';
+      try {
+        // Replies are keyed by guide uid inside each request, so find the
+        // requests this guide was matched to or answered.
+        const rq = await getDocs(query(collection(db, "blessing", "circle", "requests"),
+                                       where("forGuide", "==", uid), limit(20)));
+        const found = [];
+        for (const d of rq.docs) {
+          const rs = await getDoc(doc(db, "blessing", "circle", "requests", d.id, "responses", uid));
+          if (rs.exists()) found.push({ req: d.data(), rep: rs.data() });
+        }
+        host.innerHTML = found.length ? found.map(({ req, rep }) =>
+          '<div class="blessing" style="margin-top:10px"><div class="muted" style="font-size:12.5px">they were asked, ' +
+          esc(req.category) + ':</div><div class="body" dir="auto" style="font-size:14px">' + esc((req.note || "").slice(0, 300)) + '</div>' +
+          '<div class="v" style="margin-top:8px">“' + esc(rep.verseText) + '”</div><div class="ref">' + esc(rep.verseRef) + '</div>' +
+          '<div class="refl" dir="auto">' + esc(rep.reflection) + '</div></div>').join("")
+          : '<p class="muted">No replies yet. Requests sent to the whole circle are not attributed here — check back after they have answered a matched one.</p>';
+      } catch (e) { host.innerHTML = '<p class="muted">Could not load: ' + esc(e.message) + '</p>'; }
+    });
+    document.querySelectorAll("[data-nggrad]").forEach((b) => b.onclick = async () => {
+      const uid = b.dataset.nggrad, msg = document.querySelector('[data-ngmsg="' + uid + '"]');
+      if (!confirm("Let this guide through? They will start receiving grief and crisis-adjacent requests too.")) return;
+      try { await updateDoc(doc(db, "blessing", "circle", "guides", uid), { probation: false, graduatedAt: new Date().toISOString() });
+            msg.textContent = "through ✓"; }
+      catch (e) { msg.textContent = "Failed: " + e.message; }
+    });
+    document.querySelectorAll("[data-ngsusp]").forEach((b) => b.onclick = async () => {
+      const uid = b.dataset.ngsusp, msg = document.querySelector('[data-ngmsg="' + uid + '"]');
+      if (!confirm("Suspend this guide?")) return;
+      try { await updateDoc(doc(db, "blessing", "circle", "guides", uid), { suspended: true, active: false, suspendedAt: new Date().toISOString() });
+            msg.textContent = "suspended"; }
+      catch (e) { msg.textContent = "Failed: " + e.message; }
+    });
+  } catch (e) {
+    guideShell('<div class="panelb"><h2>New guides</h2><p class="muted">Could not load: ' + esc(e.message) + '</p></div>');
   }
 }
 

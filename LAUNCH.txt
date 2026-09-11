@@ -44,10 +44,17 @@ GATE 2 — intake                                        15 Sept – 29 Sept
   [ ] Read every application the day it arrives (blessing.html → Applications).
   [ ] Ring every organisation an applicant names. Do not confirm an
       affiliation on their word.
-  [ ] Ten-minute video call with each person before approving. Not to
-      verify identity — to form a judgement, which is the part no vendor
-      can do.
-  [ ] Approve slowly. The first hundred guides set the culture permanently.
+  [ ] No interview. A person who has passed the identity check and the
+      application is in automatically, on probation: celebrations only,
+      enforced by the database. Your job moves to AFTER their first
+      replies, which is better evidence than a call ever was.
+  [ ] Read the first three replies of every new guide (blessing.html →
+      New guides). Two minutes each, whenever suits. Let them through, or
+      not. Stewards can do this too.
+  [ ] Until identity-worker.js is deployed, approve by hand from the
+      Applications screen with probation: true on the document.
+  [ ] The first hundred guides set the culture permanently. Probation is
+      where you protect it.
   [ ] Send five letters to institutions (template below), one per faith
       you have a contact in.
   TARGET: three approved guides in at least two faiths. If that is not

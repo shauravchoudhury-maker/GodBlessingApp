@@ -48,6 +48,22 @@ file, or reactions, Twin Track and Second Chance all stop working.
     }
     function myTier() { return tierOfDoc(gdoc(request.auth.uid)); }
 
+    // Probation. A guide approved automatically after identity and
+    // application can see and answer ONLY celebrations until a person has
+    // read their first replies and cleared them. This is the rule that makes
+    // interview-free approval safe: grief and crisis never reach an unread
+    // guide, whatever their client asks for.
+    function onProbation() { return gdoc(request.auth.uid).get('probation', false) == true; }
+    function isCelebration(cat) {
+      return cat in ['newbaby','wedding','recovery','milestone','home','anniv','mended','thanks'];
+    }
+    // Who may clear or suspend a new guide: an admin, a steward, or the
+    // operator flagged supervisor:true. Spreads the reading across people so
+    // it does not bottleneck on one.
+    function isReviewer() {
+      return isAdmin() || (isGuide() && (myTier() >= 3 || gdoc(request.auth.uid).get('supervisor', false) == true));
+    }
+
     match /blessing/circle/requests/{id} {
       // Anyone may ask for a blessing, without an account.
       allow create: if
@@ -83,7 +99,8 @@ file, or reactions, Twin Track and Second Chance all stop working.
       // collection can still never be enumerated, searched or browsed, which
       // is the property that actually matters.
       allow get:  if true;
-      allow list: if isGuide() && mine(resource);
+      allow list: if isGuide() && mine(resource)
+        && (!onProbation() || isCelebration(resource.data.category));
 
       // A guide may mark it answered, and nothing else.
       allow update: if
@@ -132,6 +149,9 @@ file, or reactions, Twin Track and Second Chance all stop working.
         allow read: if true;
         allow create: if isGuide()
           && rid == request.auth.uid
+          // and a guide on probation may only answer a celebration
+          && (!onProbation()
+              || isCelebration(get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('category', '')))
           && request.resource.data.keys().hasOnly(['verseRef','verseText','reflection','guideName','guideUid','createdAt'])
           && request.resource.data.reflection is string
           && request.resource.data.reflection.size() <= 900
@@ -186,14 +206,16 @@ file, or reactions, Twin Track and Second Chance all stop working.
 
     // The approved-guide list, which doubles as the guide directory the
     // matcher reads. Profiles are meant to be seen, so they are public —
-    // but APPROVAL itself can only be granted from the Firebase console.
+    // but APPROVAL itself cannot be granted by anything signed in through
+    // the app. The document is created by the console, or by the identity
+    // worker's service account the moment Stripe reports an identity
+    // verified (with probation: true). Service accounts bypass these rules.
     match /blessing/circle/guides/{uid} {
       allow read: if true;
 
       // An approved guide may edit their own profile, and nothing else.
       // They cannot approve themselves, because create is refused
-      // outright: the document has to already exist, and only the console
-      // can make it.
+      // outright to every app user: the document has to already exist.
       allow create: if false;
       allow update: if
         // a guide edits their own profile — and cannot touch `suspended`
@@ -210,7 +232,14 @@ file, or reactions, Twin Track and Second Chance all stop working.
         || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['suspended','active','suspendedAt','approvedAt',
                         'idVerifiedAt','idVerificationId','vouchCount','affiliations',
-                        'affiliationsConfirmed','backgroundCheckAt','supervisor']));
+                        'affiliationsConfirmed','backgroundCheckAt','supervisor',
+                        'probation','graduatedAt']))
+        // or a reviewer — a steward or the operator — clears a new guide out
+        // of probation, or suspends one. Nothing else: a steward cannot
+        // verify, vouch or grant supervisor.
+        || (isReviewer() && request.auth.uid != uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['probation','graduatedAt','suspended','active','suspendedAt']));
       allow delete: if false;
 
       // A steward puts their own name behind a newcomer. The document id is
@@ -308,6 +337,32 @@ longer can. Approval is still a real trust decision — but it is no longer a
 key to everybody's private life.
 
 
+Probation — approval without an interview
+-----------------------------------------
+The interview stood in for one question: is this person right for this?
+Their actual first replies are better evidence than a call, so the
+judgement moved there. A guide who has passed identity (Stripe) and
+completed the application is approved automatically with
+`probation: true`. While on probation:
+
+  · they can LIST only celebration requests (rule on requests)
+  · they can REPLY only to celebration requests (rule on responses)
+  · the matcher never routes them a hard request or a crisis one
+  · every reply still passes the full moderation — contact, money,
+    medical, titles
+
+The worst case on probation is a tone-deaf wedding blessing, which is
+reportable. Grief never reaches them until a person has read their work.
+
+To clear one: sign in → "New guides" → "Read their replies" → "Let them
+through". That sets probation:false. Stewards and anyone flagged
+supervisor:true can do this too, so it does not bottleneck on one person.
+Two minutes per guide, whenever suits.
+
+Until identity-worker.js is deployed, approval is still by hand from the
+applications screen — paste the document and add probation: true.
+
+
 How to approve a guide
 ----------------------
 1. Sign in at /blessing.html as an admin and open "applications". Every
@@ -322,9 +377,15 @@ How to approve a guide
    it registers their account.
 4. Find their UID in Firebase console → Authentication → Users.
 5. Create `blessing/circle/guides/<that UID>` and paste the document you
-   copied in step 1.
+   copied in step 1. It includes probation: true — leave it.
 6. They reload and the queue appears, with their faith, languages and lived
-   experience already filled in from the application.
+   experience already filled in from the application. They see
+   celebrations only until you clear them from "New guides".
+
+If the probation queue ever says "the query requires an index", the
+console error carries a link that creates it in one click (forGuide +
+category). Once identity-worker.js is deployed, steps 3–5 happen on their
+own the moment Stripe reports the identity verified.
 
 Steps 4 and 5 are deliberately still console work. Nothing in the app can
 grant anyone access; the applications screen only saves you the retyping.
