@@ -57,6 +57,25 @@ function foldText(s) {
 }
 
 const LANG_SAFETY = {
+  // English lives here too now, so a page that does not load blessing.html's
+  // module — the let-it-go ritual, for one — gets the same protection from
+  // the same list. blessing.html still passes its own copy in; running
+  // English twice is harmless and cheap.
+  en: { level: "full", checked: null,
+    crisis: ["kill myself","killing myself","end my life","ending my life","take my life","taking my life",
+             "take my own life","want to die","wish i was dead","wish i were dead","suicide","suicidal",
+             "self harm","self-harm","self harming","hurt myself","hurting myself","harm myself","harming myself",
+             "cut myself","cutting myself","no reason to live","nothing to live for","better off without me",
+             "better off dead","overdose","end it all","cant go on","can't go on","give up on life",
+             "dont want to be here","don't want to be here","dont want to live","don't want to live"],
+    minor: [/\b(?:i'?m|i am)\s+(?:only\s+|just\s+)?(?:[89]|1[0-7])(?!\d)(?!\s*[,.]\d)(?!\s+(?:months?|weeks?|days?|hours?|minutes?|stone|pounds?|lbs|kg|kids|children|grandchildren|years?\s+(?:into|sober|clean|married|older|younger|ago)))\b/,
+            /\b(?:i'?m|i am)\s+(?:only\s+|just\s+)?(?:eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)\s+years?\s+old\b/,
+            /\b(?:i'?m|i am)\s+in\s+(?:the\s+)?(?:[6-9]|1[0-2])(?:st|nd|rd|th)\s+grade\b/,
+            /\b(?:i'?m|i am)\s+in\s+(?:the\s+)?(?:sixth|seventh|eighth|ninth|tenth|eleventh|twelfth)\s+grade\b/,
+            /\b(?:i'?m|i am)\s+in\s+(?:middle school|high school|year\s+(?:[7-9]|1[01]))\b/,
+            /\bmy\s+(?:mom|mum|dad|parents?)\s+(?:won'?t|wont|will not|does ?n'?t|do ?n'?t)\s+(?:let|allow)\s+me\b/,
+            /\b(?:i'?m|i am)\s+(?:still\s+)?a\s+(?:kid|child|teen|teenager|minor|schoolgirl|schoolboy)\b/] },
+
   es: { level: "full", checked: null,
     crisis: ["quiero morir","quiero morirme","me quiero morir","ganas de morir",
              "matarme","me voy a matar","voy a matarme","me mato",
@@ -296,11 +315,11 @@ function hitsMinor(text, lang) {
    existing English classifiers, passed in so this file stays standalone. */
 function riskyMulti(text, selected, enRisky) {
   if (enRisky && (enRisky(text) || enRisky(foldApostrophes(text)))) return true;
-  return langsToCheck(selected, text).some((l) => l !== "en" && hitsCrisis(text, l));
+  return langsToCheck(selected, text).some((l) => hitsCrisis(text, l));
 }
 function minorMulti(text, selected, enMinor) {
   if (enMinor && (enMinor(text) || enMinor(foldApostrophes(text)))) return true;
-  return langsToCheck(selected, text).some((l) => l !== "en" && hitsMinor(text, l));
+  return langsToCheck(selected, text).some((l) => hitsMinor(text, l));
 }
 
 /* Honesty about coverage. A language with no patterns is not silently
