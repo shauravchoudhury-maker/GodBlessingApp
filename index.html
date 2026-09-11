@@ -31,43 +31,152 @@
   </header>
 
   <!-- ============ TODAY ============ -->
+  <!-- The front door of a religious wellness platform. Its one job is to
+       make a person landing from anywhere understand, in five seconds: a verse
+       for today, a person for when today is hard, and it is safe. Everything
+       below the fold earns that claim. -->
   <div id="view-today">
     <section class="hero">
       <div class="wrap">
         <div class="today-date" id="today-date"></div>
-        <h1>Today's blessing</h1>
-        <p>A verse for every soul — the spotlight rotates daily through the world's wisdom traditions, each with its meaning in plain words.</p>
+        <h1>A verse for today.<br>A person for when today is hard.</h1>
+        <p>Seven faiths, twenty-four languages, and a circle of guides who have been where you are.
+          Free, anonymous, and safe by design.</p>
+        <div class="hero-cta">
+          <a href="blessing.html" class="btn-hero">Ask for a blessing</a>
+          <button class="btn-hero ghost" data-go="today" onclick="document.getElementById('today-posts').scrollIntoView({behavior:'smooth'})">Today's verse</button>
+        </div>
       </div>
     </section>
 
-    <section class="band appcta browser-only">
+    <!-- The promise that will matter more every year. -->
+    <section class="band human">
       <div class="wrap">
-        <h2>✦ Get the full EverVerse app</h2>
-        <p>This is just a taste. The app brings a new blessing every day, the full library of verses, sermons, videos &amp; audiobooks, and one-tap wallpapers &amp; lock screens — for every soul, on your phone.</p>
-        <div class="store-badges">
-          <span class="store-badge">🍎 <span>App Store<small>Coming soon</small></span></span>
-          <span class="store-badge">▶️ <span>Google Play<small>Coming soon</small></span></span>
-          <span class="store-badge">🪟 <span>Microsoft Store<small>Coming soon</small></span></span>
+        <div class="human-grid">
+          <div>
+            <div class="section-title">Written by people. Always.</div>
+            <p>As more of life gets answered by machines, we made one promise and built the platform around it:
+              <b>no blessing on EverVerse is ever written or suggested by AI.</b> A guide who has stood where you are
+              standing reads what you wrote, chooses a verse from your own tradition, and writes back in their own words.</p>
+            <p class="muted">That is slower than a chatbot. It is also the point.</p>
+          </div>
+          <div class="human-facts">
+            <div><b>0</b><span>blessings written by a machine</span></div>
+            <div><b>1</b><span>reply per guide — they cannot write to you twice unless you ask</span></div>
+            <div><b>7</b><span>faiths, each answered from its own scripture</span></div>
+          </div>
         </div>
-        <button class="btn-install" id="install-app">⤓ Install the app now</button>
-        <div class="lic">© EverVerse. Content is protected. To license or reuse, email PRteam@eververse.org</div>
       </div>
     </section>
+
+    <!-- The daily practice: the reason to come back -->
     <section class="band">
       <div class="wrap">
+        <div class="section-title">Today's verse</div>
+        <p class="section-sub">One verse a day, from the world's wisdom traditions in turn, with its meaning in plain words.</p>
         <div class="posts-2" id="today-posts"></div>
       </div>
     </section>
+
+    <!-- How it works, in the person's order -->
+    <section class="band" style="background:#f8f6ff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <div class="section-title">How a blessing works</div>
+        <div class="steps">
+          <div class="stepc"><span class="n">1</span><b>You write.</b>
+            <p>Pick your faith and your language, and say what you are carrying. No account, no email. You get a private link.</p></div>
+          <div class="stepc"><span class="n">2</span><b>A guide who has lived it reads.</b>
+            <p>Not whoever is free — someone matched on what they have been through. Grief goes to someone who has grieved.</p></div>
+          <div class="stepc"><span class="n">3</span><b>A verse comes back, and a few words of their own.</b>
+            <p>Usually within a day or two. If one blessing is not enough, you can ask to keep talking — only you can open that door.</p></div>
+        </div>
+        <div class="row-between" style="margin-top:18px">
+          <p class="section-sub" style="margin:0">If what you write suggests you are in danger, you are shown help in your own country first, and your request only goes to a guide we have checked most carefully.</p>
+          <a href="blessing.html" class="btn sm">Ask for a blessing →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Continuity without an account: the links this browser has held -->
+    <section class="band hidden" id="mine-band">
+      <div class="wrap">
+        <div class="section-title">Your blessings</div>
+        <p class="section-sub">Kept on this device only. Nothing about them is stored with us beyond the blessing itself.</p>
+        <div id="mine-list" class="mine"></div>
+      </div>
+    </section>
+
+    <!-- The guard rails are the brand -->
+    <section class="band">
+      <div class="wrap">
+        <div class="section-title">What a guide can never do</div>
+        <p class="section-sub">Not "should not". These are refused by the system itself, whatever anyone intends.</p>
+        <ul class="promises">
+          <li>Write to you more than once — unless you ask.</li>
+          <li>Edit or delete what they sent you.</li>
+          <li>Give you contact details, a link, or a way to reach them elsewhere.</li>
+          <li>Ask you for money, or anything at all.</li>
+          <li>Tell you to stop medication or skip a doctor.</li>
+          <li>Read anyone's request but the ones matched to them.</li>
+          <li>Sign as "Dr." or "Therapist" — we cannot verify it, so we do not allow it.</li>
+          <li>Know whether you ever gave anything.</li>
+        </ul>
+        <p class="section-sub" style="margin-top:12px">Every guide is approved by a person, and the ones who hold longer conversations are identity-checked and vouched for by two others.
+          On each guide's card we show what we <em>have</em> checked and, with equal weight, what we have <em>not</em>.</p>
+      </div>
+    </section>
+
+    <!-- Giving: from the calm side only, routed by the giver's faith, share disclosed -->
+    <section class="band give" id="give">
+      <div class="wrap">
+        <div class="section-title">If you want to give</div>
+        <p class="section-sub">Nobody who asks pays. Nobody who answers pays. If you would like to give, your gift goes to a charity of <em>your</em> faith — never to a guide, and never tied to a blessing.</p>
+        <div class="give-grid">
+          <div>
+            <div class="give-faiths" id="give-faiths"></div>
+            <p class="disclose" id="give-disclose"></p>
+            <ul class="paysfor" id="give-paysfor"></ul>
+          </div>
+          <div class="give-side">
+            <div id="give-state"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Supply. The platform is only as good as the people who answer. -->
     <section class="band" style="background:#f8f6ff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
       <div class="wrap">
         <div class="row-between">
           <div>
-            <div class="section-title">Recent posts</div>
+            <div class="section-title">Have you been through something?</div>
+            <p class="section-sub" style="margin:0">Somebody is writing about it tonight. You do not need to be ordained or trained — you need to have stood where they are, and be willing to sit with them for one message. That is the whole ask.</p>
+          </div>
+          <a href="blessing.html?v=guide" class="btn sm">Become a guide →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <div class="row-between">
+          <div>
+            <div class="section-title">Recent verses</div>
             <p class="section-sub" style="margin:0;">Every day's blessing — the same ones we share on social, gathered here to read anytime.</p>
           </div>
           <button class="btn ghost sm" data-go="posts">See all →</button>
         </div>
         <div class="feed" id="today-recent"></div>
+      </div>
+    </section>
+
+    <!-- The app, without pretending stores exist that do not -->
+    <section class="band appcta browser-only">
+      <div class="wrap">
+        <h2>✦ Keep it on your phone</h2>
+        <p>Add EverVerse to your home screen for a new verse every morning, the full library, wallpapers and lock screens — and the Circle, one tap away.</p>
+        <button class="btn-install" id="install-app">⤓ Add to home screen</button>
+        <div class="lic">© EverVerse. Content is protected. To license or reuse, email PRteam@eververse.org</div>
       </div>
     </section>
   </div>
@@ -159,7 +268,7 @@
   <footer class="site">
     <div class="wrap">
       <div class="logo" style="justify-content:center;margin-bottom:10px;"><span class="mark">✦</span> EverVerse</div>
-      <div>Daily faith, for every soul — Bible • Bhagavad Gita • Guru Granth Sahib • Dhammapada • Tripitaka • Timeless Wisdom.</div>
+      <div>Daily faith, for every soul — Christianity • Islam • Hinduism • Buddhism • Judaism • Sikhism • Taoism, and a door for those with none.</div>
       <div class="follow">
         <span>Follow the daily blessing</span>
         <div class="social">
@@ -189,6 +298,7 @@
   <script src="voice.js"></script>
   <script src="updater.js"></script>
   <script src="translations.js"></script>
+  <script src="giving.js"></script>
   <script src="site.js"></script>
   <script src="reactions.js"></script>
 </body>

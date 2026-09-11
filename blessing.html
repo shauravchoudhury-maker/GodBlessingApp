@@ -248,6 +248,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
         <li>Read anyone's request but the ones matched to them. Nobody browses the queue.</li>
         <li>Sign with a title like "Dr." or "Therapist" — we cannot verify those, so we do not allow them.</li>
         <li>Know whether you gave anything. Donations never reach a guide and are never shown to one.</li>
+        <li>Use AI to write or suggest a blessing. Every word comes from the person who signed it.</li>
       </ul>
       <p style="font-size:13.5px;margin:12px 0 0">You need no account, we never ask for your email, and nothing will follow you afterwards.
         If a guide does any of the above, there is a <b>Report this</b> button under every blessing and a person reads it.</p>
@@ -528,6 +529,8 @@ $("send").onclick = async () => {
       flagged, createdAt: new Date().toISOString(),
     });
     const url = location.origin + location.pathname + "?r=" + ref.id;
+    rememberMine(ref.id, { faith: chosenReligion,
+      about: (CATEGORIES.find((c) => c[0] === chosenCat) || [])[1] || "", answered: false });
     $("link").textContent = url;
     $("ok").classList.add("on");
     $("sendmsg").textContent = "";
@@ -542,6 +545,19 @@ $("send").onclick = async () => {
 
 /* ---- read a reply ---- */
 let lastGuideUid = null;
+
+/* The blessings this browser has asked for or opened. Device-only, so a
+   person can close the tab and still find their way back from the front
+   door without an account. Nothing here is sent anywhere. */
+function rememberMine(id, extra){
+  try {
+    const all = JSON.parse(localStorage.getItem("ev-blessings") || "[]");
+    const i = all.findIndex((m) => m.id === id);
+    const rec = Object.assign({ id, at: new Date().toISOString() }, i >= 0 ? all[i] : {}, extra || {});
+    if (i >= 0) all[i] = rec; else all.push(rec);
+    localStorage.setItem("ev-blessings", JSON.stringify(all.slice(-20)));
+  } catch (e) {}
+}
 
 /* ---- Tier 2, the asker's side --------------------------------------
    The button to continue exists ONLY here, on the page the person who
@@ -668,6 +684,7 @@ async function showReplies(id){
       return;
     }
     box.innerHTML = "";
+    rememberMine(id, { answered: true });
     snap.forEach((d) => {
       const r = d.data();
       const el = document.createElement("div");
@@ -1990,6 +2007,8 @@ document.querySelectorAll(".tabb").forEach((b) => b.onclick = () => show(b.datas
 // Opening the link someone was given goes straight to their reply.
 const rid = new URLSearchParams(location.search).get("r");
 if (rid) { show("read"); $("code").value = location.href; showReplies(rid); }
+const vv = new URLSearchParams(location.search).get("v");
+if (vv === "guide" && !rid) show("guide");
 </script>
 </body>
 </html>

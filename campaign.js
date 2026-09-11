@@ -47,6 +47,8 @@ const NEVER = [
     why: "A recipient's words are theirs. We never quote what someone wrote to us, in any form." },
   { re: /\b(free trial|premium|upgrade|subscription|per month|pricing)\b/i,
     why: "There is no paid tier and there must never appear to be one." },
+  { re: /\b(ai[- ]powered|powered by ai|ai[- ]generated|smart replies|instant (?:reply|blessing|answer)|automated blessing|chatbot)\b/i,
+    why: "Every blessing is written by a person, and that is the entire point. Never imply otherwise, even as a feature." },
 ];
 
 // Denials are the whole point of half this campaign — "no premium, no
