@@ -900,12 +900,24 @@ async function renderQueue(){
       } catch (e) { msg.textContent = "failed: " + e.message; b.disabled = false; }
     });
   } catch (e) {
-    guideShell('<div class="panelb"><h2>Open requests</h2><p class="muted">Could not load: ' +
-      (e.code === "permission-denied"
-        ? "this account is not on the approved-guide list yet."
-        : esc(e.message)) + '</p>' +
+    // Not approved yet is the expected state for a new sign-in, not an
+    // error — so say so, and hand over the one thing the person approving
+    // them will need. The UID is not secret; it is the document id.
+    const notYet = e.code === "permission-denied";
+    guideShell('<div class="panelb"><h2>' + (notYet ? "You are signed in." : "Open requests") + '</h2>' +
+      (notYet
+        ? '<p class="lede">This account is not on the approved-guide list yet. That is normal — ' +
+          'every guide is approved by hand, and it can take a few days.</p>' +
+          '<p class="muted">If you have applied, there is nothing more to do. If you are the person doing the ' +
+          'approving, this is the id you need:</p>' +
+          '<p><code id="myuid" style="font-size:13px;user-select:all">' + esc(me.uid) + '</code> ' +
+          '<button class="btnb ghost sm" id="copyuid">Copy</button> <span class="muted" id="uidmsg" style="font-size:13px"></span></p>' +
+          '<p class="muted" style="font-size:13px">Signed in as ' + esc(me.email || "") + '</p>'
+        : '<p class="muted">Could not load: ' + esc(e.message) + '</p>') +
       '<div class="rowx"><button class="btnb ghost sm" id="out2">Sign out</button></div></div>');
     const o = $("out2"); if (o) o.onclick = () => signOut(auth);
+    const c = $("copyuid"); if (c) c.onclick = () => navigator.clipboard?.writeText(me.uid)
+      .then(() => { $("uidmsg").textContent = "copied ✓"; }).catch(() => { $("uidmsg").textContent = "select and copy the id above"; });
   }
 }
 
