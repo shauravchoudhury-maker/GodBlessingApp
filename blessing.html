@@ -840,12 +840,19 @@ async function renderQueue(){
     const q = query(collection(db, "blessing", "circle", "requests"),
                     where("forGuide", "in", [me.uid, ""]), limit(40));
     const snap = await getDocs(q);
+    // Real buttons, not inline links. "Your profile" is the first thing a
+    // newly approved guide has to find, and a grey text link in a sentence
+    // was not findable — the founder asked where it was.
+    const missingName = !(myGuide && myGuide.name);
     let html = '<div class="panelb"><h2>Open requests</h2>' +
-      '<p class="lede">Signed in as ' + esc(me.displayName || me.email) +
-      ' · <a href="#" id="prof">your profile</a>' +
-      (myGuide && can(myGuide, "converse") ? ' · <a href="#" id="convs">conversations</a>' : '') +
-      (isAdmin ? ' · <a href="#" id="mod">reports</a> · <a href="#" id="apps">applications</a>' : '') +
-      ' · <a href="#" id="out">sign out</a></p>';
+      '<p class="lede" style="margin-bottom:10px">Signed in as ' + esc(me.displayName || me.email) + '</p>' +
+      '<div class="rowx" style="margin-bottom:16px">' +
+      '<button class="btnb sm' + (missingName ? '' : ' ghost') + '" id="prof">Your profile' +
+        (missingName ? ' — set your name' : '') + '</button>' +
+      (myGuide && can(myGuide, "converse") ? '<button class="btnb ghost sm" id="convs">Conversations</button>' : '') +
+      (isAdmin ? '<button class="btnb ghost sm" id="mod">Reports</button>' +
+                 '<button class="btnb ghost sm" id="apps">Applications</button>' : '') +
+      '<button class="btnb ghost sm" id="out">Sign out</button></div>';
     // Anything addressed to me by the matcher comes first.
     const rows = [];
     snap.forEach((d) => { const r = d.data(); if (r.status === "open") rows.push({ id: d.id, r }); });
