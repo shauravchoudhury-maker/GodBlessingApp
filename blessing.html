@@ -940,7 +940,9 @@ function renderReply(id, tradition){
     '<div class="vpick" id="vlist"></div>' +
     '<label class="bf"><span>A few words of your own</span>' +
     '<textarea id="refl" maxlength="900" dir="auto" placeholder="Why this verse, for them."></textarea></label>' +
-    '<label class="bf"><span>Sign it as</span><input type="text" id="gname" maxlength="60" placeholder="a first name, or how you would like to be known"></label>' +
+    '<label class="bf"><span>Sign it as</span><input type="text" id="gname" maxlength="60" ' +
+    'value="' + esc((myGuide && myGuide.name) || "") + '" placeholder="a first name, or how you would like to be known"></label>' +
+    '<div class="note" id="gnamewarn" style="display:none"></div>' +
     '<div class="note" id="modwarn" style="display:none"></div>' +
     '<div class="rowx"><button class="btnb" id="sendrep">Send the blessing</button>' +
     '<button class="btnb ghost sm" id="backq">Back to the queue</button>' +
@@ -996,6 +998,17 @@ function renderReply(id, tradition){
       $("sendrep").dataset.acked = "1";
       return;
     }
+    // The same rule the profile and the application already enforce. This
+    // box was the one gap: a guide could sign every reply as "Dr." while
+    // their profile said otherwise.
+    const tw = titleWarning($("gname").value);
+    if (tw) {
+      $("gnamewarn").style.display = "block";
+      $("gnamewarn").innerHTML = '<b>Please sign without a title</b><p>' + esc(tw) + '</p>';
+      $("gname").focus();
+      return;
+    }
+    $("gnamewarn").style.display = "none";
     $("sendrep").disabled = true; $("repmsg").textContent = "Sending…";
     try {
       await setDoc(doc(db, "blessing", "circle", "requests", id, "responses", me.uid), {
@@ -1634,7 +1647,9 @@ function checkReplyStrict(text){
 /* ---- 5. Titles a stranger reads as a credential -------------------
    "Dr. Sarah" in a directory of volunteers is a claim we cannot check,
    read by someone frightened enough to believe it. */
-var TITLE_RE = /(?:^|\s)(?:dr|doctor|prof|professor|rev|reverend|pastor|bishop|rabbi|imam|sheikh|swami|guru|pandit|monk|therapist|counsell?or|psychologist|psychiatrist|healer|md|phd|lcsw|lmft)\b\.?/i;
+// (?![a-z]) rather than \b: "Pastor1" is one word to \b, and a trailing digit
+// was enough to walk a title past the ban. Found on the very first live reply.
+var TITLE_RE = /(?:^|\s)(?:dr|doctor|prof|professor|rev|reverend|pastor|bishop|rabbi|imam|sheikh|swami|guru|pandit|monk|therapist|counsell?or|psychologist|psychiatrist|healer|md|phd|lcsw|lmft)(?![a-z])/i;
 function titleWarning(name){
   return TITLE_RE.test(String(name || ""))
     ? "A title reads as a verified credential to someone in distress, and we cannot verify it. Please sign with your name alone — " +
