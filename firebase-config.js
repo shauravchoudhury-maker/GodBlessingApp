@@ -12,9 +12,24 @@
 //
 // Until real values are pasted, reactions/comments/trending stay gracefully off.
 
+// Google sign-in runs its popup on the authDomain and hands the result back
+// to the page through a hidden iframe. When those are different origins,
+// Firefox and Safari partition the storage between them and the handshake
+// fails ("auth/popup-closed-by-user"). The fix is to serve the handler from
+// our own domain via auth-proxy-worker.js — see AUTH_PROXY_SETUP.txt.
+//
+// Flip this to true ONLY after the Worker is live on eververse.org/__/auth/*.
+// Flipping it early breaks sign-in for everyone, because the handler will
+// not exist at that address yet. localhost keeps using Firebase's domain
+// either way, which is fine — localhost is exempt from the partitioning.
+const AUTH_PROXY_LIVE = false;
+const AUTH_DOMAIN = (AUTH_PROXY_LIVE && /(^|\.)eververse\.org$/.test(location.hostname))
+  ? location.hostname
+  : "eververse2117.firebaseapp.com";
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCD7IWtNtfyxVHo0GcEiUwAZN2RGB8u8vc",
-  authDomain: "eververse2117.firebaseapp.com",
+  authDomain: AUTH_DOMAIN,
   projectId: "eververse2117",
   storageBucket: "eververse2117.firebasestorage.app",
   messagingSenderId: "666579920808",

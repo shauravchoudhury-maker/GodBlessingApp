@@ -1,0 +1,100 @@
+EverVerse — making Google sign-in work in Firefox and Safari
+=============================================================
+
+THE PROBLEM
+-----------
+Sign-in fails on eververse.org with "auth/popup-closed-by-user" in Firefox
+and Safari (and so on every iPhone). The popup runs on
+eververse2117.firebaseapp.com and hands its result back to eververse.org
+through a hidden iframe. Those are different origins, and both browsers now
+partition third-party storage — so the popup writes the result where the
+iframe cannot read it, closes, and Firebase reports the popup was closed.
+
+It worked on localhost because localhost is exempt from the partitioning.
+
+THE FIX
+-------
+Serve Firebase's sign-in handler from OUR domain, so there is no third party
+in the handshake. Firebase documents this for sites not on Firebase Hosting:
+proxy eververse.org/__/auth/* to eververse2117.firebaseapp.com/__/auth/* and
+set authDomain to eververse.org.
+
+GitHub Pages cannot proxy. Cloudflare can, and you already run a Worker
+there. So the site stays exactly where it is; Cloudflare sits in front of it
+and answers only /__/auth/*.
+
+Four steps. Three are yours, one is a flag.
+
+
+STEP 1 — move DNS to Cloudflare (yours, ~15 min, no downtime)
+--------------------------------------------------------------
+Today eververse.org's nameservers are at GoDaddy (ns71/ns72.domaincontrol.com)
+pointing straight at GitHub Pages.
+
+1. Cloudflare dashboard → Add a site → eververse.org → Free plan.
+2. Cloudflare scans and imports your existing records. CHECK that it found:
+     A     eververse.org   185.199.108.153   (and .109, .110, .111)
+     CNAME www             shauravchoudhury-maker.github.io   (if you use www)
+   plus whatever MX / TXT records your email uses. Do not skip this check —
+   missing an MX record here is how people lose their mail for a day.
+3. Set the proxy status (orange cloud) ON for the A records and www.
+4. Cloudflare gives you two nameservers. GoDaddy → your domain → Nameservers →
+   Change → enter those two. Propagation takes minutes to a few hours; the
+   site keeps working throughout because both sets point at the same place.
+5. Cloudflare → SSL/TLS → set mode to "Full". GitHub Pages already has a
+   certificate for eververse.org, so "Full (strict)" should also work; if the
+   site shows a 526 error after the switch, drop to "Full".
+
+Verify: open eververse.org — it should look identical. `nslookup -type=NS
+eververse.org` should now show cloudflare.com nameservers.
+
+
+STEP 2 — deploy the Worker (yours, ~5 min)
+-------------------------------------------
+    wrangler deploy auth-proxy-worker.js --name eververse-auth
+
+Then Cloudflare dashboard → Workers & Pages → eververse-auth → Settings →
+Triggers → Routes → Add:
+    eververse.org/__/auth/*
+    www.eververse.org/__/auth/*        (only if the site answers on www)
+
+Verify: open https://eververse.org/__/auth/handler in a browser. You should
+see a mostly-blank Firebase page, NOT a GitHub 404. That is the handler,
+now on your domain.
+
+
+STEP 3 — tell Firebase the new domain is allowed (yours, 1 min)
+----------------------------------------------------------------
+Firebase console → Authentication → Settings → Authorized domains.
+eververse.org should already be there from earlier. If you use www, add
+www.eververse.org too.
+
+Also: Google Cloud console → APIs & Services → Credentials → the OAuth 2.0
+client Firebase created → Authorized redirect URIs → add
+    https://eververse.org/__/auth/handler
+(and the www variant if used). Without this Google refuses the redirect
+back and you get "redirect_uri_mismatch".
+
+
+STEP 4 — flip the flag (one line, then a PR)
+---------------------------------------------
+firebase-config.js:
+    const AUTH_PROXY_LIVE = false;   →   const AUTH_PROXY_LIVE = true;
+
+Bump the service-worker cache in sw.js, open a PR, merge. From then on,
+authDomain is eververse.org on the live site and sign-in works in every
+browser. localhost keeps using Firebase's own domain, which is correct.
+
+DO NOT flip the flag before steps 1–3 are done and verified. With the flag
+on and no handler at eververse.org/__/auth/, sign-in breaks for everyone,
+including Chrome.
+
+
+UNTIL THEN
+----------
+To sign in yourself today: Firefox → the shield icon in the address bar on
+eververse.org → turn Enhanced Tracking Protection off for this site → retry.
+Or use Chrome. That gets you into the queue; it does not fix it for guides.
+
+Guides who report "the sign-in window closed by itself" are hitting this.
+Tell them to try Chrome until step 4 is done.
