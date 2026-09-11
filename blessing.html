@@ -1428,7 +1428,9 @@ async function showMatches(req, onPick){
   box.innerHTML = '<p class="lede" style="margin-bottom:12px">' +
     (req.flagged
       ? 'These guides have been checked more carefully than most, because of what you have written. Pick one.'
-      : 'Three people who could hold this. Pick one, or let whoever is free reply.') + '</p>' +
+      : (top.length === 1
+          ? 'One person who could hold this. Pick them, or let whoever is free reply.'
+          : ["", "", "Two", "Three"][top.length] + ' people who could hold this. Pick one, or let whoever is free reply.')) + '</p>' +
     top.map((m, i) =>
       '<div class="gcard" data-uid="' + esc(m.guide.uid) + '" role="button" tabindex="0" aria-pressed="' + (i===0?"true":"false") + '">' +
       '<div class="gname">' + esc(m.guide.name || "a guide") + '</div>' +
