@@ -18,7 +18,7 @@ file, or reactions, Twin Track and Second Chance all stop working.
         && request.auth.token.email != null
         && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
         && get(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
-             .data.suspended != true
+             .data.get('suspended', false) != true
         && !exists(/databases/$(database)/documents/blessing/circle/banned/$(request.auth.token.email));
     }
     function isAdmin() {
@@ -26,7 +26,7 @@ file, or reactions, Twin Track and Second Chance all stop working.
         && exists(/databases/$(database)/documents/blessing/circle/admins/$(request.auth.uid));
     }
     function mine(res) {
-      return res.data.forGuide == request.auth.uid || res.data.forGuide == '';
+      return res.data.get('forGuide', '') == request.auth.uid || res.data.get('forGuide', '') == '';
     }
 
     // Standing. Derived from facts a human recorded in the console, never
