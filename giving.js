@@ -1,10 +1,24 @@
 // giving.js
 // How money moves, and the three places it must never touch.
 //
-// THE MODEL. Donations go to partner charities of the giver's own faith.
-// EverVerse keeps a fixed share to run and improve the platform, and says so
-// in plain words on the page where the gift is made. Nobody who asks pays,
-// nobody who answers pays, and nobody is asked in the moment they are hurting.
+// THE MODEL. Donations go to partner charities of the giver's own faith,
+// and EverVerse takes NOTHING from them. Separately, on the same page, the
+// giver may add a tip for EverVerse if they choose. Two decisions, both
+// theirs, both stated in plain words. Nobody who asks pays, nobody who
+// answers pays, and nobody is asked in the moment they are hurting.
+//
+// Why zero rather than a small percentage: "we take nothing from your gift"
+// is the strongest true sentence a giving page can carry, and a platform
+// whose only asset is being trusted should carry it. It is also what raises
+// more — GoFundMe moved to exactly this model in 2017 and most charity
+// platforms followed, because optional tips at checkout run well above any
+// fixed low fee once nothing is hidden. And it is legally lighter: a
+// voluntary tip to the platform is not a cut of a donation.
+//
+// A percentage of gifts was never going to fund year one anyway. Year one
+// is the Etsy business, partner institutions covering their own guides'
+// checks, and grants once there is a 501(c)(3). Tips are a pleasant
+// surprise, not a plan.
 //
 // This is better than "donate to EverVerse" for three reasons. A giver trusts
 // a hospice or a parish they already know more than they trust a prayer app.
@@ -21,11 +35,13 @@
 //     The gift is routed by the GIVER'S faith, chosen on the giving page, with
 //     no reference to who answered them or whether anyone did.
 //
-//  2. THE SHARE IS DISCLOSED, EVERY TIME, BEFORE THE GIFT. Taking a cut of
-//     charitable donations makes us a fundraising platform in law — a
-//     "commercial co-venturer" in most US states, a "commercial participator"
-//     in the UK. That requires a written agreement with each charity and a
-//     clear statement of the share to the donor. Hiding the share is not just
+//  2. EVERY CENT IS ACCOUNTED FOR, BEFORE THE GIFT. What the charity gets,
+//     what the card processor takes, and what — if anything — the giver
+//     chose to tip EverVerse. Taking a cut of donations would make us a
+//     fundraising platform in law (a "commercial co-venturer" in most US
+//     states, a "commercial participator" in the UK); a voluntary tip is
+//     not that, but the written agreement with each charity still exists
+//     and the sentence is still printed. Hiding any part of it is not just
 //     poor form; in most places it is illegal.
 //
 //  3. NEVER ASKED ON THE WOUNDED SIDE. Not on the blessing page, not in a
@@ -33,7 +49,13 @@
 //     calm side of the site — the daily verse, the front door — never from a
 //     request or a conversation.
 
-const PLATFORM_SHARE = 0.01;      // one cent on the dollar
+const PLATFORM_SHARE = 0;         // EverVerse takes nothing from the gift itself
+
+// The tip is the giver's, offered after the gift amount, never folded into
+// it. These are the suggested amounts as a share of the gift; "none" is
+// always one of the choices and is never preselected to anything else.
+const TIP_OPTIONS = [0, 0.05, 0.10, 0.15];
+const TIP_DEFAULT = 0;             // the honest default is nothing
 
 // The card processor is a third party to every gift and it is not free.
 // 2.9% + 30¢ is the standard published rate for Stripe and PayPal in the
@@ -41,11 +63,10 @@ const PLATFORM_SHARE = 0.01;      // one cent on the dollar
 // whichever processor is signed, because the disclosure sentence below
 // prints it, and printing a wrong number is worse than printing none.
 //
-// At a 1% platform share the processor takes roughly three times what
-// EverVerse does. That is the honest shape of a 1% model, and it is why
-// DONOR_COVERS_FEES exists: the giver is offered the chance to add the
-// card fee on top, the way most charity platforms now do, so that the
-// charity really does receive 99%.
+// With the platform share at zero, the processor is the only thing between
+// the giver and the charity — and DONOR_COVERS_FEES lets the giver add it
+// on top, the way most charity platforms now do, so the charity really
+// does receive the whole gift.
 const PROCESSING = { pct: 0.029, fixed: 0.30 };
 const DONOR_COVERS_FEES = true;    // offer "add the card fee?" — default ticked
 const MIN_GIFT = 1;
@@ -75,47 +96,51 @@ function givingOpen() {
    coversFees: the giver chose to add the card fee on top. Then the charity
    receives the full gift less our 1%, and the giver pays a little more.
    Otherwise the fee comes out of the gift and the charity receives less. */
-function splitGift(amount, coversFees) {
+function splitGift(amount, coversFees, tipRate) {
   const a = Math.max(0, Math.round(Number(amount || 0) * 100));
+  const tip = Math.round(a * (Number(tipRate) || 0));
   if (!a) return { total: 0, charged: 0, toCharity: 0, toPlatform: 0, toProcessor: 0,
-                   sharePct: Math.round(PLATFORM_SHARE * 100), coversFees: !!coversFees };
-  const platform = Math.round(a * PLATFORM_SHARE);
-  const fee = (base) => Math.round(base * PROCESSING.pct + PROCESSING.fixed * 100);
+                   tip: 0, tipPct: 0, coversFees: !!coversFees };
+  // The processor is paid on the whole card charge — gift plus tip.
   if (coversFees) {
-    // gross up so that, after the processor's cut, the intended gift arrives
-    const charged = Math.round((a + PROCESSING.fixed * 100) / (1 - PROCESSING.pct));
-    const processor = charged - a;
-    return { total: a / 100, charged: charged / 100, toCharity: (a - platform) / 100,
-             toPlatform: platform / 100, toProcessor: processor / 100,
-             sharePct: Math.round(PLATFORM_SHARE * 100), coversFees: true };
+    // gross up so that, after the processor's cut, gift + tip arrive intact
+    const intended = a + tip;
+    const charged = Math.round((intended + PROCESSING.fixed * 100) / (1 - PROCESSING.pct));
+    return { total: a / 100, charged: charged / 100, toCharity: a / 100,
+             toPlatform: tip / 100, toProcessor: (charged - intended) / 100,
+             tip: tip / 100, tipPct: Math.round((Number(tipRate) || 0) * 100), coversFees: true };
   }
-  const processor = fee(a);
-  return { total: a / 100, charged: a / 100, toCharity: (a - platform - processor) / 100,
-           toPlatform: platform / 100, toProcessor: processor / 100,
-           sharePct: Math.round(PLATFORM_SHARE * 100), coversFees: false };
+  const charged = a + tip;
+  const processor = Math.round(charged * PROCESSING.pct + PROCESSING.fixed * 100);
+  // the fee comes out of the gift, never out of the tip — the tip was a
+  // separate decision and the charity is the one who should not be short
+  return { total: a / 100, charged: charged / 100, toCharity: (a - processor) / 100,
+           toPlatform: tip / 100, toProcessor: processor / 100,
+           tip: tip / 100, tipPct: Math.round((Number(tipRate) || 0) * 100), coversFees: false };
 }
 
 /* The sentence a giver reads before giving. Fixed wording, so nobody
    rephrases it into something softer on a busy day. Names all three
    destinations, every time. */
-function disclosure(faith, amount, coversFees) {
-  const s = splitGift(amount, coversFees);
+function disclosure(faith, amount, coversFees, tipRate) {
+  const s = splitGift(amount, coversFees, tipRate);
   const who = anyPartnerAt(faith)
     ? partnersFor(faith).map((p) => p.name).join(" and ")
     : "a partner charity of your faith";
   const tail = " The guide who wrote to you, if anyone did, will never know.";
   if (s.total <= 0)
-    return "EverVerse keeps " + s.sharePct + "% of every gift to run and improve the platform. " +
-      "The card processor takes about " + Math.round(PROCESSING.pct * 1000) / 10 + "% plus " +
-      money(PROCESSING.fixed) + ", which you can choose to add on top so the charity receives the rest in full. " +
-      "Everything else goes to " + who + "." + tail;
+    return "EverVerse takes nothing from your gift. All of it goes to " + who +
+      ", less the card processor's fee of about " + Math.round(PROCESSING.pct * 1000) / 10 + "% plus " +
+      money(PROCESSING.fixed) + " — which you can choose to add on top so the charity receives every cent. " +
+      "If you would like to support EverVerse as well, you can add a separate tip; it is never taken from the gift." + tail;
+  const tipLine = s.tip > 0
+    ? " You chose to add " + money(s.tip) + " (" + s.tipPct + "%) as a tip to EverVerse, which is separate from the gift and pays for identity checks, moderation and hosting."
+    : " Nothing goes to EverVerse.";
   if (s.coversFees)
-    return "You will be charged " + money(s.charged) + ". " + money(s.toCharity) + " goes to " + who +
-      ", " + money(s.toPlatform) + " (" + s.sharePct + "%) goes to EverVerse to run and improve the platform, and " +
-      money(s.toProcessor) + " goes to the card processor." + tail;
+    return "You will be charged " + money(s.charged) + ". " + money(s.toCharity) + " — your whole gift — goes to " + who +
+      ", and " + money(s.toProcessor) + " goes to the card processor." + tipLine + tail;
   return "Of your " + money(s.total) + ", " + money(s.toCharity) + " goes to " + who +
-    ", " + money(s.toPlatform) + " (" + s.sharePct + "%) goes to EverVerse to run and improve the platform, and " +
-    money(s.toProcessor) + " goes to the card processor." + tail;
+    " and " + money(s.toProcessor) + " goes to the card processor." + tipLine + tail;
 }
 function money(n) { return "$" + (Math.round(n * 100) / 100).toFixed(2); }
 
@@ -129,8 +154,8 @@ function mayAskToGive(surface) {
   return CALM_SURFACES.indexOf(surface) !== -1;
 }
 
-/* What the money is for, said concretely. "Running the platform" is a
-   phrase that hides a lot; this is the list a giver is entitled to. */
+/* What a tip is for, said concretely. "Running the platform" is a phrase
+   that hides a lot; this is the list a giver is entitled to. */
 const PLATFORM_SHARE_PAYS_FOR = [
   "identity checks for guides — we pay, never the volunteer",
   "the people who read reports and sit in on conversations",
@@ -142,7 +167,9 @@ const PLATFORM_SHARE_PAYS_FOR = [
 const NEVER_IN_GIVING = [
   { re: /\b(guide|blessing|reply|answered you|who wrote to you)\b.{0,40}\b(donat|give|gift|support|thank)/i,
     why: "Ties the gift to a specific guide or blessing. Route by the giver's faith only." },
-  { re: /\b(?:thank|support|help|repay|reward|tip)\s+(?:your|the|this|that|a)\s+guide\b|\btip\b/i,
+  // A tip to EverVerse is the model. A tip to a GUIDE is payment for a
+  // blessing, and never appears.
+  { re: /\b(?:thank|support|help|repay|reward|tip)\s+(?:your|the|this|that|a)\s+guide\b|\btip\s+(?:him|her|them)\b/i,
     why: "Frames the gift as payment for a blessing." },
   { re: /\b(urgent|before it'?s too late|running out|only \d+ (days|hours))\b/i,
     why: "Manufactured urgency has no place on a giving page." },
@@ -155,7 +182,7 @@ function checkGivingCopy(text) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { PLATFORM_SHARE, PROCESSING, DONOR_COVERS_FEES, MIN_GIFT, PARTNERS, partnersFor, anyPartnerAt, givingOpen,
+  module.exports = { PLATFORM_SHARE, PROCESSING, DONOR_COVERS_FEES, TIP_OPTIONS, TIP_DEFAULT, MIN_GIFT, PARTNERS, partnersFor, anyPartnerAt, givingOpen,
                      splitGift, disclosure, money, CALM_SURFACES, WOUNDED_SURFACES, mayAskToGive,
                      PLATFORM_SHARE_PAYS_FOR, NEVER_IN_GIVING, checkGivingCopy };
 }

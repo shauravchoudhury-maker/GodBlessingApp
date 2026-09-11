@@ -582,9 +582,12 @@ function initGiving() {
     host.innerHTML = HOME_FAITHS.map(([k, l]) =>
       '<button type="button" role="radio" aria-checked="' + (k === faith ? "true" : "false") + '" data-f="' + k + '">' + l + '</button>').join("");
     host.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => { faith = b.dataset.f; draw(); });
-    document.getElementById("give-disclose").textContent = disclosure(faith, 0);
+    // A worked example so the sentence is concrete rather than abstract:
+    // a $25 gift, card fee covered, no tip — the honest default.
+    document.getElementById("give-disclose").textContent =
+      "EverVerse takes nothing from your gift. " + disclosure(faith, 25, true, 0).replace(/^You will be charged/, "For example, on a $25 gift you would be charged");
     document.getElementById("give-paysfor").innerHTML =
-      '<li style="color:var(--ink);font-weight:600">The ' + Math.round(PLATFORM_SHARE * 100) + '% EverVerse keeps pays for:</li>' +
+      '<li style="color:var(--ink);font-weight:600">If you choose to add a tip for EverVerse — separate, optional, never from the gift — it pays for:</li>' +
       PLATFORM_SHARE_PAYS_FOR.map((x) => "<li>" + x + "</li>").join("");
     const st = document.getElementById("give-state");
     st.innerHTML = anyPartnerAt(faith)
@@ -592,7 +595,7 @@ function initGiving() {
         '<p>Every gift is acknowledged by the charity directly. EverVerse never sees your card.</p>'
       : '<b>Partner charities are being confirmed.</b>' +
         '<p>We will not take a single gift until there is a signed agreement with a charity of each faith, and its name is on this page. ' +
-        'When there is, this is where the button will be — and the share we keep will be written next to it, every time.</p>';
+        'When there is, this is where the button will be — with every cent accounted for beside it, every time.</p>';
   };
   draw();
 }
