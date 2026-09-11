@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Let it go — EverVerse</title>
+  <meta name="description" content="Write what is weighing on you. It never leaves your screen — nothing is sent, nothing is saved. Then let it go, and receive a verse on mercy from your own tradition.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="site.css">
+  <style>
+    /* A ritual, not a form. One column, a lot of air, nothing else on the page. */
+    body{background:#faf9fd}
+    .lg{max-width:60ch;margin:0 auto;padding:44px 22px 90px}
+    .lg h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(30px,5vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-.01em}
+    .lg .lede{font-size:17px;color:#41506b;line-height:1.6;margin:0 0 22px}
+    /* the promise is the point; it is not small print */
+    .vow{border:1px solid var(--line);border-left:3px solid var(--accent);background:#fff;border-radius:12px;padding:14px 18px;margin:0 0 26px;font-size:15px;line-height:1.6;color:var(--ink)}
+    .vow b{display:block;margin-bottom:4px;font-size:15.5px}
+    .vow ul{margin:6px 0 0;padding-left:18px;color:#41506b}
+    .faiths{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+    .faiths button{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+    .faiths button[aria-checked="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .frame{font-family:Georgia,serif;font-size:19px;line-height:1.5;color:var(--ink);margin:6px 0 18px;min-height:2.6em}
+    .paper{position:relative}
+    textarea{width:100%;min-height:220px;font:17px/1.65 Georgia,'Times New Roman',serif;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);resize:vertical;box-sizing:border-box}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:2px}
+    .rowx{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    .go{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:14px 26px;font:inherit;font-weight:800;font-size:16px;cursor:pointer}
+    .go:disabled{opacity:.45;cursor:default}
+    .hint{font-size:13.5px;color:var(--muted)}
+    /* the release: the words lift and thin out, then are gone */
+    .ghost{position:absolute;inset:0;padding:18px 20px;font:17px/1.65 Georgia,serif;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;pointer-events:none;overflow:hidden;border-radius:14px}
+    .ghost.away{animation:away 1.9s ease-in forwards}
+    @keyframes away{0%{opacity:1;transform:translateY(0);filter:blur(0)}60%{opacity:.35;filter:blur(1px)}100%{opacity:0;transform:translateY(-38px);filter:blur(6px)}}
+    @media (prefers-reduced-motion:reduce){.ghost.away{animation:none;opacity:0}}
+    .after{display:none;margin-top:28px}
+    .after.on{display:block}
+    .gone{font-family:Georgia,serif;font-size:22px;color:var(--ink);margin:0 0 4px}
+    .kept{font-size:14.5px;color:var(--muted);margin:0 0 22px}
+    .verse{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px 26px}
+    .verse .v{font-family:Georgia,serif;font-size:21px;line-height:1.5;color:var(--ink);margin:0 0 8px}
+    .verse .ref{font-size:14px;color:var(--muted)}
+    .next{margin-top:22px;font-size:15px;color:#41506b;line-height:1.6}
+    .next a{color:var(--accent);font-weight:600}
+    .help{border:2px solid #c4483c;background:#fdf1ef;border-radius:14px;padding:18px 20px;margin:18px 0;display:none}
+    .help.on{display:block}
+    .help h3{font-family:Georgia,serif;font-size:19px;margin:0 0 8px;color:#9c3427}
+    .help p{margin:0 0 10px;font-size:15px;color:#5c2620;line-height:1.55}
+    .help .num{font-size:24px;font-weight:800;color:#9c3427;display:block;margin:4px 0}
+    .help a{color:#9c3427;font-weight:700}
+    .quiet{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted);line-height:1.55}
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="wrap bar">
+      <a class="logo" href="index.html"><span class="mark">✦</span> EverVerse</a>
+      <nav class="sections">
+        <a href="library.html"><button>Library</button></a>
+        <a href="blessing.html"><button>Ask for a Blessing</button></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="lg">
+    <h1>Write it, and let it go.</h1>
+    <p class="lede">Whatever is weighing on you — a regret, a resentment, something you have not said out loud. Write it here, in your own words. Then release it, and receive a word on mercy from your own tradition.</p>
+
+    <div class="vow">
+      <b>This never leaves your screen.</b>
+      Nothing you write here is sent anywhere or saved anywhere. There is no account, no guide, no record. We could not read it if we wanted to.
+      <ul>
+        <li>No button on this page sends anything to us.</li>
+        <li>Spell-check is switched off on the box, so your browser does not send the words to anyone either.</li>
+        <li>When you press <em>Let it go</em>, the words are cleared from this page and from memory.</li>
+      </ul>
+    </div>
+
+    <div class="faiths" id="faiths" role="radiogroup" aria-label="Your tradition"></div>
+    <p class="frame" id="frame"></p>
+
+    <div class="paper">
+      <textarea id="box" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-gramm="false" data-lt-active="false" placeholder="Start anywhere. Nobody will read this."></textarea>
+      <div class="ghost" id="ghost" aria-hidden="true"></div>
+    </div>
+    <div class="rowx">
+      <button class="go" id="go" disabled>Let it go</button>
+      <span class="hint" id="count">Write first.</span>
+    </div>
+
+    <div class="help" id="help" aria-live="polite">
+      <h3>Before you let it go — please read this.</h3>
+      <p>Some of what you have written suggests you may be in real danger right now. Nothing here has been sent to anyone, and it will not be. But a verse is not enough for this. Please talk to someone trained, today.</p>
+      <div id="help-body"></div>
+    </div>
+
+    <div class="after" id="after" aria-live="polite">
+      <p class="gone">It is gone.</p>
+      <p class="kept">Nothing was kept. Not here, not anywhere.</p>
+      <div class="verse"><div class="v" id="vtext"></div><div class="ref" id="vref"></div></div>
+      <p class="next">If you would rather a person wrote back to you about this — someone from your tradition who has carried something too — <a href="blessing.html">the Blessing Circle is here</a>. That is a different door, and it is always open.</p>
+      <div class="rowx"><button class="go" id="again" style="background:#fff;color:var(--accent);border:1px solid var(--line)">Write something else</button></div>
+    </div>
+
+    <p class="quiet">This is a private practice, not a confession and not a sacrament, and nobody at EverVerse absolves anyone. If your tradition has its own way of bringing these things to God — reconciliation, teshuvah, tawbah — this does not replace it. It is a place to set something down. If you are unwell, please also speak to a doctor.</p>
+  </main>
+
+  <script src="verses.js"></script>
+  <script src="world.js"></script>
+  <script src="safety-lang.js"></script>
+  <script>
+  (function(){
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+    /* Framing per tradition. Gentle, and careful: none of these claims to
+       forgive, absolve, or stand in for anything. They say where to bring it. */
+    const FAITHS = [
+      ["christian","Christianity",["Bible"],
+        "Bring it before God. He already knows, and He is not surprised by it."],
+      ["islam","Islam",["Quran"],
+        "Turn to Him. What you bring to God, He conceals — and His mercy is wider than what you carry."],
+      ["hindu","Hinduism",["Gita"],
+        "Set it down before the Divine. What is offered honestly is received."],
+      ["buddhist","Buddhism",["Dhammapada","Tripitaka"],
+        "Look at it clearly, without adding to it. Then let it pass, as everything does."],
+      ["jewish","Judaism",["Torah"],
+        "Turn. Teshuvah begins with saying it plainly — to yourself, and to God."],
+      ["sikh","Sikhism",["Sikh"],
+        "Lay it at the feet of the Guru. Ardas is spoken from the heart, and the heart is not judged for speaking."],
+      ["taoist","Taoism",["Tao"],
+        "Name it. Then loosen your grip. Water does not hold on to the stone."],
+      ["none","No tradition",["Wisdom"],
+        "Say it plainly, to no one. Then let it go."],
+    ];
+
+    /* The verse that comes after. Hand-picked for mercy, release and beginning
+       again — by reference, so nothing here depends on a topic tag. If a
+       reference is ever missing from the library, the fallback is a comfort
+       verse from the same tradition, never a blank. */
+    const AFTER = {
+      christian: ["Lamentations 3:22-23","Matthew 11:28","Micah 6:8","Isaiah 40:31","Psalm 91:1"],
+      islam:     ["Qur'an 39:53","Qur'an 2:286","Qur'an 23:118","Qur'an 13:28","Qur'an 7:56"],
+      hindu:     ["Bhagavad Gita 2:22","Bhagavad Gita 12:8","Bhagavad Gita 6:35","Bhagavad Gita 12:13-14"],
+      buddhist:  ["Dhammapada 348","Dhammapada 173","Dhammapada 290","Sallatha Sutta","Dhammapada 368"],
+      jewish:    ["Exodus 33:14","Genesis 50:20","Numbers 6:24-26","Genesis 28:16"],
+      sikh:      ["Guru Granth Sahib (Guru Nanak II)","Guru Granth Sahib (Guru Amar Das)","Guru Granth Sahib, Ang 293"],
+      taoist:    ["Tao Te Ching 8","Tao Te Ching 2","Tao Te Ching 63","Tao Te Ching 67"],
+      none:      ["On beginning again","On rest","Lao Tzu"],
+    };
+
+    const db = (typeof VERSE_DB !== "undefined") ? VERSE_DB : [];
+    let faith = (function(){ try { return localStorage.getItem("ev-letgo-faith") || "christian"; } catch (e) { return "christian"; } })();
+
+    function drawFaiths(){
+      $("faiths").innerHTML = FAITHS.map(([k, l]) =>
+        '<button type="button" role="radio" aria-checked="' + (k === faith ? "true" : "false") + '" data-f="' + k + '">' + esc(l) + '</button>').join("");
+      $("faiths").querySelectorAll("[data-f]").forEach((b) => b.onclick = () => {
+        faith = b.dataset.f;
+        try { localStorage.setItem("ev-letgo-faith", faith); } catch (e) {}   // only the faith, never the words
+        drawFaiths();
+      });
+      const f = FAITHS.find((x) => x[0] === faith) || FAITHS[0];
+      $("frame").textContent = f[3];
+    }
+    drawFaiths();
+
+    function verseAfter(){
+      const f = FAITHS.find((x) => x[0] === faith) || FAITHS[0];
+      const refs = AFTER[faith] || [];
+      const found = refs.map((r) => db.find((v) => v.ref === r)).filter(Boolean);
+      const pool = found.length ? found : db.filter((v) => f[2].indexOf(v.faith) !== -1 && v.topic === "comfort");
+      return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+    }
+
+    const box = $("box"), go = $("go"), count = $("count");
+    box.addEventListener("input", () => {
+      const n = box.value.trim().length;
+      go.disabled = n < 3;
+      count.textContent = n < 3 ? "Write first." : n + " characters, seen by nobody.";
+      // Even here, with nothing sent, someone in danger should see help. The
+      // check runs on the device; the text still goes nowhere. There is no
+      // language picker on this page, and a false positive costs nothing —
+      // it shows a helpline, it refuses nothing — so every language is
+      // checked, not just English.
+      const danger = (typeof hitsCrisis === "function" && typeof LANG_SAFETY !== "undefined")
+        && Object.keys(LANG_SAFETY).some((l) => hitsCrisis(box.value, l));
+      $("help").classList.toggle("on", !!danger);
+      if (danger && typeof crisisHelp === "function" && !$("help-body").innerHTML) {
+        const h = crisisHelp(typeof countryOf === "function" ? countryOf() : null);
+        let html = "";
+        if (h.line) html += '<p><b>' + esc(h.name) + '</b>' + (h.note ? " — " + esc(h.note) : "") + '<span class="num">' + esc(h.line) + '</span>' +
+          (h.chat ? '<a href="' + esc(h.chat) + '" target="_blank" rel="noopener">Or chat with them online →</a>' : '') + '</p>';
+        html += '<p><a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">' + esc(HELP_DIRECTORY.label) + '</a></p>';
+        if (h.emergency) html += '<p>If someone is in immediate danger, call ' + esc(h.emergency) + '.</p>';
+        $("help-body").innerHTML = html;
+      }
+    });
+
+    go.addEventListener("click", () => {
+      const text = box.value;
+      if (text.trim().length < 3) return;
+      // Show the words leaving, then remove every copy we hold.
+      const ghost = $("ghost");
+      ghost.textContent = text;
+      box.value = "";
+      box.style.color = "transparent";
+      ghost.classList.add("away");
+      go.disabled = true;
+      const finish = () => {
+        ghost.textContent = "";
+        ghost.classList.remove("away");
+        box.style.color = "";
+        box.value = "";
+        count.textContent = "Write first.";
+        const v = verseAfter();
+        $("vtext").textContent = v ? "“" + v.text + "”" : "Be gentle with yourself today.";
+        $("vref").textContent = v ? v.ref : "";
+        $("after").classList.add("on");
+        $("after").scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      setTimeout(finish, reduced ? 50 : 1950);
+    });
+
+    $("again").addEventListener("click", () => {
+      $("after").classList.remove("on");
+      $("help").classList.remove("on");
+      box.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // Belt and braces: if the tab is hidden or closed mid-write, clear the box
+    // so no browser restores it on the way back.
+    window.addEventListener("pagehide", () => { box.value = ""; });
+    window.addEventListener("beforeunload", () => { box.value = ""; });
+  })();
+  </script>
+</body>
+</html>
