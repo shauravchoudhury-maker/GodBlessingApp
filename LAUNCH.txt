@@ -1,0 +1,206 @@
+EverVerse — launching the Blessing Circle
+=========================================
+Written 11 September 2026. The Circle is the core of the platform; the
+Library, the daily verse and the social feed exist to bring people to it
+and to bring guides to it.
+
+WHAT "GLOBAL IN OCTOBER" HONESTLY MEANS
+---------------------------------------
+The door is open to the world from the day PR #40 merges: anyone, anywhere,
+in any of the 24 languages, can ask. That part is global on day one.
+
+PROMOTION is not. A language is promoted only once a native speaker has
+read its crisis and under-18 patterns (safety-lang.js, every `checked` is
+null today). A country is promoted only once its helpline numbers have been
+verified against the provider's own site (world.js, every `checked` is null
+today). A faith opens for requests only once three approved guides can
+answer in it (campaign.js GUIDE_COUNTS, all zero today).
+
+So October is: OPEN TO EVERYONE, PROMOTED WHERE IT IS SAFE. That is not a
+smaller launch. It is the only version that survives contact with the
+first person in Delhi who is handed a helpline that does not connect.
+
+
+THE GATES, IN ORDER
+-------------------
+Each gate is a thing that must be TRUE, not a date. Dates are targets.
+
+GATE 0 — the site is real                              target: 14 Sept
+  [ ] Add eververse.org to Firebase → Authentication → Settings →
+      Authorized domains. Sign-in fails on the live site until this is done.
+  [ ] Merge PR #40. blessing.html, guides.html and library.html go live.
+  [ ] Open eververse.org/blessing.html and send yourself a blessing.
+  [ ] Sign in as a guide on the live site and reply to it.
+  [ ] Confirm the reply reads back through the link.
+  Nothing below happens until all five are ticked.
+
+GATE 1 — the announcement                              target: 15 Sept
+  The recruit-phase posts in campaign.js, and only those. Every one points
+  at eververse.org/guides.html. Nothing invites anyone to ASK yet — there
+  is nobody to answer them, and an unanswered request is the one failure
+  this platform cannot afford. Copy is below.
+
+GATE 2 — intake                                        15 Sept – 29 Sept
+  [ ] Read every application the day it arrives (blessing.html → Applications).
+  [ ] Ring every organisation an applicant names. Do not confirm an
+      affiliation on their word.
+  [ ] Ten-minute video call with each person before approving. Not to
+      verify identity — to form a judgement, which is the part no vendor
+      can do.
+  [ ] Approve slowly. The first hundred guides set the culture permanently.
+  [ ] Send five letters to institutions (template below), one per faith
+      you have a contact in.
+  TARGET: three approved guides in at least two faiths. If that is not
+  met by 29 Sept, the October date moves. It does not launch thin.
+
+GATE 3 — safety, per language and country             before promotion
+  For EACH language you intend to post in:
+  [ ] A native speaker has read that language's list in safety-lang.js
+      and their name is in its `checked` field.
+  For EACH country you intend to post to:
+  [ ] The helpline in world.js has been checked against the provider's
+      own site and the date is in its `checked` field.
+  English + US/UK/Canada/Australia/India is a realistic first set. Add a
+  language only when both boxes are ticked for it.
+
+GATE 4 — open the door                                 target: October
+  [ ] Set GUIDE_COUNTS in campaign.js to the real numbers. The daily
+      posts switch from "we need guides" to "you can ask" on their own,
+      per faith, when a faith reaches three.
+  [ ] Set supervisor:true on your own guide document so Tier 2
+      conversations can open (see IDENTITY_SETUP.txt for why).
+  [ ] Watch these numbers, in this order:
+        1. approved guides per faith
+        2. median hours to first reply
+        3. requests never answered — MUST be zero
+        4. reports per hundred blessings
+        5. then, and only then, requests received
+      If 2 or 3 go wrong, turn the campaign off. Do not recruit faster.
+
+NOT GATES, BUT SOON AFTER
+  · Deploy identity-worker.js (IDENTITY_SETUP.txt). Until then no guide
+    can reach companion, and the trust cards say so honestly.
+  · Sign the first partner charity. The giving page stays "being
+    confirmed" until a name is on paper.
+  · One call with an accountant and one with a charity lawyer about the
+    501(c)(3) question before the first gift is taken.
+
+
+THE ANNOUNCEMENT — recruit phase only
+-------------------------------------
+Generated from campaign.js and checked against its NEVER list. Rotate
+across the seven faiths; one recruitment post a week alongside the daily
+verse, and one trust post a week. Do not post more often than that — a
+verse feed that turns into an advert stops being shared.
+
+  [Lived, Christianity]
+  Somebody wrote to us tonight about losing their mother. What they need
+  is not a professional. It is someone who has stood where they are
+  standing.
+
+  If you have buried a parent, and you read the Bible, the Blessing
+  Circle needs you.
+
+  No charge, ever, to anyone — for the person asking or for you.
+  eververse.org/guides.html
+
+  [Small ask, any faith]
+  It is one message. Not a rota, not a commitment, not a call — one verse
+  and a few words of your own, when you have the time.
+
+  That is the whole ask. You can answer one and never come back.
+  eververse.org/guides.html
+
+  [Language, Islam / Hinduism / Sikhism]
+  There are people who can only pray properly in the language they
+  learned it in.
+
+  If you can write in Urdu, Punjabi, Gujarati, Tamil, Spanish or Arabic,
+  you can answer someone nobody else can reach.
+  eververse.org/guides.html
+
+  [Hard bar, any faith]
+  We turn down more applications than we accept, and we check the ones
+  we keep.
+
+  If that sounds like the kind of place you would want answering your
+  own mother — apply.
+  eververse.org/guides.html
+
+  [Trust post — the one to pin]
+  Every blessing on EverVerse is written by a person. Not generated. Not
+  suggested. A guide who has been where you are reads what you wrote and
+  writes back in their own words.
+
+  As more of life gets answered by machines, that is the promise we
+  built the platform around. It is slower than a chatbot. It is also the
+  point.
+  eververse.org
+
+Never in any post: "AI-powered", "instant", "#1", "biggest", "cure",
+"therapy", any crisis term as a hashtag, or any invitation to ask for a
+blessing before Gate 4. campaign.js refuses all of these if you run the
+copy through checkCampaignCopy().
+
+
+THE LETTER TO AN INSTITUTION
+----------------------------
+Send to a named person — a chaplain, a parish administrator, a mosque
+committee member, a gurdwara secretary, a hospice volunteer coordinator.
+Not a mail merge. Name the specific thing you want.
+
+  Dear [name],
+
+  I run EverVerse, a small platform where a person who is struggling can
+  write a few lines — about a bereavement, an illness, a marriage, a
+  faith that has gone quiet — and have someone from their own tradition
+  read it and write back with a verse and a few words of their own. There
+  is no charge to anyone and no account required. Every reply is written
+  by a person; we do not use AI to write them and never will.
+
+  I am writing because the people who are best at this are not
+  professionals. They are people who have been through the same thing.
+  I am looking for two or three members of [congregation / your
+  volunteer team] who have carried a loss, an illness or a hard season
+  and would be willing to answer one message a week from someone going
+  through it now. That is the entire commitment: one message, in their
+  own time, from their own home.
+
+  What we do to keep everyone safe, because you will want to know:
+  every guide is approved by hand after a conversation with me; a guide
+  can write to a person only once unless that person asks to continue;
+  the system itself refuses contact details, links, requests for money
+  and any advice about medication; requests that suggest someone is in
+  danger go only to guides we have identity-checked and background-
+  checked, alongside the local crisis line; and no request can ever be
+  browsed or searched. The full list is on the site.
+
+  If you were willing to put your name to two or three people, we would
+  confirm that with you directly and show it on their profile as
+  "confirmed with [institution]" — which is worth more to a frightened
+  person than anything we could say about ourselves.
+
+  I would be glad to come and explain it in person, or on a call, at
+  whatever time suits you.
+
+  With thanks,
+  [name]
+  eververse.org · [phone]
+
+Do not mention the giving model in the first letter. That conversation
+comes after they have seen their people answer real requests, and it
+should come from them asking.
+
+
+THE LIBRARY, AND WHY IT IS FREE
+-------------------------------
+library.html gives away, for personal use: the daily verses to browse and
+save, the 23 written devotionals, greeting cards for 13 occasions made from
+any verse, and the five audiobook manuscripts to read or print.
+
+Digital is free; print is Etsy. That is a deliberate split, not a leak.
+Free digital brings people to the door and gives them a reason to come
+back before they ever need the Circle. The Etsy prints are a different
+product for a different moment — a gift, a wall — and the two have never
+competed. If that changes, the license line on library.html is where to
+change it.

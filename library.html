@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Library — EverVerse</title>
+  <meta name="description" content="Devotionals to read, greeting cards to make from any verse, and audiobook manuscripts to read or print. Free for personal use, from seven faiths.">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="site.css">
+  <style>
+    .lnav{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 6px}
+    .lnav a{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;color:var(--ink);text-decoration:none;font-weight:600}
+    .lnav a:hover{border-color:var(--accent);color:var(--accent)}
+    .filt{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 16px}
+    .filt button{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 13px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--ink)}
+    .filt button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+    /* devotionals */
+    .devs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .dev{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;cursor:pointer;transition:border-color .12s}
+    .dev:hover{border-color:var(--accent)}
+    .dev .f{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+    .dev h3{margin:4px 0 6px;font-size:17px;line-height:1.3}
+    .dev .ref{font-size:13px;color:var(--muted)}
+    .dev .take{font-size:14px;color:#41506b;margin-top:8px;line-height:1.5}
+    .reader{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 28px;max-width:68ch;margin:14px auto 0;display:none;overflow-x:auto;overflow-wrap:anywhere}
+    .reader.on{display:block}
+    .reader .v{font-family:Georgia,serif;font-size:20px;line-height:1.5;color:var(--ink);margin:6px 0 4px}
+    .reader .ref{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+    .reader p{font-size:16.5px;line-height:1.7;color:#2b2a3d;margin:0 0 14px}
+    .reader .take{border-top:1px solid var(--line);padding-top:12px;font-weight:600;color:var(--accent)}
+    /* cards */
+    .cardmaker{display:grid;grid-template-columns:1fr 1.1fr;gap:22px;align-items:start}
+    .cardmaker label{display:block;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px}
+    .cardmaker select,.cardmaker input{width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .vlist{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .vlist button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 12px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--ink);line-height:1.45}
+    .vlist button:hover{background:#f8f6ff}
+    .vlist button[aria-pressed="true"]{background:#f0ecff}
+    .vlist small{color:var(--muted)}
+    .preview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+    .preview canvas{width:100%;height:auto;border-radius:8px;display:block;background:#eee}
+    .preview .rowx{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    /* manuscripts */
+    .books{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .book{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+    .book .f{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700}
+    .book h3{margin:4px 0 2px;font-size:17px}
+    .book .sub{font-size:13.5px;color:var(--muted);margin-bottom:10px;line-height:1.4}
+    .book .rowx{display:flex;gap:8px;flex-wrap:wrap}
+    .lic{font-size:13px;color:var(--muted);margin-top:22px;padding-top:14px;border-top:1px solid var(--line);max-width:68ch}
+    @media (max-width:760px){.cardmaker{grid-template-columns:1fr}}
+    @media print{header,footer,.hero,.lnav,.filt,.devs,.cardmaker,.books,.lic,.band:not(#print-band){display:none!important}
+      #print-band{display:block!important} #print-body{font:15px/1.6 Georgia,serif;white-space:pre-wrap;max-width:70ch;margin:0 auto}}
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="wrap bar">
+      <a class="logo" href="index.html"><span class="mark">✦</span> EverVerse</a>
+      <nav class="sections">
+        <a href="index.html"><button>Home</button></a>
+        <a href="guides.html"><button>Become a guide</button></a>
+        <a href="blessing.html"><button>Ask for a Blessing</button></a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <div class="today-date">The Library</div>
+      <h1>Read it, make it, keep it.</h1>
+      <p>Devotionals to read, greeting cards to make from any verse, and audiobook manuscripts to read or print — from seven faiths, free for personal use. If today is heavier than a verse can hold, <a href="blessing.html" style="color:#fff;font-weight:700">the Circle is one tap away</a>.</p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="lnav">
+        <a href="#devotionals">Devotionals</a>
+        <a href="#cards">Greeting cards</a>
+        <a href="#books">Manuscripts</a>
+        <a href="index.html#verses">Browse all verses</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Devotionals ===== -->
+  <section class="band" id="devotionals" style="background:#f8f6ff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="wrap">
+      <div class="section-title">Devotionals</div>
+      <p class="section-sub">Short written reflections, two or three minutes each, every one tied to a verse. Written by people, for reading slowly.</p>
+      <div class="filt" id="dev-filt"></div>
+      <div class="devs" id="devs"></div>
+      <div class="reader" id="reader"></div>
+    </div>
+  </section>
+
+  <!-- ===== Greeting cards ===== -->
+  <section class="band" id="cards">
+    <div class="wrap">
+      <div class="section-title">Greeting cards</div>
+      <p class="section-sub">Pick an occasion and a verse, and take the card away as an image to send or print. Diwali, Eid, Christmas, a birthday, a sympathy card — from any tradition.</p>
+      <div class="cardmaker">
+        <div>
+          <label for="occ">Occasion</label>
+          <select id="occ"></select>
+          <label>Faith</label>
+          <div class="filt" id="card-filt" style="margin:0 0 6px"></div>
+          <label for="vq">Find a verse</label>
+          <input id="vq" type="search" placeholder="a word, a book, a reference…">
+          <div class="vlist" id="vlist"></div>
+          <label for="to">To (optional)</label>
+          <input id="to" type="text" maxlength="40" placeholder="Dear Amma">
+          <label for="from">From (optional)</label>
+          <input id="from" type="text" maxlength="40" placeholder="with love, Priya">
+        </div>
+        <div class="preview">
+          <canvas id="cv" width="1200" height="1200"></canvas>
+          <div class="rowx">
+            <button class="btn sm" id="dl">Download card</button>
+            <button class="btn ghost sm" id="style">Change style</button>
+            <span id="cmsg" style="font-size:13px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Manuscripts ===== -->
+  <section class="band" id="books" style="background:#f8f6ff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="wrap">
+      <div class="section-title">Audiobook manuscripts</div>
+      <p class="section-sub">The written text of each EverVerse audiobook — verse, plain-language meaning and reflection, chapter by chapter. Read on screen, or print and keep by the bed.</p>
+      <div class="books" id="booklist"></div>
+      <div class="lic">
+        <b>Free for personal use.</b> Read, print, send a card, keep a manuscript — for yourself or someone you love. For prints on paper and canvas, <a href="https://www.etsy.com/shop/eververse" target="_blank" rel="noopener">the EverVerse shop</a> is where those live. To license or reuse content commercially, email PRteam@eververse.org. Scripture renderings are widely used public-domain English translations; devotionals and meanings are original to EverVerse.
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="print-band" style="display:none"><div id="print-body"></div></section>
+
+  <footer class="site">
+    <div class="wrap">
+      <div class="logo" style="justify-content:center;margin-bottom:10px;"><span class="mark">✦</span> EverVerse</div>
+      <div>Daily faith, for every soul — Christianity • Islam • Hinduism • Buddhism • Judaism • Sikhism • Taoism, and a door for those with none.</div>
+      <div style="margin-top:12px;"><a href="privacy.html" style="color:var(--muted);font-size:13px;">Privacy Policy</a></div>
+    </div>
+  </footer>
+
+  <script src="verses.js"></script>
+  <script src="meanings.js"></script>
+  <script src="sermons.js"></script>
+  <script src="backgrounds.js"></script>
+  <script src="render.js"></script>
+  <script src="ecards.js"></script>
+  <script src="audiobooks.js"></script>
+  <script>
+  (function(){
+    const $ = (id) => document.getElementById(id);
+    const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    // Same religion-first names the rest of the site uses; the data still
+    // carries book names, so map both ways.
+    const FAITH = { Bible:"Christianity", Quran:"Islam", Gita:"Hinduism", Dhammapada:"Buddhism", Tripitaka:"Buddhism",
+                    Torah:"Judaism", Sikh:"Sikhism", Tao:"Taoism", Wisdom:"Timeless wisdom" };
+    const label = (f) => FAITH[f] || f;
+    // eCards vary their background per verse; app.js normally supplies this
+    function bgForVerseApp(v){
+      const list = ["sunrise","aurora","rays","mesh","clouds","watercolor","ocean","forest","bokeh","meadow","blessing","petals","canopy","strata","aura"];
+      const h = v.ref.split("").reduce((a,c)=>(a*31+c.charCodeAt(0))|0,5);
+      return list[Math.abs(h) % list.length];
+    }
+    window.bgForVerseApp = bgForVerseApp;
+
+    function pills(host, items, current, onPick){
+      host.innerHTML = items.map(([k,l]) => '<button type="button" data-k="'+esc(k)+'" aria-pressed="'+(k===current?"true":"false")+'">'+esc(l)+'</button>').join("");
+      host.querySelectorAll("[data-k]").forEach((b) => b.onclick = () => onPick(b.dataset.k));
+    }
+
+    /* ---- Devotionals ---- */
+    const sermons = (typeof SERMONS !== "undefined") ? SERMONS : [];
+    let devFaith = "all";
+    function drawDevs(){
+      const faiths = [["all","All"]].concat([...new Set(sermons.map(s=>label(s.faith)))].map(f=>[f,f]));
+      pills($("dev-filt"), faiths, devFaith, (k) => { devFaith = k; drawDevs(); });
+      const list = sermons.filter(s => devFaith==="all" || label(s.faith)===devFaith);
+      $("devs").innerHTML = list.map((s) =>
+        '<div class="dev" data-id="'+esc(s.id)+'" role="button" tabindex="0">' +
+        '<div class="f">'+esc(label(s.faith))+'</div><h3>'+esc(s.title)+'</h3>' +
+        '<div class="ref">'+esc(s.verseRef)+'</div><div class="take">'+esc(s.takeaway)+'</div></div>').join("");
+      $("devs").querySelectorAll(".dev").forEach((el) => {
+        const open = () => {
+          const s = sermons.find(x => x.id === el.dataset.id); if (!s) return;
+          $("reader").innerHTML = '<div class="f" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:700">'+esc(label(s.faith))+'</div>' +
+            '<h2 style="margin:4px 0 8px">'+esc(s.title)+'</h2>' +
+            '<div class="v">“'+esc(s.verseText)+'”</div><div class="ref">'+esc(s.verseRef)+'</div>' +
+            s.body.map(p => '<p>'+esc(p)+'</p>').join("") +
+            '<div class="take">'+esc(s.takeaway)+'</div>' +
+            '<div style="margin-top:14px;font-size:13.5px;color:var(--muted)">If this one landed, <a href="blessing.html">a guide can write one just for you</a>.</div>';
+          $("reader").classList.add("on"); $("reader").scrollIntoView({behavior:"smooth",block:"start"});
+        };
+        el.onclick = open; el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+      });
+    }
+    drawDevs();
+
+    /* ---- Greeting cards ---- */
+    const db = (typeof VERSE_DB !== "undefined") ? VERSE_DB : [];
+    const styles = ["classic","postcard","framed","minimal","bold","vintage"];
+    let occ = "encouragement", cardFaith = "all", picked = null, styleIx = 0;
+    ECARD_OCCASIONS.forEach((o) => $("occ").add(new Option(o.label, o.id)));
+    $("occ").value = occ;
+    function verseList(){
+      const q = $("vq").value.trim().toLowerCase();
+      const rows = db.filter(v => (cardFaith==="all" || label(v.faith)===cardFaith) &&
+        (!q || v.text.toLowerCase().includes(q) || v.ref.toLowerCase().includes(q))).slice(0, 60);
+      $("vlist").innerHTML = rows.map((v,i) =>
+        '<button type="button" data-i="'+db.indexOf(v)+'" aria-pressed="'+(picked===v?"true":"false")+'">' +
+        esc(v.text.length > 110 ? v.text.slice(0,107)+"…" : v.text) + '<br><small>'+esc(v.ref)+' · '+esc(label(v.faith))+'</small></button>').join("") ||
+        '<div style="padding:12px;color:var(--muted);font-size:13.5px">Nothing matched — try another word.</div>';
+      $("vlist").querySelectorAll("[data-i]").forEach((b) => b.onclick = () => { picked = db[+b.dataset.i]; verseList(); draw(); });
+    }
+    function draw(){
+      if (!picked) picked = db.find(v => v.topic === "comfort") || db[0];
+      try {
+        drawEcard($("cv"), picked, occ, 1200, 1200, { design: styles[styleIx % styles.length], from: $("from").value.trim(), to: $("to").value.trim() });
+        $("cmsg").textContent = "";
+      } catch (e) { $("cmsg").textContent = "Could not draw the card: " + e.message; }
+    }
+    const faithPills = [["all","All"]].concat([...new Set(db.map(v=>label(v.faith)))].map(f=>[f,f]));
+    function drawCardPills(){ pills($("card-filt"), faithPills, cardFaith, (k) => { cardFaith = k; drawCardPills(); verseList(); }); }
+    drawCardPills();
+    $("occ").onchange = () => { occ = $("occ").value; draw(); };
+    $("vq").oninput = verseList;
+    $("from").oninput = draw; $("to").oninput = draw;
+    $("style").onclick = () => { styleIx++; draw(); };
+    $("dl").onclick = () => {
+      const a = document.createElement("a");
+      a.download = "eververse-" + occ + "-" + (picked ? picked.ref.replace(/[^a-z0-9]+/gi,"-").toLowerCase() : "card") + ".png";
+      a.href = $("cv").toDataURL("image/png"); a.click();
+      $("cmsg").textContent = "Saved. Free for personal use — send it, print it, keep it.";
+    };
+    verseList(); draw();
+
+    /* ---- Manuscripts ---- */
+    const books = (typeof AUDIOBOOKS !== "undefined") ? AUDIOBOOKS : [];
+    $("booklist").innerHTML = books.map((b, i) =>
+      '<div class="book"><div class="f">'+esc(label(b.faith || ""))+'</div><h3>'+esc(b.title)+'</h3><div class="sub">'+esc(b.subtitle||"")+'</div>' +
+      '<div class="rowx"><button class="btn sm" data-read="'+i+'">Read</button><button class="btn ghost sm" data-print="'+i+'">Print</button></div></div>').join("");
+    function manuscript(i){
+      const b = books[i]; const ch = buildAudiobookChapters(b);
+      return audiobookManuscript(b, ch);
+    }
+    $("booklist").querySelectorAll("[data-read]").forEach((btn) => btn.onclick = () => {
+      const txt = manuscript(+btn.dataset.read);
+      $("reader").innerHTML = '<pre style="white-space:pre-wrap;overflow-wrap:anywhere;font:15.5px/1.65 Georgia,serif;margin:0">'+esc(txt)+'</pre>';
+      $("reader").classList.add("on"); $("reader").scrollIntoView({behavior:"smooth",block:"start"});
+    });
+    $("booklist").querySelectorAll("[data-print]").forEach((btn) => btn.onclick = () => {
+      $("print-body").textContent = manuscript(+btn.dataset.print);
+      window.print();
+    });
+  })();
+  </script>
+</body>
+</html>
