@@ -2,6 +2,8 @@
 // Verified, curated verse database for the EverVerse daily engine.
 // Bible verses use commonly-rendered English (public-domain / paraphrase).
 // Gita verses use widely-accepted English renderings referenced by chapter:verse.
+// Qur'an verses are rendered in the same plain modern English, referenced by
+// surah:ayah, rather than taken from a modern copyrighted translation.
 // Grow toward 365 in reviewed batches — the daily engine cycles through whatever exists.
 
 const VERSE_DB = [
@@ -593,6 +595,59 @@ const VERSE_DB = [
   { faith: "Bible", ref: "James 1:17",         theme: "gold",    topic: "gratitude",  text: "Every good and perfect gift is from above, coming down from the Father of the heavenly lights, who does not change like shifting shadows." },
   { faith: "Bible", ref: "Psalm 32:7",         theme: "slate",   topic: "protection", text: "You are my hiding place; you will protect me from trouble and surround me with songs of deliverance." },
   { faith: "Bible", ref: "Psalm 121:7-8",      theme: "night",   topic: "protection", text: "The Lord will keep you from all harm — he will watch over your life; the Lord will watch over your coming and going both now and forevermore." },
+
+
+  // ---------------------------- QUR'AN ----------------------------
+  // Islam. Rendered in the same plain modern English as the rest of this
+  // file rather than taken from a modern copyrighted translation.
+  { faith: "Quran", ref: "Qur'an 2:286",  theme: "calm",    topic: "strength",     text: "God does not burden any soul beyond what it can bear." },
+  { faith: "Quran", ref: "Qur'an 94:5-6", theme: "hope",    topic: "hope",         text: "So truly, with hardship comes ease. Truly, with hardship comes ease." },
+  { faith: "Quran", ref: "Qur'an 2:153",  theme: "calm",    topic: "perseverance", text: "Seek help through patience and prayer. God is with those who are patient." },
+  { faith: "Quran", ref: "Qur'an 13:28",  theme: "azure",   topic: "peace",        text: "Hearts find rest in the remembrance of God." },
+  { faith: "Quran", ref: "Qur'an 65:3",   theme: "forest",  topic: "faith",        text: "Whoever puts their trust in God, God is enough for them." },
+  { faith: "Quran", ref: "Qur'an 39:53",  theme: "gold",    topic: "hope",         text: "Never despair of the mercy of God. He forgives all wrongs, for He is the Forgiving, the Merciful." },
+  { faith: "Quran", ref: "Qur'an 2:216",  theme: "dusk",    topic: "wisdom",       text: "You may dislike a thing that is good for you, and love a thing that is bad for you. God knows, and you do not." },
+  { faith: "Quran", ref: "Qur'an 3:139",  theme: "bold",    topic: "courage",      text: "Do not lose heart, and do not grieve. You will rise high, if you are truly faithful." },
+  { faith: "Quran", ref: "Qur'an 40:60",  theme: "warm",    topic: "faith",        text: "Your Lord has said: call upon Me, and I will answer you." },
+  { faith: "Quran", ref: "Qur'an 2:186",  theme: "night",   topic: "comfort",      text: "When My servants ask you about Me — I am near. I answer the call of the one who calls on Me." },
+  { faith: "Quran", ref: "Qur'an 93:3",   theme: "peach",   topic: "comfort",      text: "Your Lord has not abandoned you, nor is He displeased with you." },
+  { faith: "Quran", ref: "Qur'an 93:5",   theme: "hope",    topic: "hope",         text: "And your Lord is going to give to you, and you will be satisfied." },
+  { faith: "Quran", ref: "Qur'an 93:7",   theme: "sand",    topic: "guidance",     text: "He found you lost, and guided you." },
+  { faith: "Quran", ref: "Qur'an 14:7",   theme: "harvest", topic: "gratitude",    text: "If you are grateful, I will surely give you more." },
+  { faith: "Quran", ref: "Qur'an 55:13",  theme: "amber",   topic: "gratitude",    text: "So which of the blessings of your Lord will you deny?" },
+  { faith: "Quran", ref: "Qur'an 2:156",  theme: "ink",     topic: "comfort",      text: "Truly we belong to God, and truly to Him we return." },
+  { faith: "Quran", ref: "Qur'an 2:155",  theme: "slate",   topic: "perseverance", text: "We will surely test you with something of fear and hunger, and loss of wealth and lives and fruits — but give good news to the patient." },
+  { faith: "Quran", ref: "Qur'an 12:87",  theme: "hope",    topic: "hope",         text: "Do not despair of the comfort of God. No one despairs of God's comfort except those who have lost their way." },
+  { faith: "Quran", ref: "Qur'an 3:173",  theme: "calm",    topic: "faith",        text: "God is enough for us, and He is the best guardian of our affairs." },
+  { faith: "Quran", ref: "Qur'an 9:51",   theme: "moss",    topic: "faith",        text: "Nothing will happen to us except what God has written for us. He is our protector." },
+  { faith: "Quran", ref: "Qur'an 50:16",  theme: "plum",    topic: "comfort",      text: "We created the human being, and We know what their soul whispers. We are closer to them than their jugular vein." },
+  { faith: "Quran", ref: "Qur'an 24:35",  theme: "gold",    topic: "guidance",     text: "God is the Light of the heavens and the earth." },
+  { faith: "Quran", ref: "Qur'an 6:59",   theme: "forest",  topic: "protection",   text: "Not a leaf falls without His knowing it." },
+  { faith: "Quran", ref: "Qur'an 17:82",  theme: "mint",    topic: "comfort",      text: "We send down of the Qur'an that which is a healing and a mercy for those who believe." },
+  { faith: "Quran", ref: "Qur'an 10:57",  theme: "azure",   topic: "comfort",      text: "There has come to you guidance from your Lord, and a healing for what is in the hearts." },
+  { faith: "Quran", ref: "Qur'an 20:25-26", theme: "calm",  topic: "courage",      text: "My Lord, open my heart for me, and make my task easy for me." },
+  { faith: "Quran", ref: "Qur'an 28:24",  theme: "sand",    topic: "comfort",      text: "My Lord, I am in need of whatever good You send me." },
+  { faith: "Quran", ref: "Qur'an 21:83",  theme: "dusk",    topic: "comfort",      text: "Harm has touched me, and You are the most merciful of the merciful." },
+  { faith: "Quran", ref: "Qur'an 23:118", theme: "night",   topic: "peace",        text: "My Lord, forgive and have mercy, for You are the best of those who show mercy." },
+  { faith: "Quran", ref: "Qur'an 16:97",  theme: "hope",    topic: "purpose",      text: "Whoever does good, whether man or woman, and is a believer — We will give them a good life." },
+  { faith: "Quran", ref: "Qur'an 29:69",  theme: "bold",    topic: "guidance",     text: "Those who strive for Us — We will surely guide them to Our paths." },
+  { faith: "Quran", ref: "Qur'an 65:7",   theme: "hope",    topic: "change",       text: "God will bring about ease after hardship." },
+  { faith: "Quran", ref: "Qur'an 92:7",   theme: "butter",  topic: "hope",         text: "We will ease his way to ease." },
+  { faith: "Quran", ref: "Qur'an 5:32",   theme: "royal",   topic: "love",         text: "Whoever saves one life, it is as if they had saved all of humanity." },
+  { faith: "Quran", ref: "Qur'an 49:13",  theme: "terra",   topic: "love",         text: "We made you into nations and tribes so that you might come to know one another." },
+  { faith: "Quran", ref: "Qur'an 30:21",  theme: "blush",   topic: "love",         text: "Among His signs is that He created for you partners from among yourselves, so you might find rest in them, and He placed between you affection and mercy." },
+  { faith: "Quran", ref: "Qur'an 17:23",  theme: "warm",    topic: "love",         text: "Be good to your parents. If one or both of them reach old age with you, never say a word of contempt to them." },
+  { faith: "Quran", ref: "Qur'an 17:24",  theme: "peach",   topic: "love",         text: "Lower to them the wing of humility out of mercy, and say: my Lord, have mercy on them as they raised me when I was small." },
+  { faith: "Quran", ref: "Qur'an 31:17",  theme: "sage",    topic: "perseverance", text: "Be patient over what befalls you. That is a matter of firm resolve." },
+  { faith: "Quran", ref: "Qur'an 41:34",  theme: "mint",    topic: "peace",        text: "Repel evil with what is better, and the one who was your enemy will become a close friend." },
+  { faith: "Quran", ref: "Qur'an 25:63",  theme: "sage",    topic: "wisdom",       text: "The servants of the Merciful are those who walk upon the earth gently, and when the ignorant speak to them, they say: peace." },
+  { faith: "Quran", ref: "Qur'an 42:43",  theme: "calm",    topic: "wisdom",       text: "Whoever is patient and forgives — that is a mark of true resolve." },
+  { faith: "Quran", ref: "Qur'an 7:56",   theme: "moss",    topic: "hope",         text: "The mercy of God is near to those who do good." },
+  { faith: "Quran", ref: "Qur'an 3:159",  theme: "warm",    topic: "wisdom",       text: "It was by the mercy of God that you were gentle with them. Had you been harsh and hard-hearted, they would have scattered from around you." },
+  { faith: "Quran", ref: "Qur'an 64:11",  theme: "slate",   topic: "faith",        text: "No misfortune strikes except by the permission of God. Whoever believes in God, He guides their heart." },
+  { faith: "Quran", ref: "Qur'an 67:2",   theme: "ink",     topic: "purpose",      text: "He created death and life to test which of you is best in deed." },
+  { faith: "Quran", ref: "Qur'an 76:8-9", theme: "harvest", topic: "love",         text: "They give food, despite loving it, to the poor, the orphan and the captive, saying: we feed you only for the sake of God. We want no reward from you, nor thanks." },
+  { faith: "Quran", ref: "Qur'an 2:45",   theme: "azure",   topic: "strength",     text: "Seek help through patience and prayer. It is hard indeed, except for the humble in heart." },
 
   // ------------------- AFFIRMATIONS · TIMELESS WISDOM -------------------
   { faith: "Wisdom", ref: "On joy",              theme: "amber",   topic: "joy",        text: "Joy is not a reward for finishing. Take some now, mid-mess, entirely unearned." },

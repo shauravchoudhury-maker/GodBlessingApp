@@ -562,3 +562,57 @@ function init() {
   });
 }
 document.addEventListener("DOMContentLoaded", init);
+
+/* ---- Platform front door ------------------------------------------ */
+// The seven faiths, as the giving picker and the rest of the site name them.
+const HOME_FAITHS = [
+  ["christian","Christianity"],["islam","Islam"],["hindu","Hinduism"],["buddhist","Buddhism"],
+  ["jewish","Judaism"],["sikh","Sikhism"],["taoist","Taoism"],["none","Wherever it is needed"],
+];
+
+/* Giving lives on the calm side only. giving.js decides the wording and the
+   split; this only draws it. If giving.js failed to load, the section says
+   nothing rather than something unchecked. */
+function initGiving() {
+  const host = document.getElementById("give-faiths");
+  if (!host || typeof disclosure !== "function") return;
+  if (!mayAskToGive("home")) return;          // it always is, but the rule is the rule
+  let faith = "none";
+  const draw = () => {
+    host.innerHTML = HOME_FAITHS.map(([k, l]) =>
+      '<button type="button" role="radio" aria-checked="' + (k === faith ? "true" : "false") + '" data-f="' + k + '">' + l + '</button>').join("");
+    host.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => { faith = b.dataset.f; draw(); });
+    document.getElementById("give-disclose").textContent = disclosure(faith, 0);
+    document.getElementById("give-paysfor").innerHTML =
+      '<li style="color:var(--ink);font-weight:600">The ' + Math.round(PLATFORM_SHARE * 100) + '% pays for:</li>' +
+      PLATFORM_SHARE_PAYS_FOR.map((x) => "<li>" + x + "</li>").join("");
+    const st = document.getElementById("give-state");
+    st.innerHTML = anyPartnerAt(faith)
+      ? '<b>Give to ' + partnersFor(faith).map((p) => p.name).join(" and ") + '</b>' +
+        '<p>Every gift is acknowledged by the charity directly. EverVerse never sees your card.</p>'
+      : '<b>Partner charities are being confirmed.</b>' +
+        '<p>We will not take a single gift until there is a signed agreement with a charity of each faith, and its name is on this page. ' +
+        'When there is, this is where the button will be — and the share we keep will be written next to it, every time.</p>';
+  };
+  draw();
+}
+
+/* The blessings this browser has asked for or opened, kept in localStorage
+   by blessing.html. No account, nothing sent to us: a person can close the
+   tab and still find their way back from here. */
+function initMine() {
+  const band = document.getElementById("mine-band"), list = document.getElementById("mine-list");
+  if (!band || !list) return;
+  let mine = [];
+  try { mine = JSON.parse(localStorage.getItem("ev-blessings") || "[]"); } catch (e) { mine = []; }
+  if (!Array.isArray(mine) || !mine.length) return;
+  mine.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+  list.innerHTML = mine.slice(0, 8).map((m) =>
+    '<a href="blessing.html?r=' + encodeURIComponent(m.id) + '">' +
+    '<span>' + (m.faith ? m.faith.charAt(0).toUpperCase() + m.faith.slice(1) : "A blessing") +
+    (m.about ? " · " + m.about : "") + '</span>' +
+    '<small>' + String(m.at || "").slice(0, 10) + (m.answered ? " · answered" : " · waiting") + '</small></a>').join("");
+  band.classList.remove("hidden");
+}
+
+document.addEventListener("DOMContentLoaded", () => { initGiving(); initMine(); });

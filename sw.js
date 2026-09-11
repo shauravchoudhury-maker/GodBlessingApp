@@ -15,7 +15,7 @@
 // installed worker could precache TEN-MINUTE-OLD files under a brand new
 // cache name — the app would look stale even after the worker updated.
 
-const CACHE = "eververse-v74";
+const CACHE = "eververse-v91";
 
 // How long a slow network gets before the cached copy is served instead.
 const NET_TIMEOUT_MS = 3000;
@@ -23,10 +23,10 @@ const SHELL = [
   "./", "./index.html", "./app.html",
   "./styles.css", "./site.css",
   "./firebase-config.js", "./reactions.js", "./tts-config.js",
-  "./verses.js", "./meanings.js", "./sermons.js", "./content.js", "./translations.js",
+  "./verses.js", "./meanings.js", "./sermons.js", "./content.js", "./campaign.js", "./world.js", "./identity.js", "./safety-lang.js", "./thread.js", "./translations.js",
   "./backgrounds.js", "./render.js", "./voice.js", "./site.js",
-  "./zip.js", "./video.js", "./audiobooks.js", "./explainer.js", "./ecards.js", "./mockups.js", "./collection.js", "./occasions.js", "./series.js", "./updater.js", "./hub.js", "./app.js",
-  "./manifest.json", "./privacy.html", "./style-gallery.html",
+  "./zip.js", "./video.js", "./audiobooks.js", "./explainer.js", "./ecards.js", "./mockups.js", "./collection.js", "./occasions.js", "./giving.js", "./guides.html", "./library.html", "./series.js", "./updater.js", "./hub.js", "./app.js",
+  "./manifest.json", "./privacy.html", "./style-gallery.html", "./blessing.html",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
 ];
 

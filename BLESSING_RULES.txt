@@ -1,0 +1,625 @@
+EverVerse — Blessing Circle Firestore rules
+===========================================
+
+Paste into the Firebase console for `eververse2117`:
+  Build → Firestore Database → Rules → Publish.
+
+Keep everything already there. Add this INSIDE the same
+`match /databases/{database}/documents { ... }` block — do not replace the
+file, or reactions, Twin Track and Second Chance all stop working.
+
+
+    // ---- Blessing Circle ----
+    // A request contains someone's private burden. It is readable ONLY by
+    // the guide it was matched to, never by the public, and never listed
+    // in bulk by anyone.
+    function isGuide() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
+        && get(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
+             .data.get('suspended', false) != true
+        && !exists(/databases/$(database)/documents/blessing/circle/banned/$(request.auth.token.email));
+    }
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/blessing/circle/admins/$(request.auth.uid));
+    }
+    function mine(res) {
+      return res.data.get('forGuide', '') == request.auth.uid || res.data.get('forGuide', '') == '';
+    }
+
+    // Standing. Derived from facts a human recorded in the console, never
+    // stored as an opinion and never writable by the guide themselves.
+    // The same four facts, in the same order, as tierOf() in the app —
+    // keep them in step if you change either.
+    //   1 listener   in the circle
+    //   2 companion  + identity confirmed + two stewards vouched
+    //   3 steward    + an affiliation confirmed + a background check
+    function gdoc(uid) {
+      return get(/databases/$(database)/documents/blessing/circle/guides/$(uid)).data;
+    }
+    function tierOfDoc(g) {
+      return g.get('suspended', false) == true ? 0
+        : (g.get('idVerifiedAt', '') != '' && g.get('vouchCount', 0) >= 2
+           && g.get('affiliationsConfirmed', 0) >= 1 && g.get('backgroundCheckAt', '') != '') ? 3
+        : (g.get('idVerifiedAt', '') != '' && g.get('vouchCount', 0) >= 2) ? 2
+        : 1;
+    }
+    function myTier() { return tierOfDoc(gdoc(request.auth.uid)); }
+
+    match /blessing/circle/requests/{id} {
+      // Anyone may ask for a blessing, without an account.
+      allow create: if
+        request.resource.data.keys().hasOnly(['tradition','category','language','note','status','replies','flagged','forGuide','createdAt'])
+        && request.resource.data.language is string
+        && request.resource.data.language.size() <= 8
+        && request.resource.data.note is string
+        && request.resource.data.note.size() > 0
+        && request.resource.data.note.size() <= 1200
+        && request.resource.data.tradition is string
+        && request.resource.data.tradition.size() <= 24
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 24
+        && request.resource.data.status == 'open'
+        // A request that tripped the crisis check may not be written at all
+        // unless it names a guide who is cleared to receive it. It can never
+        // go to the whole circle, and never to someone who joined last week.
+        // If nobody is available the app says so and points at 988, which is
+        // the honest answer rather than a worse guide.
+        && (request.resource.data.flagged != true
+            || (request.resource.data.forGuide is string
+                && request.resource.data.forGuide.size() > 0
+                && request.resource.data.forGuide.size() < 64
+                && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.resource.data.forGuide))
+                && tierOfDoc(gdoc(request.resource.data.forGuide)) >= 2));
+
+      // A guide reads the ones matched to them, and the ones the person
+      // chose to send to the whole circle. Nothing else. A query that asks
+      // for more than that is refused outright — see the note below.
+      // A single get is open to whoever holds the secret link — they wrote
+      // it, and they need the conversation's state to read it back. This is
+      // the same trade as responses. LIST is what stays locked: the
+      // collection can still never be enumerated, searched or browsed, which
+      // is the property that actually matters.
+      allow get:  if true;
+      allow list: if isGuide() && mine(resource);
+
+      // A guide may mark it answered, and nothing else.
+      allow update: if
+        (isGuide() && mine(resource)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','replies']))
+
+        // ---- Tier 2: the asker opens a conversation ----
+        // Only ever the person holding the link, never a guide. It can only
+        // point at a guide who actually replied to them, and it cannot open
+        // at all without a named steward to read alongside.
+        || (resource.data.get('threadOpen', false) == false
+            && !('threadClosedAt' in resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['threadOpen','threadGuide','threadSupervisor','threadOpenedAt','threadCount'])
+            && request.resource.data.threadOpen == true
+            && request.resource.data.threadCount == 0
+            && exists(/databases/$(database)/documents/blessing/circle/requests/$(id)/responses/$(request.resource.data.threadGuide))
+            && exists(/databases/$(database)/documents/blessing/circle/guides/$(request.resource.data.threadSupervisor)))
+
+        // ---- the turn counter advances ----
+        // ONLY by one, and ONLY once the current slot is actually filled.
+        // This is what stops a guide skipping the asker's turn: to reach
+        // their next odd slot they need the even one to exist, and an even
+        // slot cannot be written by the guide the thread belongs to.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['threadCount'])
+            && request.resource.data.threadCount == resource.data.threadCount + 1
+            && exists(/databases/$(database)/documents/blessing/circle/requests/$(id)/thread/$(string(resource.data.threadCount))))
+
+        // ---- either side ends it ----
+        // No explanation required, from anybody, ever.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['threadOpen','threadClosedAt'])
+            && request.resource.data.threadOpen == false);
+
+      allow delete: if false;
+
+      // Replies are readable by whoever holds the request's secret id —
+      // that is how the person who asked gets back to their blessing
+      // without an account and without giving us an email address.
+      //
+      // NOTE THE DOCUMENT ID. It is the guide's own uid, and update and
+      // delete are both refused. One guide therefore gets exactly ONE
+      // message to any given person, ever. This is the most important
+      // line in the file: every grooming pattern worth the name needs a
+      // second message, and there is no second message.
+      match /responses/{rid} {
+        allow read: if true;
+        allow create: if isGuide()
+          && rid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['verseRef','verseText','reflection','guideName','guideUid','createdAt'])
+          && request.resource.data.reflection is string
+          && request.resource.data.reflection.size() <= 900
+          && request.resource.data.guideName is string
+          && request.resource.data.guideName.size() <= 60
+          && request.resource.data.guideUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      // ---- Tier 2: the conversation ----
+      // The document id IS the turn number and must equal the request's
+      // current threadCount. Creates cannot overwrite, so no slot is ever
+      // claimed twice. Even turns belong to the person who asked, odd turns
+      // to the one guide the thread belongs to — which means a guide can
+      // only ever speak when the asker has just spoken. A guide who is
+      // ignored cannot write again. That is not a policy; it is arithmetic.
+      match /thread/{turn} {
+        // Same trade as responses: whoever holds the secret link can read.
+        allow read: if true;
+
+        allow create: if
+          resource == null
+          && get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadOpen', false) == true
+          && get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadCount', 0) < 12
+          && turn == string(get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount)
+          && request.resource.data.keys().hasOnly(['from','text','guideUid','turn','createdAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 900
+          && request.resource.data.turn == get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount
+          && (
+              // EVEN turn — the person who asked. No account, no auth. The
+              // one thing refused is the thread's own guide writing as them.
+              (get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount % 2 == 0
+                && request.resource.data.from == 'asker'
+                && (request.auth == null
+                    || request.auth.uid != get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadGuide', '')))
+
+              // ODD turn — only the guide this thread belongs to.
+              || (get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.threadCount % 2 == 1
+                && request.resource.data.from == 'guide'
+                && isGuide()
+                && request.auth.uid == get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('threadGuide', '')
+                && request.resource.data.guideUid == request.auth.uid)
+             );
+
+        // Nothing written in a conversation is ever edited or removed,
+        // by anyone, including us.
+        allow update, delete: if false;
+      }
+    }
+
+    // The approved-guide list, which doubles as the guide directory the
+    // matcher reads. Profiles are meant to be seen, so they are public —
+    // but APPROVAL itself can only be granted from the Firebase console.
+    match /blessing/circle/guides/{uid} {
+      allow read: if true;
+
+      // An approved guide may edit their own profile, and nothing else.
+      // They cannot approve themselves, because create is refused
+      // outright: the document has to already exist, and only the console
+      // can make it.
+      allow create: if false;
+      allow update: if
+        // a guide edits their own profile — and cannot touch `suspended`
+        (request.auth != null && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['name','tradition','languages','experience','about','capacity','active','updatedAt'])
+          && request.resource.data.about is string
+          && request.resource.data.about.size() <= 400
+          && request.resource.data.name.size() <= 60)
+        // or an admin records a standing fact, and can do nothing else here.
+        // Note what is NOT in the guide's own list above: every one of these.
+        // A guide cannot verify themselves, vouch for themselves, or claim an
+        // affiliation — those are the only inputs to standing, on purpose.
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['suspended','active','suspendedAt','approvedAt',
+                        'idVerifiedAt','idVerificationId','vouchCount','affiliations',
+                        'affiliationsConfirmed','backgroundCheckAt','supervisor']));
+      allow delete: if false;
+
+      // A steward puts their own name behind a newcomer. The document id is
+      // the voucher's uid, and there is no update and no delete — a vouch
+      // cannot be quietly withdrawn once the person is in. If that guide is
+      // later suspended for cause, the record of who let them in is still
+      // here. That is the whole point: vouching has to cost something.
+      match /vouches/{voucher} {
+        allow read: if isAdmin();
+        allow create: if isGuide()
+          && voucher == request.auth.uid
+          && voucher != uid
+          && myTier() >= 3
+          && request.resource.data.keys().hasOnly(['note','createdAt'])
+          && request.resource.data.note is string
+          && request.resource.data.note.size() <= 500;
+        allow update, delete: if false;
+      }
+    }
+
+    // Anyone barred from the circle, keyed by their sign-in email in
+    // lower case. Console-only, like every other trust decision here.
+    match /blessing/circle/banned/{email} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Reports. Anyone who received a blessing may file one, without an
+    // account — the person who most needs to report is the least likely
+    // to have signed up for anything. Guides file them too, against
+    // requests: `kind` says which way round it is.
+    match /blessing/circle/reports/{id} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['requestId','responseId','guideUid','kind','reason','note','status','createdAt'])
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 16
+        && request.resource.data.kind in ['reply','request']
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 500
+        && request.resource.data.status == 'open';
+      allow read: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','closedAt']);
+      allow delete: if false;
+    }
+
+    // Admins. Console-created, exactly like guides.
+    match /blessing/circle/admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Applications. Anyone may send one; only an admin may read them, and
+    // nobody may edit or delete one — including the person who wrote it.
+    // The application now carries everything the profile does, so a guide
+    // answers the questions once rather than twice, and the person deciding
+    // has something real to decide on.
+    match /blessing/circle/applications/{id} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['name','email','religions','experience',
+                                              'languages','role','why','createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 120
+        && request.resource.data.why is string
+        && request.resource.data.why.size() <= 900
+        && request.resource.data.religions is list
+        && request.resource.data.religions.size() >= 1
+        && request.resource.data.religions.size() <= 8
+        && request.resource.data.experience is list
+        && request.resource.data.experience.size() <= 18
+        && request.resource.data.languages is list
+        && request.resource.data.languages.size() <= 20;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+
+Why the queue query looks the way it does
+-----------------------------------------
+Firestore checks `allow list` against every document a query returns. If a
+single one fails, the whole query fails — it does not quietly drop rows. So
+`allow list: if isGuide() && mine(resource)` does not merely hide other
+people's requests: it makes the broad query impossible. The client must ask
+
+    where("forGuide", "in", [me.uid, ""])
+
+or get nothing at all. A guide with the developer console open cannot widen
+it, because widening it is exactly what the rule refuses.
+
+This closes the hole flagged in the first version of this file, which said a
+guide could read every open request the moment they were approved. They no
+longer can. Approval is still a real trust decision — but it is no longer a
+key to everybody's private life.
+
+
+How to approve a guide
+----------------------
+1. Sign in at /blessing.html as an admin and open "applications". Every
+   application is there, with the exact guide document ready to copy.
+2. If they named an organisation, RING THE ORGANISATION. Do not confirm an
+   affiliation on the applicant's word — it appears to a frightened person
+   as "confirmed with St Mary's Hospice", and that is your promise, not
+   theirs.
+3. Ask them to sign in once at /blessing.html → "For guides" → Sign in with
+   Google, using the same email they applied with. They will see "this
+   account is not on the approved-guide list yet" — that is expected, and
+   it registers their account.
+4. Find their UID in Firebase console → Authentication → Users.
+5. Create `blessing/circle/guides/<that UID>` and paste the document you
+   copied in step 1.
+6. They reload and the queue appears, with their faith, languages and lived
+   experience already filled in from the application.
+
+Steps 4 and 5 are deliberately still console work. Nothing in the app can
+grant anyone access; the applications screen only saves you the retyping.
+
+Note the asymmetry: a guide can edit their profile but can never CREATE the
+document, so approval is impossible from inside the app. Only the console
+grants it. There is no way to do step 4 from inside the app, on purpose.
+
+Working outside the United States
+---------------------------------
+The Circle was written US-first without anyone deciding to. Every crisis
+panel hard-coded 988, 911 and a Los Angeles teen line, and every request was
+tagged language "en" whatever the person actually wrote. Someone in Delhi in
+real trouble was handed a number that does not connect; a woman writing in
+Urdu was matched as though she needed English.
+
+world.js now picks a helpline from the browser's own timezone. No location
+prompt, no IP lookup, nothing stored or sent. 33 countries have a local line,
+another 36 have at least a verified-by-nobody emergency number, and every
+country on earth gets findahelpline.com.
+
+  THE NUMBERS ARE NOT VERIFIED. They were compiled from a model's training
+  data. Helpline numbers change and services close, and a wrong number given
+  to someone in crisis is worse than no number. Every row in CRISIS carries
+  a `checked` field, every one of them is null, and a person must confirm
+  each against the provider's own site before this ships outside the US.
+
+  That is also why findahelpline.com appears ALONGSIDE the local line every
+  single time rather than as a fallback. If our number is stale, the person
+  still has a working route in the same breath. Do not "tidy" that away.
+
+Requests now carry `language`, which the rules accept and cap at 8
+characters. This matters more than it looks: scoreGuide() refuses a guide
+who cannot write the requester's language, so with the field hard-coded to
+"en" every non-English speaker was silently matched as an English speaker.
+
+Right-to-left is handled by dir="auto" on the request box, the reply box and
+the blessing as it is read back, plus an explicit dir="rtl" when the chosen
+language is Arabic, Urdu, Persian or Hebrew. The guide's queue shows an
+"answer in ..." chip whenever the request is not in English.
+
+Crisis and under-18 detection now run in all 24 offered languages
+(safety-lang.js). Fourteen are "full" — crisis phrases and first-person age
+patterns: en, es, pt, fr, de, it, id, tl, ru, pl, hi, ur, ar, bn. Ten are
+"basic" — the unambiguous words for suicide plus one age pattern: fa, he,
+vi, ko, zh-CN, ta, te, pa, gu, sw.
+
+  NO LANGUAGE HAS BEEN READ BY A NATIVE SPEAKER. A model wrote them and a
+  missed crisis phrase is the most expensive bug in this codebase. Each
+  language carries a `checked` field naming its reviewer; every one is null.
+  Do not promote the Circle in a language until a native speaker has read
+  that language's list.
+
+Two properties worth preserving if anyone edits them:
+
+  Crisis patterns are PRECISE, not merely sensitive. A flagged request can
+  only go to a companion or steward, and if none is free it is refused. So a
+  false positive does not waste a panel — it turns someone away. General
+  distress ("no aguanto mas", "je n'en peux plus") is deliberately absent.
+
+  Minor patterns are FIRST PERSON. "mi hija tiene 14 anos" is a mother
+  asking for help and must pass; "tengo 14 anos" must not. Indonesian needed
+  an explicit exclusion because it marks possession after the noun, so "anak
+  saya 15 tahun" contains "saya 15 tahun" word for word.
+
+English always runs alongside the chosen language, and script detection adds
+a third opinion: Devanagari in the text checks Hindi whatever the picker
+says, because people choose English and then write in their own tongue.
+
+STILL ENGLISH-ONLY: the interface itself. A Spanish speaker picks Spanish,
+writes in Spanish and is answered in Spanish, but the labels around them
+stay English.
+
+
+The seven faiths
+----------------
+The taxonomy is by RELIGION, not by book. It used to be by book, which meant
+Buddhism appeared twice (Dhammapada and Tripitaka) and Islam did not appear
+at all — a Muslim looking for their own tradition could not find it, and a
+Muslim guide had nothing to reply with.
+
+  christian  Christianity   the Bible
+  islam      Islam          the Qur'an
+  hindu      Hinduism       the Bhagavad Gita
+  buddhist   Buddhism       the Dhammapada and the suttas   (two texts)
+  jewish     Judaism        the Torah
+  sikh       Sikhism        the Guru Granth Sahib
+  taoist     Taoism         the Tao Te Ching
+  none       No tradition   timeless wisdom
+
+A request stores one of these keys in `tradition`; a guide stores a list of
+them. The verse pool a guide replies from is every text of that religion, so
+a Buddhist guide sees both books.
+
+
+Tier 2 — conversations, and why they are safe
+---------------------------------------------
+One reply per guide, immutable, was the strongest property in this system.
+Every grooming pattern worth the name needs a second message, and there was
+no second message. Tier 2 hands that back, so it is not "the one-reply rule
+relaxed" — it is a different structure with four properties, none of which
+anyone has to remember:
+
+1. THE ASKER OPENS THE DOOR. The button to continue exists only on the page
+   the person who asked holds the link to. There is no equivalent anywhere
+   in the guide's interface. "Let me check in on you" is the move, and it is
+   unavailable.
+
+2. STRICT ALTERNATION, ASKER FIRST. The message document id IS the turn
+   number and must equal the request's threadCount. Creates cannot
+   overwrite, so no slot is ever claimed twice. Even turns belong to the
+   asker, odd turns to the one guide. A guide can only speak when the asker
+   has just spoken; a guide who is ignored cannot write again.
+
+   The counter is what makes this hold against a guide with the console
+   open. It may only advance by one, and only when the current slot is
+   already filled — so to reach their next odd turn a guide needs the even
+   one to exist, and an even turn cannot be written by the thread's own
+   guide. Failing to advance the counter BLOCKS the thread rather than
+   opening it, which is the right way round for a bug to fail.
+
+3. A STEWARD IS IN THE ROOM. threadSupervisor must name an existing guide
+   before a thread can open, and both sides are told in plain words.
+   Supervision nobody knows about is surveillance. If no steward is free,
+   conversations are simply off.
+
+4. IT ENDS. Twelve turns, six each, thirty days. Either side closes it
+   instantly with no explanation, and the guide is told only that it ended.
+
+Every message is held to the same moderation as the first blessing —
+contact details, money, meeting, medical advice, all refused — and the
+under-18 check runs on the asker's messages too.
+
+RESIDUAL RISK, stated plainly: a guide who signs out could write an even
+turn posing as the asker, because even turns need no account. The rule
+refuses it while they are signed in as the thread's guide, and the forged
+message is visible to both the asker and the steward, so it is detectable
+rather than silent. Closing it completely would mean giving the asker an
+account, which is the one thing this design refuses.
+
+Note also that `allow get` on a request is now open to whoever holds the
+link — they wrote it, and they need the conversation's state. `allow list`
+stays locked to guides, which is the property that actually matters: the
+collection can never be enumerated, searched or browsed.
+
+
+Standing — what a guide is cleared to do
+---------------------------------------
+Not a rating. A ladder of capability, derived from facts you record in the
+console. A guide climbing it is not "better"; they are cleared to carry
+more. A person asking for help never sees which rung anyone is on.
+
+  LISTENER    the guide document exists. Can send one blessing.
+  COMPANION   + 'idVerifiedAt' set, and 'vouchCount' >= 2.
+              Can also be routed a request that tripped the crisis check,
+              and can hold a conversation rather than a single reply.
+  STEWARD     + 'affiliationsConfirmed' >= 1, and 'backgroundCheckAt' set.
+              Can vouch for a newcomer and supervise a companion.
+
+To promote someone, record the fact — not the tier:
+
+  idVerifiedAt          "2026-09-20"   you saw their ID on a video call
+  vouchCount            2              two stewards vouched (see the
+                                       vouches subcollection for who)
+  affiliations          [{ org: "St Mary's Hospice",
+                           role: "Chaplaincy volunteer",
+                           confirmedAt: "2026-09-22" }]
+  affiliationsConfirmed 1              how many of the above YOU confirmed
+                                       with the institution directly
+  backgroundCheckAt     "2026-09-25"
+
+The tier follows automatically, in the app and in these rules, from the
+same four facts. There is no tier field to set and no way to grant standing
+without doing the underlying work.
+
+CONFIRM AFFILIATIONS WITH THE INSTITUTION, NOT THE PERSON. An affiliation
+only appears to a requester once 'confirmedAt' is set, and it appears as
+"confirmed with St Mary's Hospice" — which is a promise you are making on
+their behalf. Ring the hospice.
+
+'vouchCount' is maintained by hand today: a steward writes a vouch document
+from inside the app, you read it, and you set the number. That is the one
+place a Cloud Function would earn its keep later. Until then it is a human
+step, which is consistent with everything else here.
+
+
+How to bar someone
+------------------
+Suspending (`suspended: true` on their guide doc) stops them immediately.
+It does not stop them signing up again with a second Google account — and
+nothing here can, short of asking everyone for government ID. What it does
+stop is the same person walking back in on the same email: create
+`blessing/circle/banned/<their email, lower case>` with any contents, and
+isGuide() refuses them at every rule. Do both.
+
+
+What this protects, and what it does not
+----------------------------------------
+PROTECTED
+  · Nobody without an approved guide account reads a single request.
+  · An approved guide reads only what was matched to them, or offered to
+    the whole circle. The collection cannot be enumerated by anyone.
+  · One guide gets one message to one person. There is no second message,
+    no editing the first, and no deleting it afterwards.
+  · Requests can never be deleted or edited after the fact, so what was
+    actually said is still there when someone comes to look.
+  · A suspended guide loses access on their very next request, not at some
+    later cleanup, because isGuide() reads the flag every time.
+  · A request that tripped the crisis check cannot be written to the
+    database at all unless it names a guide cleared to receive it. Not a
+    routing preference — the write itself is refused.
+  · A guide cannot verify themselves, vouch for themselves, or claim an
+    affiliation. Those are the only inputs to standing.
+
+NOT PROTECTED, by design
+  · Anyone holding a request's link can read the replies to it. That is the
+    trade for not collecting email addresses — the secret link IS the
+    credential, exactly as it is for a password-reset URL. The person is
+    told plainly to keep it.
+
+STILL A HUMAN JOB
+  · Someone barred can return under a fresh Google account with a fresh
+    email. Watch the reports queue.
+  · Age is inferred from what people write, never verified. It cannot be.
+
+
+Moderation and guard rails
+--------------------------
+1. PREVENT, on the way out. Before a reply can be sent it is checked
+   against contact details, links, requests for money, and anything telling
+   a person to stop medical treatment — refused outright, not judgement
+   calls. Then against the ways people hand over a contact WITHOUT typing
+   one: "j o h n dot smith at gmail dot com", "(at)", zero-width
+   characters, Cyrillic lookalikes, spaced-out phone numbers, "look me up,
+   same name on instagram", "let's talk privately", "our little secret",
+   "you're special to me", "send me a photo". Softer language ("cure",
+   "you deserve this", "I guarantee") warns once and sends on a second
+   press, and the warning re-arms on any edit.
+
+   Fifty-one cases are tested, including the ones that must NOT fire:
+   "Come to me, all you who are weary" (Matthew 11:28), "keep talking to
+   your doctor", "this is not your fault", "I am 16 years sober".
+
+2. PREVENT, on the way in. A request is checked for a third party's
+   address or contact details, links, and threats before it is accepted.
+
+3. NOT AT ALL, for children. If a request reads as coming from someone
+   under 18 — "i'm 15", "i'm in 8th grade", "my mom won't let me" — it is
+   not posted. The person is shown Teen Line and 988 instead. There is no
+   "I'm really an adult" override, deliberately: an override is a checkbox,
+   and a checkbox is what we already know does not work. Matching is
+   first-person only, so "my daughter is 14" is a parent asking for help
+   and goes through untouched.
+
+4. VOLUME. Twelve blessings per guide per day, held on the device. A
+   guide with developer tools can lift it; the optional block below makes
+   it server-side if the circle ever grows enough to need it.
+
+5. NO CREDENTIALS IN THE SIGNATURE. "Dr.", "Pastor", "Therapist", "LCSW"
+   and the rest are refused in the name a guide signs with, because to
+   someone frightened they read as verified, and we verify nothing. They
+   are welcome to say what they do in their description.
+
+6. REPORT, both ways. One tap under any received blessing, seven reasons,
+   no account. And a guide can report a request — for abuse, for something
+   aimed at a named third party, or for somebody working the queue looking
+   for a mark.
+
+7. ACT. `blessing/circle/reports` is readable ONLY by an admin.
+
+To make yourself an admin, create `blessing/circle/admins/<your UID>` in
+the console. Same as guides: there is no way to do it from inside the app.
+
+
+OPTIONAL — a server-enforced daily cap
+--------------------------------------
+Only add this once the circle is big enough to need it, and test it with
+one guide before relying on it: if it is wrong, nobody can reply at all.
+
+Add to the guides match, as a third alternative in `allow update`:
+
+        || (request.auth != null && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['d','n'])
+            && request.resource.data.d == int(request.time.toMillis() / 86400000)
+            && ((resource.data.get('d', 0) == request.resource.data.d
+                 && request.resource.data.n == resource.data.get('n', 0) + 1)
+                || (resource.data.get('d', 0) != request.resource.data.d
+                    && request.resource.data.n == 1)))
+
+and to the responses `allow create`, one more condition:
+
+          && get(/databases/$(database)/documents/blessing/circle/guides/$(request.auth.uid))
+               .data.get('n', 0) <= 12
+
+The counter can only be incremented by one, can only carry today's day
+number, and resets only when the day itself changes — so a guide cannot
+zero it to keep going. The client must bump `d`/`n` on the guide document
+immediately before writing the reply.

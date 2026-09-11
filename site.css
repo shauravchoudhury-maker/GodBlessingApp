@@ -223,3 +223,66 @@ body.browser-mode nav.sections button[data-go="wallpapers"] { display: none; }
 
 .reminder-row { margin: 4px 0 16px; }
 .reminder-row .btn { width: 100%; }
+
+/* ================================================================ */
+/*  Platform front door                                             */
+/* ================================================================ */
+.hero h1{line-height:1.12}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.btn-hero{display:inline-block;background:#fff;color:var(--accent);border:0;border-radius:12px;padding:14px 24px;
+  font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;font-family:inherit}
+.btn-hero.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.5)}
+.btn-hero:hover{transform:translateY(-1px)}
+
+/* the human promise */
+.band.human{background:#fff}
+.human-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:28px;align-items:start}
+.human-grid p{font-size:16px;line-height:1.65;margin:8px 0}
+.human-grid .muted{color:var(--muted);font-size:14.5px}
+.human-facts{display:grid;gap:10px}
+.human-facts div{background:#f8f6ff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:baseline}
+.human-facts b{font-size:30px;font-weight:800;color:var(--accent);line-height:1;min-width:30px}
+.human-facts span{font-size:14px;color:#41506b;line-height:1.4}
+
+/* how it works */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.stepc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative}
+.stepc .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:13px;margin-bottom:8px}
+.stepc b{display:block;font-size:15.5px;margin-bottom:4px}
+.stepc p{margin:0;font-size:14px;color:#41506b;line-height:1.55}
+
+/* your blessings */
+.mine{display:grid;gap:8px}
+.mine a{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);
+  border-radius:12px;padding:12px 16px;text-decoration:none;color:var(--ink);font-size:14.5px}
+.mine a:hover{border-color:var(--accent)}
+.mine a small{color:var(--muted);white-space:nowrap}
+
+/* the guard rails */
+.promises{margin:8px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:6px 22px}
+.promises li{font-size:14.5px;color:#41506b;padding:8px 0 8px 24px;position:relative;border-top:1px solid var(--line)}
+.promises li:before{content:"—";position:absolute;left:4px;color:var(--accent);font-weight:700}
+
+/* giving */
+.band.give{background:#fff}
+.give-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:26px;align-items:start;margin-top:6px}
+.give-faiths{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.give-faiths button{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+.give-faiths button[aria-checked="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.disclose{font-size:14px;color:#41506b;background:#f8f6ff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;line-height:1.55;margin:0 0 12px}
+.paysfor{margin:0;padding-left:0;list-style:none}
+.paysfor li{font-size:13.5px;color:var(--muted);padding:4px 0 4px 18px;position:relative}
+.paysfor li:before{content:"·";position:absolute;left:4px;color:var(--accent);font-weight:800}
+.give-side{background:#f8f6ff;border:1px solid var(--line);border-radius:14px;padding:18px}
+.give-side b{display:block;font-size:15.5px;margin-bottom:6px}
+.give-side p{margin:0;font-size:14px;color:#41506b;line-height:1.55}
+
+@media (max-width:720px){
+  .human-grid,.give-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  .promises{grid-template-columns:1fr}
+  /* The header's backdrop-filter made it the containing block for the
+     fixed bottom nav, which pinned the nav over the logo instead of to
+     the bottom of the screen. Live on every phone until now. */
+  header.site{backdrop-filter:none;-webkit-backdrop-filter:none;background:#fbfaff}
+}

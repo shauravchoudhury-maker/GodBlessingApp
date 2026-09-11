@@ -133,16 +133,22 @@ function captionFor(verse, platform) {
   const track = trackFor(verse);
   const v = `"${verse.text}"`;
   const ref = `— ${verse.ref}`;
+  // One quiet campaign line, rotating by day, and never on a post about
+  // grief or peace — a verse someone opens while hurting is not a funnel.
+  const cta = (typeof dailyCTA === "function")
+    ? dailyCTA(verse, campaignPhase(), Math.floor(Date.now() / 864e5), "eververse.org/blessing.html")
+    : "";
+  const c = cta ? `\n\n${cta}` : "";
 
   switch (platform.key) {
     case "instagram":
-      return `${v}\n${ref}\n\n${reflection}\n\n✨ Save this and share it with someone who needs it today.\n🎵 Suggested sound: ${track.idea}\n\n${tags}`;
+      return `${v}\n${ref}\n\n${reflection}\n\n✨ Save this and share it with someone who needs it today.${c}\n🎵 Suggested sound: ${track.idea}\n\n${tags}`;
     case "tiktok":
-      return `${reflection} 🙏\n${v} ${ref}\n\n🎵 Add: ${track.idea}\n${tags}`;
+      return `${reflection} 🙏\n${v} ${ref}${c}\n\n🎵 Add: ${track.idea}\n${tags}`;
     case "facebook":
-      return `${v}\n${ref}\n\n${reflection}\n\nMay this bless your day. 🙏 If it spoke to you, share it forward.\n\n${tags}`;
+      return `${v}\n${ref}\n\n${reflection}\n\nMay this bless your day. 🙏 If it spoke to you, share it forward.${c}\n\n${tags}`;
     case "youtube":
-      return `${verse.ref} | Daily Blessing #shorts\n\n${v}\n${ref}\n\n${reflection}\n\n🎵 Suggested track: ${track.idea}\n\n${tags}`;
+      return `${verse.ref} | Daily Blessing #shorts\n\n${v}\n${ref}\n\n${reflection}${c}\n\n🎵 Suggested track: ${track.idea}\n\n${tags}`;
     case "x":
       // Keep it tight for the character limit.
       return `${v} ${ref}\n\n${reflection}\n${tags}`;
