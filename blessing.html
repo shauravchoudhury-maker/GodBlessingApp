@@ -251,7 +251,8 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
         <li>Use AI to write or suggest a blessing. Every word comes from the person who signed it.</li>
       </ul>
       <p style="font-size:13.5px;margin:12px 0 0">You need no account, we never ask for your email, and nothing will follow you afterwards.
-        If a guide does any of the above, there is a <b>Report this</b> button under every blessing and a person reads it.</p>
+        If a guide does any of the above, there is a <b>Report this</b> button under every blessing and a person reads it.
+        <a href="trust.html">How we check the people who write to you →</a></p>
     </div>
   </section>
 
@@ -1170,7 +1171,9 @@ function guideTrust(g, tierKey){
          : '<span class="tv none">nothing beyond a sign-in</span>') + '</div>';
   h += '<div class="tline"><span class="tk">Not checked</span>' +
        gaps.map((c) => '<span class="tv no" title="' + esc(c.why) + '">' + esc(c.text) + '</span>').join("") +
-       '</div></div>';
+       '</div>' +
+       '<a href="trust.html" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--muted)">What these mean →</a>' +
+       '</div>';
   return h;
 }
 
