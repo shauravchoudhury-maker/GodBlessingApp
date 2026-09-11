@@ -535,6 +535,21 @@ $("send").onclick = async () => {
   }
   const rq = checkRequest(note);
   if (!rq.ok) { $("sendmsg").textContent = rq.msg; return; }
+  const qq = checkQuality(note);
+  if (!qq.ok) { $("sendmsg").textContent = qq.msg; return; }
+
+  // Sent the same words a moment ago? Hand back the link they already have
+  // rather than putting a duplicate in front of a guide — a double-tap on a
+  // slow connection is the common case, not spam.
+  const dup = sameAsLastSent(note);
+  if (dup) {
+    const url = location.origin + location.pathname + "?r=" + dup;
+    $("link").textContent = url; $("ok").classList.add("on");
+    $("sendmsg").textContent = "You sent these exact words a few minutes ago — here is that link again.";
+    $("copylink").onclick = () => navigator.clipboard?.writeText(url)
+      .then(() => { $("copied").textContent = "copied ✓"; setTimeout(()=>$("copied").textContent="",1500); }).catch(()=>{});
+    return;
+  }
 
   // A crisis request must be assigned to a named companion or steward
   // before it can be written at all. If the person never pressed "find
@@ -561,6 +576,7 @@ $("send").onclick = async () => {
       flagged, createdAt: new Date().toISOString(),
     });
     const url = location.origin + location.pathname + "?r=" + ref.id;
+    rememberLastSent(note, ref.id);
     rememberMine(ref.id, { faith: chosenReligion,
       about: (CATEGORIES.find((c) => c[0] === chosenCat) || [])[1] || "", answered: false });
     $("link").textContent = url;
@@ -577,6 +593,21 @@ $("send").onclick = async () => {
 
 /* ---- read a reply ---- */
 let lastGuideUid = null;
+
+/* A cheap fingerprint of the last request sent from this device, kept for
+   fifteen minutes. Not a security measure — a courtesy against double-taps
+   and refreshes, so a guide is not handed the same words twice. */
+function textKey(t){ var h = 5381, s = String(t || "").trim().toLowerCase(); for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h); }
+function rememberLastSent(text, id){
+  try { localStorage.setItem("ev-last-sent", JSON.stringify({ k: textKey(text), id: id, at: Date.now() })); } catch (e) {}
+}
+function sameAsLastSent(text){
+  try {
+    var v = JSON.parse(localStorage.getItem("ev-last-sent") || "null");
+    if (v && v.k === textKey(text) && Date.now() - v.at < 15 * 60 * 1000) return v.id;
+  } catch (e) {}
+  return null;
+}
 
 /* The blessings this browser has asked for or opened. Device-only, so a
    person can close the tab and still find their way back from the front
@@ -1049,6 +1080,8 @@ function renderReply(id, tradition){
     }
     const refl = $("refl").value.trim();
     if (refl.length < 10) { $("repmsg").textContent = "A sentence or two of your own, please."; return; }
+    const rqq = checkQuality(refl);
+    if (!rqq.ok) { $("repmsg").textContent = "That does not read as words yet — the person on the other end will read every one."; return; }
     const verdict = checkReplyStrict(refl);
     if (!verdict.ok) {
       $("repmsg").textContent = "";
@@ -1691,7 +1724,56 @@ var REQUEST_BLOCK = [
   { re: /\b(?:i(?:'| a)?m going to|i will|i'?ll)\s+(?:kill|hurt|find|destroy|ruin)\s+(?:him|her|them|you)\b/i,
     msg: "We cannot pass on a message that threatens someone. If you are in danger, or someone else is, " +
          "please call your local emergency number." },
+  // Data a person in distress types without thinking, and which then sits in
+  // a database it never needed to be in. A guide cannot call you, cannot pay
+  // you, and does not need to know your account number.
+  // Most specific first, so the message names what it actually saw. A bare
+  // run of 10–11 digits is left for the phone rule; 9 or 12+ reads as an ID.
+  { re: /\b(?:\d[ -]?){13,19}\b/,
+    msg: "That looks like a card number. Please take it out — nobody here will ever ask you to pay anything." },
+  { re: /\b\d{9}\b|\b\d{12,}\b|\b\d{3}-\d{2}-\d{4}\b|\b\d{4}\s\d{4}\s\d{4}\b/,
+    msg: "That looks like an ID or account number. Please leave it out — a guide never needs one." },
+  { re: /(?:^|\D)(\+?\d[\d\s().-]{8,}\d)(?:\D|$)/,
+    msg: "Please leave out phone numbers — yours or anyone's. A guide cannot call you, and does not need it." },
 ];
+
+/* ---- Is it words at all? ---------------------------------------------
+   Real guides read every request, and a queue of "asdf" and "test" spends
+   the one thing that cannot be bought back. But the person writing may be
+   in distress, may be writing transliterated Hindi, may have two years of
+   English — so every rule here is conservative and script-aware, and the
+   messages are kind. Nothing below fires on ordinary bad spelling. */
+// Repeated test words with digits or punctuation around them: "testing 123",
+// "test test", "hello hello". Anything with a real word after it passes.
+var TEST_WORDS = /^(?:(?:test|testing|tests|hello|hi|hey|hiya|ok|okay|yes|no|asdf|qwerty|abc|blah|lol|hmm|umm)[\s.!?,\d]*)+$/i;
+function looksLikeGibberish(text){
+  var t = String(text || "").trim();
+  if (!t) return null;
+  // scripts that do not put spaces between words get no space-based rules
+  var noSpaceScript = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0e00-\u0e7f]/.test(t);
+  var letters = t.replace(/[^\p{L}]/gu, "");
+  if (!/\p{L}/u.test(t)) return "noletters";                          // only punctuation and digits — first, so "...." gets the right message
+  if (TEST_WORDS.test(t)) return "test";
+  if (/(?:asdf|qwer|zxcv|hjkl|uiop|fghj|sdfg|dfgh|cvbn|vbnm|qwerty|asdfgh|zxcvbn)/i.test(t)) return "keyboard";
+  if (/(\p{L}|\d)\1{7,}/u.test(t)) return "repeat";                 // "aaaaaaaa" — "soooooo" (6) passes
+  if (letters.length >= 20 && new Set(letters.toLowerCase()).size <= 3) return "lowdiversity";
+  if (!noSpaceScript && t.length >= 40 && !/\s/.test(t)) return "nospaces";
+  if (/^[\u0000-\u024F\s\d\p{P}]+$/u.test(t) && letters.length >= 15 && !/[aeiouy]/i.test(letters)) return "novowels";
+  return null;
+}
+var GIBBERISH_MSG = {
+  test:         "If you were checking that it works — it does. When you are ready, write what you are carrying, and a person will read it.",
+  keyboard:     "That does not look like words yet. Take your time — a sentence or two, in any language, is enough.",
+  repeat:       "That does not look like words yet. Take your time — a sentence or two, in any language, is enough.",
+  noletters:    "A few words, please, so a guide knows what to hold. Any language is fine.",
+  lowdiversity: "That does not look like words yet. Take your time — a sentence or two, in any language, is enough.",
+  nospaces:     "That reads as one long word. Could you add a few spaces? Any language is fine.",
+  novowels:     "That does not look like words yet. Take your time — a sentence or two, in any language, is enough.",
+};
+function checkQuality(text){
+  var g = looksLikeGibberish(text);
+  return g ? { ok: false, msg: GIBBERISH_MSG[g], why: g } : { ok: true, msg: "", why: "" };
+}
 function checkRequest(text){
   var raw = String(text || ""), norm = normaliseForCheck(raw);
   for (var i = 0; i < REQUEST_BLOCK.length; i++) {
