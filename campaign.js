@@ -138,6 +138,16 @@ const RECRUIT_ANGLES = [
   { key: "hard",
     hook: () => "We turn down more applications than we accept, and we check the ones we keep.",
     ask:  () => "If that sounds like the kind of place you would want answering your own mother — apply." },
+  // Not every request is a hard one, and the campaign should not read as
+  // though it were. Half the door is for good news — a birth, a wedding,
+  // a scan that came back clear — and a celebration is the gentlest first
+  // request a new guide could answer.
+  { key: "joy",
+    hook: () => "Somebody wrote to us this morning because their daughter was born on Tuesday, and they wanted a verse for her.",
+    ask:  (r) => "Not every request is a heavy one. If you read " + r.book + " and would like to bless a birth, a wedding, a new start — the Circle needs you for those too." },
+  { key: "first",
+    hook: () => "Your first request as a guide does not have to be someone's darkest night.",
+    ask:  () => "It can be a couple getting married in June. You get to choose what you carry, and celebrations are always in the queue." },
 ];
 
 function recruitPost(religion, angleKey, url) {
@@ -171,6 +181,8 @@ const TRUST_POSTS = [
     body: "A guide cannot sign as \"Dr.\" or \"Therapist\", even if they are one.\n\nTo somebody frightened, a title reads as a credential we have checked. We check affiliations by ringing the organisation — and only what we have confirmed is ever shown." },
   { key: "young",
     body: "If a request reads as coming from someone under 18, we do not pass it on.\n\nThey get Teen Line and 988 instead. There is no \"I'm really an adult\" override, because an override is a checkbox, and we already know checkboxes do not work.\n\nIt costs us users. It is not negotiable." },
+  { key: "joy",
+    body: "The Circle is not only for hard days.\n\nHalf the door is for good news — a baby, a wedding, a scan that came back clear, a brother spoken to for the first time in years. You can ask for a blessing on those too, and a guide from your own tradition will write one.\n\nJoy is worth a verse as much as grief is." },
   { key: "crisis",
     body: "If what you write suggests you are in real danger, your request does not go to whoever is free.\n\nIt goes to a guide we have identity-checked, vouched and background-checked — or, if none is available, we tell you so and point you at 988.\n\nA volunteer is not what that moment needs, and we would rather say it than pretend." },
 ];
@@ -194,6 +206,7 @@ const CTA_RECRUIT = [
 ];
 const CTA_OPEN = [
   "Carrying something today? You can ask for a verse of your own — free, anonymous, answered by a person.",
+  "Something to celebrate? A birth, a wedding, good news — you can ask for a blessing on that too.",
   "Anyone can ask the Blessing Circle for a verse. No account, no charge, no email needed.",
   "If today is heavy, someone will read what you write and send you something back.",
 ];

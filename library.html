@@ -207,7 +207,12 @@
     /* ---- Greeting cards ---- */
     const db = (typeof VERSE_DB !== "undefined") ? VERSE_DB : [];
     const styles = ["classic","postcard","framed","minimal","bold","vintage"];
-    let occ = "encouragement", cardFaith = "all", picked = null, styleIx = 0;
+    // A celebration blessing links here with its verse and occasion, so the
+    // card is already the right one when the page opens.
+    const qs = new URLSearchParams(location.search);
+    let occ = ECARD_OCCASIONS.some((o) => o.id === qs.get("occ")) ? qs.get("occ") : "encouragement";
+    let cardFaith = "all", picked = null, styleIx = 0;
+    if (qs.get("ref")) picked = db.find((v) => v.ref === qs.get("ref")) || null;
     ECARD_OCCASIONS.forEach((o) => $("occ").add(new Option(o.label, o.id)));
     $("occ").value = occ;
     function verseList(){
