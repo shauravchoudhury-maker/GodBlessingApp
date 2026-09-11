@@ -584,7 +584,7 @@ function initGiving() {
     host.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => { faith = b.dataset.f; draw(); });
     document.getElementById("give-disclose").textContent = disclosure(faith, 0);
     document.getElementById("give-paysfor").innerHTML =
-      '<li style="color:var(--ink);font-weight:600">The ' + Math.round(PLATFORM_SHARE * 100) + '% pays for:</li>' +
+      '<li style="color:var(--ink);font-weight:600">The ' + Math.round(PLATFORM_SHARE * 100) + '% EverVerse keeps pays for:</li>' +
       PLATFORM_SHARE_PAYS_FOR.map((x) => "<li>" + x + "</li>").join("");
     const st = document.getElementById("give-state");
     st.innerHTML = anyPartnerAt(faith)
