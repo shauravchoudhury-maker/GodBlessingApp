@@ -20,40 +20,49 @@ The person who asked can erase everything sooner, themselves, from the
 page their link opens (requirement D5). Retention is the floor under that,
 for everyone who never comes back.
 
-SETTING IT UP
--------------
-1. The same service account as identity-worker.js. If it does not exist
-   yet: Firebase console -> Project settings -> Service accounts ->
-   Generate new private key. Keep the JSON.
+SETTING IT UP (Cloudflare dashboard, no tools to install)
+--------------------------------------------------------
+1. A Firebase service account key. Firebase console -> the gear next to
+   "Project Overview" -> Project settings -> Service accounts ->
+   "Generate new private key" -> Generate. A JSON file downloads. Keep it
+   in Downloads, NEVER inside the GodBlessingApp folder. You need two
+   values from it: "client_email" and "private_key". (The same file
+   serves identity-worker.js later.)
 
-2. In an empty folder, a wrangler.toml:
+2. Cloudflare dashboard -> Workers & Pages -> Create -> "Create Worker".
+   Name: eververse-retention. Deploy (the hello-world is fine for now).
 
-     name = "eververse-retention"
-     main = "retention-worker.js"
-     compatibility_date = "2024-09-01"
-     [vars]
-     RETENTION_DAYS = "60"
-     [triggers]
-     crons = ["20 4 * * *"]
+3. "Edit code". Select everything in the editor, delete it, and paste the
+   whole of retention-worker.js. Deploy.
 
-   Copy retention-worker.js beside it.
+4. The worker's Settings -> "Variables and Secrets" -> Add, four times:
+     FIREBASE_PROJECT_ID   type Text     eververse2117
+     FIREBASE_SA_EMAIL     type Secret   the client_email from the JSON
+     FIREBASE_SA_KEY       type Secret   the private_key from the JSON —
+                           copy the whole value between its quotes,
+                           
+ characters and all; the worker accepts it
+     RUN_TOKEN             type Secret   any long random string you invent
+                           (30+ characters); it lets you run it by hand
+   Optional: RETENTION_DAYS, Text, 60. Deploy / Save.
 
-3. Deploy:
-     wrangler deploy
-     wrangler secret put FIREBASE_PROJECT_ID      # eververse2117
-     wrangler secret put FIREBASE_SA_EMAIL        # client_email from the JSON
-     wrangler secret put FIREBASE_SA_KEY          # private_key, newlines intact
+5. Settings -> "Triggers" -> Cron Triggers -> Add:  20 4 * * *
+   (04:20 UTC, every day.)
 
-4. Run it once by hand, and look:
-     Cloudflare dashboard -> the worker -> Triggers -> Cron Triggers ->
-     "Run now" (or wait until 04:20 UTC).
-   Then open the worker's URL in a browser. It prints one line: when it
-   last ran and how many it expired. No text, no ids.
+6. Run it once by hand, from a terminal on your machine:
+     curl -X POST -H "Authorization: Bearer YOUR_RUN_TOKEN" https://eververse-retention.<your-subdomain>.workers.dev/run
+   It prints one line: ran: {"at":..., "days":60, "seen":0, "expired":0, ...}
+   seen 0 is right today — nothing on the site is 60 days old yet. The
+   first requests to expire are the September test ones, in November.
 
-5. Check in Firestore that blessing/circle/stats/retention exists and
-   that a request older than 60 days has an empty `note` and an
-   `expiredAt`. Test requests from September count — they will be the
-   first to go.
+7. Open the worker's URL in a browser. It prints "retention: last run ..."
+   with the same numbers. That line, and blessing/circle/stats/retention in
+   Firestore, are the evidence for requirement D4.
+
+If step 6 says "token exchange failed", the private key was pasted short:
+re-copy the whole private_key value. If it says "query failed ... 403",
+the service account has no Firestore access: Google Cloud console -> IAM ->
+the service account -> role "Cloud Datastore User".
 
 WHAT IT CANNOT DO
 -----------------
