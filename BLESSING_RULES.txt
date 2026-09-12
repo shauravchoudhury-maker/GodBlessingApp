@@ -67,7 +67,11 @@ file, or reactions, Twin Track and Second Chance all stop working.
     match /blessing/circle/requests/{id} {
       // Anyone may ask for a blessing, without an account.
       allow create: if
-        request.resource.data.keys().hasOnly(['tradition','category','language','note','status','replies','flagged','forGuide','createdAt'])
+        request.resource.data.keys().hasOnly(['tradition','category','language','note','status','replies','flagged','forGuide','createdAt','ownerHash'])
+        // The owner key's hash. The key itself is in the asker's link and
+        // nowhere else; it is what lets them erase everything later.
+        && (!('ownerHash' in request.resource.data)
+            || (request.resource.data.ownerHash is string && request.resource.data.ownerHash.size() == 64))
         && request.resource.data.language is string
         && request.resource.data.language.size() <= 8
         && request.resource.data.note is string
@@ -136,8 +140,27 @@ file, or reactions, Twin Track and Second Chance all stop working.
         // ---- either side ends it ----
         // No explanation required, from anybody, ever.
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['threadOpen','threadClosedAt'])
-            && request.resource.data.threadOpen == false);
+            && request.resource.data.threadOpen == false)
 
+        // ---- the person who asked erases it ----
+        // The update carries the owner key; its hash must match what was
+        // stored when the request was written. The guide who replied holds
+        // the same link id but not the key, so they cannot erase the
+        // evidence of what they wrote. The text goes blank and the request
+        // is marked deleted; the replies may then be removed (below).
+        || (resource.data.get('ownerHash', '') != ''
+            && resource.data.get('deleted', false) != true
+            && 'deleteKey' in request.resource.data
+            && request.resource.data.deleteKey is string
+            && hashing.sha256(request.resource.data.deleteKey).toHexString().lower() == resource.data.ownerHash.lower()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['deleteKey','note','status','deleted','deletedAt','threadOpen'])
+            && request.resource.data.note == ''
+            && request.resource.data.status == 'deleted'
+            && request.resource.data.deleted == true);
+
+      // The document itself is never removed — the numbers (tradition,
+      // category, dates) stay for the Health counts; the words do not.
       allow delete: if false;
 
       // Replies are readable by whoever holds the request's secret id —
@@ -162,7 +185,10 @@ file, or reactions, Twin Track and Second Chance all stop working.
           && request.resource.data.guideName is string
           && request.resource.data.guideName.size() <= 60
           && request.resource.data.guideUid == request.auth.uid;
-        allow update, delete: if false;
+        allow update: if false;
+        // Removable only once the person who asked has erased the request
+        // — which needed their key. Until then, immutable.
+        allow delete: if get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('deleted', false) == true;
       }
 
       // ---- Tier 2: the conversation ----
@@ -202,9 +228,11 @@ file, or reactions, Twin Track and Second Chance all stop working.
                 && request.resource.data.guideUid == request.auth.uid)
              );
 
-        // Nothing written in a conversation is ever edited or removed,
-        // by anyone, including us.
-        allow update, delete: if false;
+        // Nothing written in a conversation is ever edited, by anyone,
+        // including us. It is removed only when the person who asked erases
+        // the whole request with their key — never by the guide.
+        allow update: if false;
+        allow delete: if get(/databases/$(database)/documents/blessing/circle/requests/$(id)).data.get('deleted', false) == true;
       }
     }
 
@@ -296,7 +324,7 @@ file, or reactions, Twin Track and Second Chance all stop working.
     match /blessing/circle/stats/{id} {
       allow read: if true;
       allow create, update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['at','windowDays','requests30d','open','answered',
+        && request.resource.data.keys().hasOnly(['at','windowDays','requests30d','open','answered','deleted',
              'unanswered48h','celebrations','flagged','medianReplyH','repliesMeasured','languagesAsked',
              'faithsAsked','guidesTotal','guidesActive','guidesProbation','probationOldestD',
              'faithsCovered','languagesCovered','reportsOpen','reportsOldestH','applicationsWaiting'])

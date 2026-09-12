@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — EverVerse</title>
+  <meta name="description" content="What EverVerse stores, for how long, and who can see it — in plain words." />
   <meta name="theme-color" content="#7c5cff" />
+  <link rel="icon" href="icons/icon-192.png">
   <style>
     :root{--ink:#1c1a2e;--muted:#6b6b84;--accent:#7c5cff;--line:#eae7f5;--cream:#fbfaff;--grad:linear-gradient(135deg,#7c5cff,#4bc0c8);}
     *{box-sizing:border-box;}
@@ -17,12 +19,18 @@
     h1{margin:16px 0 4px;font-size:26px;}
     .eff{opacity:.9;font-size:14px;}
     main{padding:34px 0 60px;}
-    h2{font-size:19px;margin:28px 0 8px;color:var(--ink);}
+    h2{font-size:19px;margin:30px 0 8px;color:var(--ink);}
+    h3{font-size:16px;margin:20px 0 6px;color:var(--ink);}
     p,li{color:#333;font-size:15.5px;}
     ul{padding-left:20px;}
     a{color:var(--accent);}
-    .note{background:#f3f0ff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;font-size:14.5px;color:#444;}
+    .note{background:#f3f0ff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;font-size:14.5px;color:#444;margin:14px 0;}
+    table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14.5px;}
+    th,td{text-align:left;vertical-align:top;padding:9px 10px;border-top:1px solid var(--line);}
+    th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-top:0;}
+    .tw{overflow-x:auto;}
     footer{border-top:1px solid var(--line);padding:22px;text-align:center;color:var(--muted);font-size:13px;}
+    footer a{color:var(--muted);margin:0 6px;}
     .back{display:inline-block;margin-top:10px;color:#fff;text-decoration:none;font-weight:600;opacity:.95;}
   </style>
 </head>
@@ -31,74 +39,136 @@
     <div class="wrap">
       <div class="logo"><span class="mark">✦</span> EverVerse</div>
       <h1>Privacy Policy</h1>
-      <div class="eff">Effective 12 July 2026</div>
+      <div class="eff">Effective 12 September 2026 · replaces the policy of 12 July 2026</div>
       <a class="back" href="index.html">← Back to EverVerse</a>
     </div>
   </div>
 
   <main class="wrap">
-    <p>EverVerse ("we", "us") is a free, multi-faith daily wellness app offering verses,
-      meanings and sermons to read, listen to and share. We care about keeping your
-      experience calm, safe and private. This policy explains what we do and don't collect.</p>
+    <p>EverVerse is a free, multi-faith place to read a verse, make a card, and — through the
+      <b>Blessing Circle</b> — tell a stranger something private and receive a verse and a few kind
+      words back. This page says, in plain words, what we store, for how long, and who can see it.
+      If anything here is unclear, write to us; we would rather fix the words than hide behind them.</p>
 
     <h2>The short version</h2>
     <ul>
-      <li>No account or sign-in is required to use EverVerse.</li>
-      <li>We show no ads, and we never sell your data.</li>
-      <li>Most of what you do (favorites, journal, streak, settings) stays only on your device.</li>
-      <li>The only things sent to a server are content you deliberately submit (reactions and comments) and text you choose to translate.</li>
+      <li>You can ask for a blessing <b>without an account, an email address or a name</b>. The secret link you are given is the only key.</li>
+      <li>What you write is read by <b>one guide at a time, never the public</b>, and never used to train anything.</li>
+      <li>We <b>delete the text of every request after 60 days</b>, and you can delete yours sooner, yourself, from the page your link opens.</li>
+      <li>We show no ads and never sell or share your data for anyone else's purposes.</li>
+      <li>Almost everything else you do here — favourites, journal, streak, the private ritual — <b>stays on your device</b> and never reaches us.</li>
     </ul>
 
-    <h2>Information we collect</h2>
+    <h2>Asking for a blessing</h2>
+    <h3>What is stored</h3>
+    <p>When you send a request we store: the words you wrote (up to 1,200 characters), the tradition
+      and the kind of moment you chose, your language, the date and time, and — if our safety check
+      thought your words suggested you were in danger — a flag and the name of the one guide it was
+      sent to. We also store a scrambled fingerprint of your link's key, so that only you can delete
+      the request later. We do <b>not</b> store your name, email, phone number, account or IP address
+      with a request. There is nothing in it that says who you are unless you put it in the text
+      yourself — so please don't.</p>
+    <h3>Who can see it</h3>
     <ul>
-      <li><b>Reactions &amp; comments.</b> If you like/love a verse or post a reflection, that
-        action — and any name and text you type — is stored using <b>Google Firebase (Firestore)</b>
-        so it can be shown to the community. Comments are public. Please don't include
-        sensitive personal information in them.</li>
-      <li><b>On-device data.</b> Favorites, your prayer/reflection journal, your daily streak,
-        voice/language preferences and similar settings are stored in your browser's local
-        storage on your device only. We cannot see them, and they are not uploaded.</li>
-      <li><b>Translations.</b> When you choose to read a verse or sermon in another language,
-        that text is sent to the <b>MyMemory</b> translation service (translated.net) to
-        return the translation.</li>
-      <li><b>Technical data.</b> Our host (<b>GitHub Pages</b>) and Google (Firebase) may process
-        standard technical information such as your IP address and device/browser type as a
-        normal part of delivering the service and keeping it secure. We do not use tracking
-        cookies or advertising trackers.</li>
+      <li><b>One guide</b> — the guide it was matched to, or, if you sent it to the whole Circle, the guides free to take it. A guide sees only requests in their own queue; the database refuses anything wider.</li>
+      <li><b>You</b>, through your link. Anyone you give the link to can read the replies, so treat it like a letter.</li>
+      <li><b>The people who run EverVerse</b> can see it in the database, as with any service. We look only when something is reported, when the daily counts show something wrong, or when a guide's first replies are being read as part of their probation. We do not browse.</li>
+    </ul>
+    <p>Nobody else. Requests are never listed, searched, published or shown to other askers. A guide's reply is written once and cannot be edited afterwards, by them or by us.</p>
+    <h3>How long</h3>
+    <p><b>60 days</b>, then the text of the request, every reply and any conversation are erased
+      automatically. What remains is numbers: the tradition, the kind of moment, the language, the
+      dates and how many replies there were, so we can publish honest counts. You can erase it
+      sooner: the page your link opens has a button that deletes what you wrote and every reply
+      immediately. Deletion cannot be undone.</p>
+    <p>If you report a reply, the report — which reason you chose, the line you wrote, and which
+      reply it was about — is kept, because it is the record of what was raised and what was done.
+      It does not contain your request.</p>
+
+    <h2>Being a guide</h2>
+    <p>Guides sign in with a Google account, so we hold the email address Google gives us. We store
+      the profile you write (name, traditions, languages, a line about yourself), the date you were
+      approved, and the facts other people record about you: who vouched for you, whether an
+      affiliation was confirmed, whether you are on probation, whether you were reported or
+      suspended. Your replies stay with the request they answer and are deleted with it.</p>
+    <p><b>Identity check.</b> Guides confirm who they are with <b>Stripe Identity</b> (a photo of an
+      identity document and a live selfie). Stripe holds those images under
+      <a href="https://stripe.com/privacy" target="_blank" rel="noopener">its own policy</a>. EverVerse
+      never receives or stores the document or the selfie — only a session id and the date the check
+      passed. If we are ever breached there is no identity document here to lose.</p>
+    <p><b>Applying.</b> An application (name, email, traditions, experience, why you want to do this)
+      is kept, so that a person who applies twice is recognised and a decision about them can be explained later. Ask and we will erase it.</p>
+    <p>A guide's public profile — name, traditions, languages, and the standing facts above — is
+      visible to people asking, so they can choose. Your email address is never shown.</p>
+
+    <h2>The rest of EverVerse</h2>
+    <ul>
+      <li><b>On your device only.</b> Favourites, your journal, your streak, settings, the list of blessings you have asked for, and the private ritual on the <i>Let it go</i> page — which makes no network requests at all — are kept in your browser's storage. We cannot see them and they are never uploaded.</li>
+      <li><b>Reactions and comments</b> on verses are public by design and stored in Google Firebase, with whatever name and text you typed. Please keep personal details out of them.</li>
+      <li><b>Translations.</b> Text you choose to translate is sent to <b>MyMemory</b> (translated.net) and comes back translated.</li>
+      <li><b>Read-aloud.</b> Text you ask to hear is sent, through our own relay, to <b>ElevenLabs</b> to make the audio. The relay adds nothing about you.</li>
+      <li><b>Bot check.</b> Pages that write to our database carry Google <b>reCAPTCHA</b>, which looks at browser signals to tell a person from a script. That is all it is used for.</li>
+      <li><b>Technical data.</b> Our hosts — GitHub Pages for the site, Cloudflare for our relays, Google Firebase for the database — see IP addresses and browser types in their ordinary server logs, under their own policies. We keep no analytics, no tracking cookies and no advertising trackers.</li>
     </ul>
 
-    <h2>Third-party services</h2>
-    <p>We rely on a few trusted providers, each with their own privacy policies:</p>
+    <h2>Who can see what — at a glance</h2>
+    <div class="tw"><table>
+      <tr><th>What</th><th>Who sees it</th><th>Kept for</th></tr>
+      <tr><td>Your request</td><td>One guide; you, by link; us, only on cause</td><td>60 days, or until you delete it</td></tr>
+      <tr><td>A guide's reply</td><td>You, by link; the guide; us, only on cause</td><td>With the request</td></tr>
+      <tr><td>A conversation (Tier 2)</td><td>You; that one guide; the named steward reading alongside</td><td>With the request</td></tr>
+      <tr><td>A report</td><td>Admins</td><td>Kept, as the record</td></tr>
+      <tr><td>Guide profile</td><td>Public, minus email</td><td>While you are a guide</td></tr>
+      <tr><td>Guide email</td><td>Admins</td><td>While you are a guide</td></tr>
+      <tr><td>Identity document and selfie</td><td>Stripe only — never us</td><td>Per Stripe's policy</td></tr>
+      <tr><td>Reactions and comments</td><td>Public</td><td>Until you ask us to remove one</td></tr>
+      <tr><td>Favourites, journal, streak, ritual</td><td>Nobody — your device</td><td>Until you clear it</td></tr>
+    </table></div>
+
+    <h2>Services we rely on</h2>
     <ul>
-      <li>Google Firebase / Firestore (reactions &amp; comments) — <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">policy</a></li>
+      <li>Google Firebase (database, sign-in, reCAPTCHA) — <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">policy</a></li>
+      <li>Stripe Identity (guide identity checks) — <a href="https://stripe.com/privacy" target="_blank" rel="noopener">policy</a></li>
+      <li>Cloudflare (relays and scheduled jobs) — <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">policy</a></li>
+      <li>ElevenLabs (read-aloud audio) — <a href="https://elevenlabs.io/privacy-policy" target="_blank" rel="noopener">policy</a></li>
       <li>MyMemory by Translated (translations) — <a href="https://mymemory.translated.net/doc/privacy.php" target="_blank" rel="noopener">policy</a></li>
-      <li>GitHub Pages (hosting) and Google (Firebase SDK delivery via gstatic).</li>
+      <li>GitHub Pages (hosting) — <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">policy</a></li>
     </ul>
+    <p>Our database is in Google's <b>United States</b> region. If you are in the EU or UK, your
+      request travels there. We are a small volunteer project and have not yet done the formal
+      work an EU service needs; we say so rather than pretend otherwise, and we will not promote
+      the Circle there until we have.</p>
 
     <h2>Children</h2>
-    <p>EverVerse is suitable for all ages and does not require personal information. We do not
-      knowingly collect personal data from children. If you believe a child has posted personal
-      information in a comment, contact us and we will remove it.</p>
+    <p>The verses, cards and rituals are for everyone. The <b>Blessing Circle is for adults</b>: you
+      confirm you are 18 or over before sending, and if your words suggest you may be younger we stop
+      and show you the right helpline instead of sending it to a guide. We do not knowingly keep a
+      request from a child; if you believe we have one, tell us and we will erase it.</p>
 
     <h2>Your choices</h2>
     <ul>
-      <li>Clear your on-device data anytime by clearing your browser's site data for EverVerse.</li>
-      <li>To have a comment you posted removed, contact us with details and we'll take it down.</li>
-      <li>You can use the app fully without ever posting a reaction or comment.</li>
+      <li>Delete your request and every reply, any time, from the page your link opens.</li>
+      <li>Clear everything on your device by clearing your browser's site data for eververse.org.</li>
+      <li>Ask us to remove a comment you posted, or a guide profile, and we will.</li>
+      <li>Use every part of EverVerse without ever asking for a blessing, posting, or signing in.</li>
     </ul>
+    <p>Because a request carries no name or email, we cannot look one up for you — the link is
+      the only key, for us as well as for you. That is deliberate.</p>
+
+    <h2>When we would hand something over</h2>
+    <p>Only if the law compels us. We keep as little as we can and for as short a time as we can so
+      that there is little to hand over. We will tell the people concerned if we are allowed to.</p>
 
     <h2>Changes</h2>
-    <p>We may update this policy as EverVerse grows. Material changes will be reflected by the
-      effective date above.</p>
+    <p>We will update this page as EverVerse grows, and change the date at the top. A material
+      change will be announced on the front page before it takes effect.</p>
 
     <h2>Contact</h2>
-    <p>Questions or requests? Email <a href="mailto:privacy@eververse.org">privacy@eververse.org</a>.</p>
-
-    <div class="note">Note for the EverVerse team: set up <b>privacy@eververse.org</b> (email
-      forwarding at your domain registrar) or replace it with your preferred contact address in
-      <code>privacy.html</code>.</div>
+    <p><a href="mailto:privacy@eververse.org">privacy@eververse.org</a> for anything on this page.
+      For a concern about a person's safety, see our <a href="safeguarding.html">safeguarding policy</a>.
+      The rules for using EverVerse are in the <a href="terms.html">terms of service</a>.</p>
   </main>
 
-  <footer>✦ EverVerse — Daily faith, for every soul. · <a href="index.html">Home</a></footer>
+  <footer>✦ EverVerse — Daily faith, for every soul. · <a href="index.html">Home</a> · <a href="terms.html">Terms</a> · <a href="safeguarding.html">Safeguarding</a> · <a href="trust.html">How we check guides</a></footer>
 </body>
 </html>
