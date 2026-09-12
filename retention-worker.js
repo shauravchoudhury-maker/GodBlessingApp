@@ -217,15 +217,12 @@ export default {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/run") {
       const auth = request.headers.get("Authorization") || "";
-      if (!env.RUN_TOKEN || auth !== "Bearer " + env.RUN_TOKEN) return new Response("no
-", { status: 403 });
+      if (!env.RUN_TOKEN || auth !== "Bearer " + env.RUN_TOKEN) return new Response("no\n", { status: 403 });
       try {
         const s = await run(env);
-        return new Response("ran: " + JSON.stringify(s) + "
-", { headers: { "Content-Type": "text/plain" } });
+        return new Response("ran: " + JSON.stringify(s) + "\n", { headers: { "Content-Type": "text/plain" } });
       } catch (e) {
-        return new Response("failed: " + e.message + "
-", { status: 500, headers: { "Content-Type": "text/plain" } });
+        return new Response("failed: " + e.message + "\n", { status: 500, headers: { "Content-Type": "text/plain" } });
       }
     }
     const r = await fs(env, "GET", "/blessing/circle/stats/retention");
