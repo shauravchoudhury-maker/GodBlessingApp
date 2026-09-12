@@ -9,6 +9,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="site.css">
 <style>
+.grecaptcha-badge{visibility:hidden}
 /* Blessing circle — leans on site.css for the EverVerse palette. */
 .bwrap{max-width:760px;margin:0 auto;padding:0 20px 90px}
 .bhero{padding:46px 0 26px}
@@ -276,6 +277,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
   <footer class="foot">
     <p><b>EverVerse guides offer prayer, scripture and reflection.</b> They are volunteers, not clinicians. Nothing here is medical, psychological or legal advice, and nothing here treats or cures any condition. If you are unwell, please also speak to a doctor.</p>
     <p style="margin-top:10px" id="foot-help"></p>
+    <p style="margin-top:10px;font-size:12px">This page is protected by reCAPTCHA, which checks that requests come from a real browser and nothing more. The Google <a href="https://policies.google.com/privacy" rel="noopener">Privacy Policy</a> and <a href="https://policies.google.com/terms" rel="noopener">Terms of Service</a> apply to that check.</p>
   </footer>
 </div>
 
@@ -293,6 +295,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc,
          query, where, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaV3Provider }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
@@ -301,6 +305,14 @@ let app = null, auth = null, db = null;
 try {
   if (typeof FIREBASE_READY !== "undefined" && FIREBASE_READY) {
     app = initializeApp(FIREBASE_CONFIG);
+    // App Check first, so every Firestore call below carries a token.
+    // A failure here must not take the page down: without a token the
+    // request simply arrives unverified, which the console shows us.
+    try {
+      if (typeof APPCHECK_SITE_KEY === "string" && APPCHECK_SITE_KEY) {
+        initializeAppCheck(app, { provider: new ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+      }
+    } catch (e) { console.warn("App Check not started: " + e.message); }
     auth = getAuth(app);
     db = getFirestore(app);
   }

@@ -37,3 +37,14 @@ const FIREBASE_CONFIG = {
 };
 
 const FIREBASE_READY = FIREBASE_CONFIG.apiKey.indexOf("PASTE") === -1;
+
+// App Check. reCAPTCHA v3 proves a request came from a real browser on
+// eververse.org before Firestore will serve it — the cheapest defence
+// against a script flooding the database. The site key is public by
+// design (it is in every page); the secret never leaves Google.
+// Enforcement is switched on in the Firebase console, not here, and only
+// after the App Check metrics show live traffic arriving verified —
+// enforcing early would refuse every request and reply on the site.
+// NOTE: enforcement is per Firestore database, so Twin Track and Second
+// Chance (same project) must also send App Check tokens before it is on.
+const APPCHECK_SITE_KEY = "6LeYGrgtAAAAAARc_hdeRpjxi94_hVtKM-b7GKPi";

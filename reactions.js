@@ -12,6 +12,12 @@ const EVReact = (function () {
     if (typeof firebase === "undefined" || !firebase.firestore) return false;
     try {
       if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      // App Check, so the front door's reads carry a token too (see firebase-config.js).
+      try {
+        if (firebase.appCheck && typeof APPCHECK_SITE_KEY === "string" && APPCHECK_SITE_KEY) {
+          firebase.appCheck().activate(APPCHECK_SITE_KEY, true);
+        }
+      } catch (e) {}
       db = firebase.firestore();
       ready = true;
     } catch (e) { ready = false; }
