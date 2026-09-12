@@ -211,7 +211,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
       </div>
 
       <div class="checkline"><input type="checkbox" id="ok18">
-        <label for="ok18">I am 18 or older, and I understand a guide offers prayer and reflection — never medical, legal or mental-health advice.</label></div>
+        <label for="ok18">I am 18 or older, and I understand a guide offers prayer and reflection — never medical, legal or mental-health advice. <a href="terms.html" target="_blank" rel="noopener">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy</a></label></div>
 
       <div id="matches" style="margin:6px 0 18px"></div>
 
@@ -223,7 +223,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 
       <div class="okmsg" id="ok">
         <b>Sent. Keep this link.</b>
-        <p style="margin:8px 0">It is the only way back to your reply, and we deliberately do not have your email. Save it somewhere.</p>
+        <p style="margin:8px 0">It is the only way back to your reply, and we deliberately do not have your email. Save it somewhere. It is also the only key that can delete what you wrote — so keep it to yourself.</p>
         <p><code id="link"></code></p>
         <div class="rowx"><button class="btnb sm ghost" id="copylink">Copy the link</button>
           <span class="muted" id="copied" style="font-size:13.5px"></span></div>
@@ -278,6 +278,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
     <p><b>EverVerse guides offer prayer, scripture and reflection.</b> They are volunteers, not clinicians. Nothing here is medical, psychological or legal advice, and nothing here treats or cures any condition. If you are unwell, please also speak to a doctor.</p>
     <p style="margin-top:10px" id="foot-help"></p>
     <p style="margin-top:10px;font-size:12px">This page is protected by reCAPTCHA, which checks that requests come from a real browser and nothing more. The Google <a href="https://policies.google.com/privacy" rel="noopener">Privacy Policy</a> and <a href="https://policies.google.com/terms" rel="noopener">Terms of Service</a> apply to that check.</p>
+    <p style="margin-top:10px;font-size:12.5px"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="safeguarding.html">Safeguarding</a> · <a href="trust.html">How we check guides</a></p>
   </footer>
 </div>
 
@@ -292,7 +293,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc,
+import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          query, where, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider }
@@ -556,7 +557,7 @@ $("send").onclick = async () => {
   // slow connection is the common case, not spam.
   const dup = sameAsLastSent(note);
   if (dup) {
-    const url = location.origin + location.pathname + "?r=" + dup;
+    const url = location.origin + location.pathname + "?r=" + dup + (ownerKeyFor(dup) ? "&k=" + ownerKeyFor(dup) : "");
     $("link").textContent = url; $("ok").classList.add("on");
     $("sendmsg").textContent = "You sent these exact words a few minutes ago — here is that link again.";
     $("copylink").onclick = () => navigator.clipboard?.writeText(url)
@@ -582,15 +583,21 @@ $("send").onclick = async () => {
   if (!db) { $("sendmsg").textContent = "Not connected yet — the backend rules still need publishing."; return; }
   $("send").disabled = true; $("sendmsg").textContent = "Sending…";
   try {
+    // The owner key lets the person who asked erase everything later. Only
+    // its hash is stored; the key itself travels in their link and nowhere
+    // else — so a guide, who sees the document, cannot erase the evidence
+    // of what they wrote.
+    const ownerKey = newOwnerKey();
+    const ownerHash = await sha256hex(ownerKey);
     const ref = await addDoc(collection(db, "blessing", "circle", "requests"), {
       tradition: chosenReligion, category: chosenCat, language: chosenLang,
       note: note.slice(0, 1200), status: "open", replies: 0,
       forGuide: pickedGuide || "",
-      flagged, createdAt: new Date().toISOString(),
+      flagged, createdAt: new Date().toISOString(), ownerHash,
     });
-    const url = location.origin + location.pathname + "?r=" + ref.id;
+    const url = location.origin + location.pathname + "?r=" + ref.id + "&k=" + ownerKey;
     rememberLastSent(note, ref.id);
-    rememberMine(ref.id, { faith: chosenReligion,
+    rememberMine(ref.id, { faith: chosenReligion, k: ownerKey,
       about: (CATEGORIES.find((c) => c[0] === chosenCat) || [])[1] || "", answered: false });
     $("link").textContent = url;
     $("ok").classList.add("on");
@@ -633,6 +640,60 @@ function rememberMine(id, extra){
     if (i >= 0) all[i] = rec; else all.push(rec);
     localStorage.setItem("ev-blessings", JSON.stringify(all.slice(-20)));
   } catch (e) {}
+}
+
+function ownerKeyFor(id){
+  try { const m = (JSON.parse(localStorage.getItem("ev-blessings") || "[]")).find((x) => x.id === id); return (m && m.k) || ""; }
+  catch (e) { return ""; }
+}
+function forgetMine(id){
+  try {
+    const all = JSON.parse(localStorage.getItem("ev-blessings") || "[]");
+    localStorage.setItem("ev-blessings", JSON.stringify(all.filter((m) => m.id !== id)));
+  } catch (e) {}
+}
+function newOwnerKey(){
+  const b = new Uint8Array(24); crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+async function sha256hex(s){
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(d)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+/* ---- Erase: the person who asked takes it all back ------------------
+   The update carries the owner key; the rules hash it and compare it to
+   what was stored at creation. It blanks the text and marks the request
+   deleted, after which — and only after which — the replies and any
+   conversation may be removed by whoever holds the link. */
+async function eraseRequest(id, key){
+  await updateDoc(doc(db, "blessing", "circle", "requests", id),
+    { deleteKey: key, note: "", status: "deleted", deleted: true, deletedAt: new Date().toISOString(),
+      threadOpen: false });
+  for (const sub of ["responses", "thread"]) {
+    const snap = await getDocs(collection(db, "blessing", "circle", "requests", id, sub));
+    for (const d of snap.docs) { try { await deleteDoc(d.ref); } catch (e) {} }
+  }
+  forgetMine(id);
+}
+function eraseUI(host, id, key){
+  const wrap = document.createElement("div");
+  wrap.className = "note"; wrap.style.marginTop = "18px";
+  wrap.innerHTML = '<b>This is yours to take back.</b><p>Deleting removes what you wrote, every reply, and any conversation. ' +
+    'Nothing of it stays on our side. It cannot be undone.</p>' +
+    '<button class="btnb ghost sm" id="erase">Delete my request and every reply</button> <span class="muted" id="erasemsg"></span>';
+  host.appendChild(wrap);
+  wrap.querySelector("#erase").onclick = async (e) => {
+    if (!confirm("Delete this request and every reply? This cannot be undone.")) return;
+    e.target.disabled = true; wrap.querySelector("#erasemsg").textContent = "deleting…";
+    try {
+      await eraseRequest(id, key);
+      host.innerHTML = '<div class="note"><b>Deleted.</b><p>What you wrote and every reply are gone. The link no longer opens anything.</p></div>';
+    } catch (err) {
+      e.target.disabled = false;
+      wrap.querySelector("#erasemsg").textContent = "could not delete — " + (err.code === "permission-denied" ? "this link does not carry the key." : err.message);
+    }
+  };
 }
 
 /* ---- Tier 2, the asker's side --------------------------------------
@@ -749,17 +810,27 @@ async function renderThreadUI(id, host){
 }
 
 let reqCategory = "";
-async function showReplies(id){
+async function showReplies(id, key){
   const box = $("replies");
-  try { const rd = await getDoc(doc(db, "blessing", "circle", "requests", id)); if (rd.exists()) reqCategory = rd.data().category || ""; }
-  catch (e) { reqCategory = ""; }
+  key = key || ownerKeyFor(id);
   box.innerHTML = '<p class="muted">Looking…</p>';
   if (!db) { box.innerHTML = '<p class="muted">Not connected yet.</p>'; return; }
+  let req = null;
+  try { const rd = await getDoc(doc(db, "blessing", "circle", "requests", id)); if (rd.exists()) req = rd.data(); }
+  catch (e) {}
+  reqCategory = (req && req.category) || "";
+  if (req && req.deleted === true) {
+    forgetMine(id);
+    box.innerHTML = '<div class="note"><b>This request was deleted</b><p>by the person who wrote it. Nothing of it remains.</p></div>';
+    return;
+  }
+  const canErase = !!(key && req && req.ownerHash);
   try {
     const snap = await getDocs(collection(db, "blessing", "circle", "requests", id, "responses"));
     if (snap.empty) {
       box.innerHTML = '<div class="note"><b>Nothing yet.</b><p>No guide has replied so far. ' +
         'Keep the link and come back — replies usually arrive within a day or two.</p></div>';
+      if (canErase) eraseUI(box, id, key);
       return;
     }
     box.innerHTML = "";
@@ -790,6 +861,7 @@ async function showReplies(id){
       }
     });
     await renderThreadUI(id, box);
+    if (canErase) eraseUI(box, id, key);
   } catch (e) {
     box.innerHTML = '<p class="muted">Could not open that: ' + esc(e.message) + '</p>';
   }
@@ -797,8 +869,9 @@ async function showReplies(id){
 $("fetch").onclick = () => {
   const raw = $("code").value.trim();
   const m = raw.match(/[?&]r=([A-Za-z0-9_-]+)/);
+  const k = raw.match(/[?&]k=([A-Za-z0-9_-]+)/);
   const id = m ? m[1] : raw.replace(/[^A-Za-z0-9_-]/g, "");
-  if (id) showReplies(id);
+  if (id) showReplies(id, k ? k[1] : "");
 };
 
 /* ---- guides ---- */
@@ -2123,7 +2196,8 @@ async function computeStats(){
   const rq = await getDocs(query(col("requests"), where("createdAt", ">=", since30), orderBy("createdAt", "desc"), limit(400)));
   const reqs = rq.docs.map((d) => ({ id: d.id, ...d.data() }));
   const open = reqs.filter((r) => r.status === "open");
-  const answered = reqs.filter((r) => r.status !== "open" || (r.replies || 0) > 0);
+  const deleted = reqs.filter((r) => r.deleted === true).length;
+  const answered = reqs.filter((r) => r.deleted !== true && (r.status !== "open" || (r.replies || 0) > 0));
   const unanswered48h = open.filter((r) => hoursBetween(r.createdAt, now) > 48).length;
   const celebrations = reqs.filter((r) => isCelebration(r.category)).length;
   const flagged = reqs.filter((r) => r.flagged).length;
@@ -2163,7 +2237,7 @@ async function computeStats(){
 
   return {
     at: now, windowDays: 30,
-    requests30d: reqs.length, open: open.length, answered: answered.length,
+    requests30d: reqs.length, open: open.length, answered: answered.length, deleted,
     unanswered48h, celebrations, flagged,
     medianReplyH: round1(median(hours)), repliesMeasured: hours.length,
     languagesAsked: Object.keys(byLang).length, faithsAsked: Object.keys(byFaith).length,
@@ -2394,7 +2468,8 @@ document.querySelectorAll(".tabb").forEach((b) => b.onclick = () => show(b.datas
 
 // Opening the link someone was given goes straight to their reply.
 const rid = new URLSearchParams(location.search).get("r");
-if (rid) { show("read"); $("code").value = location.href; showReplies(rid); }
+const rkey = new URLSearchParams(location.search).get("k") || "";
+if (rid) { show("read"); $("code").value = location.href; if (rkey) rememberMine(rid, { k: rkey }); showReplies(rid, rkey); }
 const vv = new URLSearchParams(location.search).get("v");
 if (vv === "guide" && !rid) show("guide");
 </script>

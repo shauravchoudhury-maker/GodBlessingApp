@@ -1,0 +1,73 @@
+EverVerse — turning on retention
+================================
+
+retention-worker.js is a Cloudflare Worker on a daily cron. Once a day it
+erases the text of every Blessing Circle request older than 60 days, and
+deletes the replies and any conversation under it. The document itself
+stays, with its numbers (tradition, category, language, dates, reply
+count), so the Health screen and the yearly transparency report still add
+up. This is requirement D4.
+
+WHY 60 DAYS
+-----------
+Long enough that a person who lost their link for a fortnight can still
+find their way back from the front door and read what a guide wrote.
+Short enough that a breach, a subpoena or a lost laptop exposes weeks of
+private burdens, not years. RETENTION_DAYS can be set anywhere from 30 to
+90; the worker refuses anything outside that range.
+
+The person who asked can erase everything sooner, themselves, from the
+page their link opens (requirement D5). Retention is the floor under that,
+for everyone who never comes back.
+
+SETTING IT UP
+-------------
+1. The same service account as identity-worker.js. If it does not exist
+   yet: Firebase console -> Project settings -> Service accounts ->
+   Generate new private key. Keep the JSON.
+
+2. In an empty folder, a wrangler.toml:
+
+     name = "eververse-retention"
+     main = "retention-worker.js"
+     compatibility_date = "2024-09-01"
+     [vars]
+     RETENTION_DAYS = "60"
+     [triggers]
+     crons = ["20 4 * * *"]
+
+   Copy retention-worker.js beside it.
+
+3. Deploy:
+     wrangler deploy
+     wrangler secret put FIREBASE_PROJECT_ID      # eververse2117
+     wrangler secret put FIREBASE_SA_EMAIL        # client_email from the JSON
+     wrangler secret put FIREBASE_SA_KEY          # private_key, newlines intact
+
+4. Run it once by hand, and look:
+     Cloudflare dashboard -> the worker -> Triggers -> Cron Triggers ->
+     "Run now" (or wait until 04:20 UTC).
+   Then open the worker's URL in a browser. It prints one line: when it
+   last ran and how many it expired. No text, no ids.
+
+5. Check in Firestore that blessing/circle/stats/retention exists and
+   that a request older than 60 days has an empty `note` and an
+   `expiredAt`. Test requests from September count — they will be the
+   first to go.
+
+WHAT IT CANNOT DO
+-----------------
+The update mask on every write is the guard. It can blank `note`, set
+`status` to "expired" (only if it was "open") and stamp `expiredAt`. It
+cannot touch tradition, category, forGuide, ownerHash, standing, guides,
+applications, reports, vouches or bans. Reports are deliberately kept:
+they are the record of what was raised and what was done, and they carry
+no request text.
+
+SERVICE ACCOUNT SCOPE (requirement S5)
+--------------------------------------
+This worker needs to read and write requests and their subcollections and
+stats/retention. The identity worker needs guides and applications. Until
+they have separate service accounts, one account does both; when you
+create the second, give each a custom role with only the
+datastore.entities.* permissions and nothing else in the project.
