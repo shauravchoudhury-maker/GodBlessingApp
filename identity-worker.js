@@ -95,7 +95,9 @@ async function googlePublicKeys() {
 }
 
 function pemToDer(pem) {
-  return b64urlToBytes(pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "")
+  // The JSON from Firebase writes newlines as backslash-n; a secret pasted
+  // straight from it keeps them as two characters. Either form is accepted.
+  return b64urlToBytes(pem.replace(/\\n/g, "\n").replace(/-----[^-]+-----/g, "").replace(/\s+/g, "")
                           .replace(/\+/g, "-").replace(/\//g, "_"));
 }
 

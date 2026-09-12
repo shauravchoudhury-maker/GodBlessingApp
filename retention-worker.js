@@ -26,22 +26,21 @@
 // cursor and older than the cutoff, at most BATCH of them, oldest first.
 // A run that finds nothing costs one read.
 //
-// SECRETS (wrangler secret put ...):
+// SECRETS (dashboard: Settings -> Variables and Secrets, or wrangler):
 //   FIREBASE_PROJECT_ID      eververse2117
 //   FIREBASE_SA_EMAIL        ...@....iam.gserviceaccount.com
-//   FIREBASE_SA_KEY          the PEM private key, newlines intact
-// VARS (wrangler.toml [vars], optional):
+//   FIREBASE_SA_KEY          the PEM private key (pasted from the JSON is fine)
+//   RUN_TOKEN                any long random string; lets a person run it by hand
+// VARS (optional):
 //   RETENTION_DAYS           default 60
 //
-// wrangler.toml:
-//   name = "eververse-retention"
-//   main = "retention-worker.js"
-//   compatibility_date = "2024-09-01"
-//   [triggers]
-//   crons = ["20 4 * * *"]      # 04:20 UTC, daily
+// CRON (dashboard: Settings -> Triggers -> Cron Triggers): 20 4 * * *
 //
 // A GET to the worker's URL reports the last run (numbers only) so a person
 // can see it is alive without opening the Cloudflare dashboard.
+// A POST to /run with "Authorization: Bearer <RUN_TOKEN>" runs it now and
+// returns the same numbers — for the first test, and for the day something
+// needs erasing before 04:20.
 
 const BATCH = 150;
 
@@ -57,7 +56,9 @@ function b64urlToBytes(s) {
   return out;
 }
 function pemToDer(pem) {
-  return b64urlToBytes(pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "")
+  // The JSON from Firebase writes newlines as backslash-n; a secret pasted
+  // straight from it keeps them as two characters. Either form is accepted.
+  return b64urlToBytes(pem.replace(/\\n/g, "\n").replace(/-----[^-]+-----/g, "").replace(/\s+/g, "")
                           .replace(/\+/g, "-").replace(/\//g, "_"));
 }
 
@@ -213,6 +214,20 @@ export default {
   },
   // A glance, for a person: the last run's numbers. No text, no ids.
   async fetch(request, env) {
+    const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/run") {
+      const auth = request.headers.get("Authorization") || "";
+      if (!env.RUN_TOKEN || auth !== "Bearer " + env.RUN_TOKEN) return new Response("no
+", { status: 403 });
+      try {
+        const s = await run(env);
+        return new Response("ran: " + JSON.stringify(s) + "
+", { headers: { "Content-Type": "text/plain" } });
+      } catch (e) {
+        return new Response("failed: " + e.message + "
+", { status: 500, headers: { "Content-Type": "text/plain" } });
+      }
+    }
     const r = await fs(env, "GET", "/blessing/circle/stats/retention");
     if (r.status !== 200) return new Response("retention: no run recorded yet\n", { headers: { "Content-Type": "text/plain" } });
     const f = (await r.json()).fields || {};
