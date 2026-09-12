@@ -285,6 +285,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 <script src="identity.js"></script>
 <script src="safety-lang.js"></script>
 <script src="thread.js"></script>
+<script src="requirements.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -953,7 +954,8 @@ async function renderQueue(){
       (isAdmin || (myGuide && canSupervise(myGuide, can))
         ? '<button class="btnb ghost sm" id="newg">New guides</button>' : '') +
       (isAdmin ? '<button class="btnb ghost sm" id="mod">Reports</button>' +
-                 '<button class="btnb ghost sm" id="apps">Applications</button>' : '') +
+                 '<button class="btnb ghost sm" id="apps">Applications</button>' +
+                 '<button class="btnb ghost sm" id="health">Health</button>' : '') +
       '<button class="btnb ghost sm" id="out">Sign out</button></div>';
     // Anything addressed to me by the matcher comes first.
     const rows = [];
@@ -997,6 +999,7 @@ async function renderQueue(){
     if (isAdmin && $("apps")) $("apps").onclick = (e) => { e.preventDefault(); renderApplications(); };
     if ($("convs")) $("convs").onclick = (e) => { e.preventDefault(); renderConversations(); };
     if ($("newg")) $("newg").onclick = (e) => { e.preventDefault(); renderNewGuides(); };
+    if ($("health")) $("health").onclick = (e) => { e.preventDefault(); renderHealth(); };
     $("prof").onclick = (e) => { e.preventDefault(); renderProfile(myGuide); };
     document.querySelectorAll("[data-reply]").forEach((b) => {
       b.onclick = () => renderReply(b.dataset.reply, b.dataset.trad);
@@ -2087,6 +2090,129 @@ async function renderConversations(){
     guideShell('<div class="panelb"><h2>Conversations</h2><p class="muted">Could not load: ' +
       esc(e.message) + '</p></div>');
   }
+}
+
+/* ---- Health: usage against targets, and every requirement ------------
+   One screen, read once a day. It reads only metadata — never a request's
+   text — and writes an aggregate snapshot to stats/latest (public read,
+   numbers only) so the daily check can see the same numbers without a
+   person signing in. The requirement list itself lives in requirements.js;
+   this screen does not carry a second copy. */
+function hoursBetween(a, b){ return Math.max(0, (new Date(b) - new Date(a)) / 36e5); }
+function median(xs){ if (!xs.length) return null; const s = xs.slice().sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+function round1(x){ return x == null ? null : Math.round(x * 10) / 10; }
+
+async function computeStats(){
+  const now = new Date().toISOString();
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
+  const col = (name) => collection(db, "blessing", "circle", name);
+
+  // Requests, last 30 days, newest first, capped. Metadata only.
+  const rq = await getDocs(query(col("requests"), where("createdAt", ">=", since30), orderBy("createdAt", "desc"), limit(400)));
+  const reqs = rq.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const open = reqs.filter((r) => r.status === "open");
+  const answered = reqs.filter((r) => r.status !== "open" || (r.replies || 0) > 0);
+  const unanswered48h = open.filter((r) => hoursBetween(r.createdAt, now) > 48).length;
+  const celebrations = reqs.filter((r) => isCelebration(r.category)).length;
+  const flagged = reqs.filter((r) => r.flagged).length;
+  const byLang = {}; reqs.forEach((r) => { const l = r.language || "en"; byLang[l] = (byLang[l] || 0) + 1; });
+  const byFaith = {}; reqs.forEach((r) => { byFaith[r.tradition || "none"] = (byFaith[r.tradition || "none"] || 0) + 1; });
+
+  // Time to first reply: read the responses of the most recent answered
+  // requests (capped so this stays cheap).
+  const hours = [];
+  for (const r of answered.slice(0, 60)) {
+    try {
+      const rs = await getDocs(query(collection(db, "blessing", "circle", "requests", r.id, "responses"), limit(3)));
+      const first = rs.docs.map((d) => d.data().createdAt).filter(Boolean).sort()[0];
+      if (first) hours.push(hoursBetween(r.createdAt, first));
+    } catch (e) {}
+  }
+
+  // Guides.
+  const gs = await getDocs(query(col("guides"), limit(500)));
+  const guides = gs.docs.map((d) => ({ uid: d.id, ...d.data() }));
+  const active = guides.filter((g) => g.active !== false && g.suspended !== true);
+  const probation = active.filter((g) => g.probation === true);
+  const faiths = new Set(); active.forEach((g) => (g.tradition || []).forEach((t) => faiths.add(t)));
+  const langs = new Set(); active.forEach((g) => (g.languages || []).forEach((l) => langs.add(l)));
+  const probationOldestD = probation.length
+    ? Math.max(...probation.map((g) => hoursBetween(g.approvedAt || now, now) / 24)) : 0;
+
+  // Reports and applications.
+  const rp = await getDocs(query(col("reports"), where("status", "==", "open"), limit(200)));
+  const reports = rp.docs.map((d) => d.data());
+  const reportsOldestH = reports.length ? Math.max(...reports.map((r) => hoursBetween(r.createdAt, now))) : 0;
+  // Guide documents carry no email, so "waiting" is approximate: applications
+  // in the window minus guides approved in the window, never below zero.
+  const ap = await getDocs(query(col("applications"), where("createdAt", ">=", since30), limit(200)));
+  const approved30 = guides.filter((g) => (g.approvedAt || "") >= since30.slice(0, 10)).length;
+  const applicationsWaiting = Math.max(0, ap.size - approved30);
+
+  return {
+    at: now, windowDays: 30,
+    requests30d: reqs.length, open: open.length, answered: answered.length,
+    unanswered48h, celebrations, flagged,
+    medianReplyH: round1(median(hours)), repliesMeasured: hours.length,
+    languagesAsked: Object.keys(byLang).length, faithsAsked: Object.keys(byFaith).length,
+    guidesTotal: guides.length, guidesActive: active.length, guidesProbation: probation.length,
+    probationOldestD: round1(probationOldestD),
+    faithsCovered: faiths.size, languagesCovered: langs.size,
+    reportsOpen: reports.length, reportsOldestH: round1(reportsOldestH),
+    applicationsWaiting,
+  };
+}
+
+async function renderHealth(){
+  guideShell('<div class="panelb"><h2>Health</h2><p class="lede">Counting…</p></div>');
+  let stats;
+  try { stats = await computeStats(); }
+  catch (e) {
+    guideShell('<div class="panelb"><h2>Health</h2><p class="muted">Could not count: ' + esc(e.message) +
+      '</p><p class="muted" style="font-size:13px">If this says "requires an index", the console error has a link that creates it in one click.</p></div>');
+    return;
+  }
+  // Publish the aggregate so the daily check can read it without a person.
+  let saved = "";
+  try { await setDoc(doc(db, "blessing", "circle", "stats", "latest"), stats); saved = "snapshot saved " + stats.at.slice(0, 16).replace("T", " "); }
+  catch (e) { saved = "snapshot not saved: " + e.message; }
+
+  const health = healthOf(stats);
+  const sum = requirementSummary();
+  const okN = health.filter((h) => h.ok).length;
+  const pill = (ok) => '<span class="chipb" style="background:' + (ok ? '#eef7ee;color:#2f6b3a' : '#fdecec;color:#9b2c2c') + '">' + (ok ? 'ok' : 'off') + '</span>';
+  const st = (s) => '<span class="chipb" style="background:' + (s === 'met' ? '#eef7ee;color:#2f6b3a' : s === 'partial' ? '#fff4e0;color:#8a5a00' : '#f1f1f4;color:#555') + '">' + s + '</span>';
+
+  let html = '<div class="panelb"><h2>Health</h2>' +
+    '<p class="lede">Usage against targets, then every requirement. Read once a day. <a href="#" id="h-back">back to the queue</a></p>' +
+    '<p class="muted" style="font-size:13px">' + esc(saved) + ' · last 30 days · no request text is read here</p>';
+
+  html += '<h3 style="margin:18px 0 8px">Usage — ' + okN + ' of ' + health.length + ' targets met</h3><div class="req" style="padding:8px 14px">' +
+    health.map((h) => '<div class="rowx" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)">' +
+      '<span>' + esc(h.label) + '</span><span><b>' + (h.value == null ? '—' : esc(String(h.value))) + '</b> <span class="muted" style="font-size:12.5px">target ' + esc(h.target) + '</span> ' + pill(h.ok) + '</span></div>').join("") + '</div>';
+
+  html += '<div class="gfacts" style="margin-top:10px">' +
+    [["requests, 30 d", stats.requests30d], ["open now", stats.open], ["celebrations", stats.celebrations], ["crisis-flagged", stats.flagged],
+     ["languages asked in", stats.languagesAsked], ["guides total", stats.guidesTotal], ["on probation", stats.guidesProbation],
+     ["languages covered", stats.languagesCovered], ["replies timed", stats.repliesMeasured]]
+      .map(([k, v]) => '<span class="fact">' + esc(k) + ': <b>' + esc(String(v)) + '</b></span>').join("") + '</div>';
+
+  const blocking = blockingNow();
+  html += '<h3 style="margin:22px 0 4px">Requirements — ' + sum.met + ' met · ' + sum.partial + ' partial · ' + sum.open + ' open</h3>' +
+    '<p class="muted" style="font-size:13px">' + blocking.length + ' still block promotion (gate "now"). Statuses live in requirements.js; change them there.</p>';
+  REQ_AREAS.forEach(([key, label]) => {
+    const rows = REQUIREMENTS.filter((r) => r.area === key);
+    const a = sum.byArea[key] || { met: 0, partial: 0, open: 0 };
+    html += '<details style="margin-top:8px"><summary style="cursor:pointer"><b>' + esc(label) + '</b> <span class="muted" style="font-size:13px">' +
+      a.met + ' met · ' + a.partial + ' partial · ' + a.open + ' open</span></summary>' +
+      rows.map((r) => '<div class="rowx" style="align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)">' +
+        st(r.status) + '<span class="chipb">' + esc(r.gate === 'now' ? 'before promotion' : 'by ' + r.gate + ' guides') + '</span>' +
+        '<span style="flex:1"><span class="muted" style="font-size:12px">' + esc(r.id) + '</span> ' + esc(r.text) +
+        '<div class="muted" style="font-size:12.5px;margin-top:2px">' + esc(r.evidence || '') + '</div></span></div>').join("") + '</details>';
+  });
+  html += '</div>';
+  guideShell(html);
+  $("h-back").onclick = (e) => { e.preventDefault(); renderQueue(); };
 }
 
 /* ---- New guides: read their first replies, then let them through ------

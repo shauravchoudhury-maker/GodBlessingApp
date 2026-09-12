@@ -1,0 +1,129 @@
+EverVerse — scaling and protecting the platform
+===============================================
+Written 2026-09-12, while the Circle has one guide. Gated on numbers, not
+dates, like LAUNCH.txt. The requirement list itself is requirements.js —
+this file is the reasoning; that file is the checklist.
+
+
+What "big" means here
+---------------------
+Servers are not the constraint. Firestore and a static CDN carry a
+million requests a month without anyone noticing. The constraint is one
+ratio:
+
+    open requests  :  guides who can answer them, in that language
+
+If promotion outruns guides, an unanswered request is the one failure
+the platform cannot afford — and it happens at five hundred requests a
+week, not five million. Scaling means scaling the human supply chain
+and the trust ladder. Everything technical below serves that.
+
+The second thing that does not scale with money is the promise: written
+by people, never AI. The biggest threat at five thousand guides is not
+a server; it is guides pasting a model's words. Detectors do not work
+reliably and would refuse real writing, so the defence is people reading
+samples of replies — the first three on probation, then random audits
+forever.
+
+
+The technical walls, in the order they arrive
+---------------------------------------------
+1. Client-side matching reads the whole guide directory.
+   Every request loads every guide into the browser to score them. Fine
+   at 100 guides; at 10,000 it is 10,000 reads per request and the whole
+   directory is scrapeable. Move matching into a Worker (the identity
+   worker already has the service-account pattern) and serve the public
+   only a projection: name, tradition, standing facts.        [C2, C4]
+
+2. The broadcast queue.
+   `forGuide in [me, ""]` means every guide lists the whole unassigned
+   pool: reads × guides. Shard by language and tradition; have the
+   matcher assign rather than broadcast.                          [C3]
+
+3. Anonymous writes with no rate limit.
+   Rules validate a document; they cannot say "no more than five a
+   minute from this address". A script can write a million requests and
+   hand us the bill. Layers: a billing budget alert (today, free);
+   Firebase App Check (blocks scripts without a real browser); later a
+   Worker in front of request creation with per-IP limits.  [A4, A5, A6]
+
+4. GitHub Pages.
+   Soft 100 GB/month bandwidth, no control of cache headers, no WAF.
+   Cloudflare Pages is an afternoon's move once DNS is on Cloudflare,
+   and brings DDoS protection for free.                       [C5, A9]
+
+5. No backups.
+   One mis-click in the console deletes the guide list. Scheduled
+   Firestore export to a bucket, weekly for now; point-in-time recovery
+   on.                                                             [D3]
+
+
+Protecting people at scale
+--------------------------
+· Reviewers scale with guides. "New guides" is one list today; it needs
+  to be per language and per tradition, with stewards reviewing. Watch
+  the oldest-probation-age number.                             [G8, C7]
+· Reports have a clock. A report sitting for a week is a story. 24 h,
+  measured.                                                       [P10]
+· Identity before any reply once the worker is live, including hand
+  approvals.                                                       [G3]
+· Retention. Delete request text after 30–90 days. Less to lose, leak
+  or be compelled to hand over; it fits the anonymous design. Add a
+  delete-my-request path for the link holder.                 [D4, D5]
+· Crisis lines and language patterns verified by a native speaker
+  before promoting in that language or country.               [P7, P8]
+
+
+Protecting the platform
+-----------------------
+· Admins: 2-step verification on every admin account; a separate owner
+  account not used daily; least-privilege service accounts per worker;
+  secrets only in Cloudflare; an audit log of every admin action that
+  nobody can delete.                                   [S2, S3, S5, G10]
+· Brand: trademark and the obvious social handles before the first
+  press. The first clone with AI-written blessings appears the week
+  EverVerse gets attention.                                        [L6]
+· Legal, in the order it bites: privacy policy and terms (before any
+  promotion); GDPR basics for Europe (retention, erasure, lawful basis);
+  UK Online Safety Act — EverVerse is a user-to-user service and even a
+  small one owes an illegal-content risk assessment; India DPDP if
+  promoted there. Easy now, hard to retrofit.        [D6, L1, D7, L3]
+· Governance: the day stewards decide who graduates, a written
+  safeguarding policy, a named safeguarding lead and an incident
+  process. Also most of what a charity registration or an institution
+  will ask for.                                               [L2, O6]
+
+
+Staged, gated on numbers
+------------------------
+NOW (before promotion)
+  billing alert · App Check · scheduled export · retention policy ·
+  privacy + terms · admin 2FA · deploy the identity worker · Health
+  screen + daily check (built)
+
+50 GUIDES / 1,000 REQUESTS A MONTH
+  server-side matching · queues sharded by language · Turnstile on send ·
+  random reply audits · steward reviewers per language · OSA risk
+  assessment · audit log · report SLA published
+
+500 GUIDES
+  Cloudflare Pages + WAF · a trust-and-safety person who is not the
+  founder · transparency report · a board
+
+
+How we check, every day
+-----------------------
+The admin Health screen (blessing.html → Health) counts the last 30
+days — never reading a request's text — compares against USAGE_TARGETS
+in requirements.js, lists every requirement with its status, and writes
+an aggregate snapshot to blessing/circle/stats/latest, which is public
+because it holds only numbers.
+
+A scheduled task, "eververse-daily-check", reads that snapshot and the
+live site each morning and reports: targets missed, requirements still
+blocking promotion, whether the snapshot is stale (nobody opened Health
+in two days is itself a finding), whether the site and rules are up.
+It changes nothing; it only reports.
+
+To change a requirement's status, change requirements.js and ship it.
+The BRD page, the Health screen and the daily check all read that file.

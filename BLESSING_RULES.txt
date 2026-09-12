@@ -99,8 +99,12 @@ file, or reactions, Twin Track and Second Chance all stop working.
       // collection can still never be enumerated, searched or browsed, which
       // is the property that actually matters.
       allow get:  if true;
-      allow list: if isGuide() && mine(resource)
-        && (!onProbation() || isCelebration(resource.data.category));
+      allow list: if (isGuide() && mine(resource)
+                      && (!onProbation() || isCelebration(resource.data.category)))
+        // An admin may list for the Health screen's counts. The screen
+        // reads metadata only; the operator can already see everything in
+        // the console, so this widens nothing that matters.
+        || isAdmin();
 
       // A guide may mark it answered, and nothing else.
       allow update: if
@@ -283,6 +287,20 @@ file, or reactions, Twin Track and Second Chance all stop working.
       allow read: if isAdmin();
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','closedAt']);
+      allow delete: if false;
+    }
+
+    // The usage snapshot the Health screen writes. Aggregate numbers only
+    // — never a request, a name or an email — so it can be public: the
+    // daily check reads it without anybody signing in.
+    match /blessing/circle/stats/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['at','windowDays','requests30d','open','answered',
+             'unanswered48h','celebrations','flagged','medianReplyH','repliesMeasured','languagesAsked',
+             'faithsAsked','guidesTotal','guidesActive','guidesProbation','probationOldestD',
+             'faithsCovered','languagesCovered','reportsOpen','reportsOldestH','applicationsWaiting'])
+        && request.resource.data.at is string;
       allow delete: if false;
     }
 
