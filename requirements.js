@@ -99,6 +99,12 @@ var REQUIREMENTS = [
   { id: "G10", area: "guides", gate: "50",  status: "open",    check: "code",
     text: "Every admin action — graduate, suspend, verify, vouch — is written to an audit log nobody can delete.",
     evidence: "Not built." },
+  { id: "G11", area: "guides", gate: "now", status: "met",     check: "code",
+    text: "Guides are unpaid volunteers, and the guides page and trust page say so; nothing a guide receives depends on any reply or comes from the person who asked. Reassess December 2026.",
+    evidence: "guide-support.js REASSESS_ON; guides.html 'Is it paid?'; trust.html 'Ask you for money'." },
+  { id: "G13", area: "guides", gate: "now", status: "met",     check: "code",
+    text: "Every guide can print a letter of service from facts — months, blessings, standing — with no rating or ranking in it.",
+    evidence: "serviceRecord / serviceLetter in guide-support.js; 'Your service' on the profile screen." },
 
   /* ---- The promise: written by people, never AI ---------------------- */
   { id: "T1",  area: "thesis", gate: "now", status: "met",     check: "code",
@@ -288,6 +294,9 @@ var USAGE_TARGETS = [
   { key: "guidesActive",    label: "Guides active",                           op: ">=", value: 3,  req: "B3" },
   { key: "faithsCovered",   label: "Faiths with at least one active guide",   op: ">=", value: 2,  req: "B3" },
   { key: "applicationsWaiting", label: "Applications waiting",                op: "<=", value: 5,  req: "G8" },
+  // Recruiting pulse. Ten guides in ninety days needs about one application
+  // a week; this is the number the December decision is made on.
+  { key: "applications7d",  label: "Guide applications this week",            op: ">=", value: 1,  req: "B3" },
 ];
 
 function cmp(op, a, b){ return op === "<=" ? a <= b : op === ">=" ? a >= b : a === b; }

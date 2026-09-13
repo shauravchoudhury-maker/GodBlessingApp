@@ -289,6 +289,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 <script src="safety-lang.js"></script>
 <script src="thread.js"></script>
 <script src="requirements.js"></script>
+<script src="guide-support.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -1604,7 +1605,8 @@ function renderProfile(existing){
     '<label for="p-active">I am available to receive requests just now</label></div>' +
     '<div class="rowx"><button class="btnb" id="p-save">Save profile</button>' +
     '<button class="btnb ghost sm" id="p-back">Back to the queue</button>' +
-    '<span class="muted" id="p-msg" style="font-size:14px"></span></div></div>';
+    '<span class="muted" id="p-msg" style="font-size:14px"></span></div>' +
+    '<div id="p-service"></div></div>';
   guideShell(html);
 
   multiPick("p-trad", RELIGIONS.map((r) => [r.key, r.label, r.book]), trads, "pickgrid");
@@ -1612,6 +1614,7 @@ function renderProfile(existing){
   multiPick("p-exp", LIVED, chosen);
   $("p-cap").value = String(g.capacity || 3);
   $("p-back").onclick = renderQueue;
+  renderService(g);
 
   if ($("p-verify")) $("p-verify").onclick = () => startIdentity($("p-verify"), $("p-vmsg"));
 
@@ -1651,6 +1654,66 @@ function renderProfile(existing){
       $("p-msg").textContent = "Could not save: " + (e.code === "permission-denied"
         ? "your account is not on the approved list yet." : e.message);
     } finally { $("p-save").disabled = false; }
+  };
+}
+
+/* ---- Your service -------------------------------------------------
+   What a guide gets for staying, said in one place: the three layers from
+   guide-support.js, their own record (facts, never a rank), and the letter
+   they can print. Counts come from the guide's own requests — the same
+   list the queue reads. */
+async function renderService(g){
+  const host = $("p-service");
+  if (!host) return;
+  const today = new Date().toISOString();
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
+
+  // Count blessings written. A guide on probation may only list
+  // celebrations, so their count waits until their first replies are read.
+  let counts = { replies: 0, replies30d: 0, languages: [] }, counted = true;
+  try {
+    const q = onProbation(g)
+      ? query(collection(db, "blessing", "circle", "requests"),
+              where("forGuide", "==", me.uid), where("category", "in", [...CELEBRATE]), limit(500))
+      : query(collection(db, "blessing", "circle", "requests"), where("forGuide", "==", me.uid), limit(500));
+    const snap = await getDocs(q);
+    const langs = new Set();
+    snap.forEach((d) => {
+      const r = d.data();
+      if (!(r.replies > 0)) return;
+      counts.replies++;
+      if ((r.createdAt || "") >= since30) counts.replies30d++;
+      if (r.language) langs.add(r.language);
+    });
+    counts.languages = [...langs];
+  } catch (e) { counted = false; }
+
+  const rec = serviceRecord(g, counts, today, tierOf, TIERS);
+
+  let html = '<h3 style="margin:26px 0 6px">Your service</h3>' +
+    '<p class="hint">What you get for staying. Guides are unpaid; nothing here is a rating or a rank.</p>' +
+    '<div class="req" style="padding:6px 14px">' +
+    SUPPORT_LAYERS.map((l) => '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>' + esc(l.title) + '</b>' +
+      '<div class="muted" style="font-size:13.5px">' + esc(l.text) + '</div></div>').join("") + '</div>';
+
+  html += '<div class="gfacts" style="margin-top:10px">' +
+    [["in the circle since", rec.since || "—"], ["months", rec.months],
+     ["blessings written", counted ? rec.replies : "counted once your first replies are read"],
+     ["last 30 days", counted ? rec.replies30d : "—"],
+     ["standing", rec.standing || "—"]]
+      .map(([k, v]) => '<span class="fact">' + esc(k) + ': <b>' + esc(String(v)) + '</b></span>').join("") + '</div>';
+
+  html += '<div class="rowx" style="margin-top:10px"><button class="btnb ghost sm" id="p-letter">Print a letter of service</button>' +
+    '<span class="muted" style="font-size:13px">Facts only — months, blessings, standing. No rating, no rank.</span></div>';
+
+  host.innerHTML = html;
+  $("p-letter").onclick = () => {
+    const text = serviceLetter(g.name, rec, today, religionLabel, (c) => (LANGS.find((l) => l[0] === c) || [c, c])[1]);
+    const w = window.open("", "_blank");
+    if (!w) { alert(text); return; }
+    w.document.write('<!doctype html><title>Letter of service</title><pre style="font:15px/1.5 Georgia,serif;max-width:640px;margin:48px auto;white-space:pre-wrap">' +
+      esc(text) + '</pre><script>print()<\/script>');
+    w.document.close();
   };
 }
 
@@ -2234,6 +2297,11 @@ async function computeStats(){
   const ap = await getDocs(query(col("applications"), where("createdAt", ">=", since30), limit(200)));
   const approved30 = guides.filter((g) => (g.approvedAt || "") >= since30.slice(0, 10)).length;
   const applicationsWaiting = Math.max(0, ap.size - approved30);
+  // Recruiting pulse: applications started and guides approved this week,
+  // so the "is supply coming?" question is answered by a number.
+  const since7 = new Date(Date.now() - 7 * 864e5).toISOString();
+  const applications7d = ap.docs.filter((d) => (d.data().createdAt || "") >= since7).length;
+  const approved7d = guides.filter((g) => (g.approvedAt || "") >= since7.slice(0, 10)).length;
 
   return {
     at: now, windowDays: 30,
@@ -2245,7 +2313,8 @@ async function computeStats(){
     probationOldestD: round1(probationOldestD),
     faithsCovered: faiths.size, languagesCovered: langs.size,
     reportsOpen: reports.length, reportsOldestH: round1(reportsOldestH),
-    applicationsWaiting,
+    applicationsWaiting, applications30d: ap.size, approved30d: approved30,
+    applications7d, approved7d,
   };
 }
 
@@ -2280,7 +2349,9 @@ async function renderHealth(){
   html += '<div class="gfacts" style="margin-top:10px">' +
     [["requests, 30 d", stats.requests30d], ["open now", stats.open], ["celebrations", stats.celebrations], ["crisis-flagged", stats.flagged],
      ["languages asked in", stats.languagesAsked], ["guides total", stats.guidesTotal], ["on probation", stats.guidesProbation],
-     ["languages covered", stats.languagesCovered], ["replies timed", stats.repliesMeasured]]
+     ["languages covered", stats.languagesCovered], ["replies timed", stats.repliesMeasured],
+     ["applications, 7 d", stats.applications7d], ["approved, 7 d", stats.approved7d],
+     ["applications, 30 d", stats.applications30d], ["approved, 30 d", stats.approved30d]]
       .map(([k, v]) => '<span class="fact">' + esc(k) + ': <b>' + esc(String(v)) + '</b></span>').join("") + '</div>';
 
   const blocking = blockingNow();
