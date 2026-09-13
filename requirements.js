@@ -27,6 +27,7 @@ var REQ_AREAS = [
   ["legal",    "Legal and governance"],
   ["ops",      "Operations and monitoring"],
   ["product",  "Product and business"],
+  ["money",    "Money: gifts, tips and wallets"],
 ];
 
 var REQUIREMENTS = [
@@ -283,6 +284,26 @@ var REQUIREMENTS = [
   { id: "B7",  area: "product", gate: "now", status: "met",     check: "code",
     text: "Three primary markets — the Americas, Asia, Africa — and a country is promoted only when it is green: verified crisis line, patterns read by a native speaker, three guides in one of its languages.",
     evidence: "regions.js readiness()/regionSummary(); Regions panel on Health; countriesPromotable in the snapshot. Nine starters: US BR MX · IN PH ID · NG KE ZA." },
+  /* ---- Money: gifts, tips and wallets (TIPS.txt) --------------------- */
+  { id: "M1",  area: "money", gate: "now", status: "met",     check: "code",
+    text: "EverVerse never holds a gift, a balance or a payout: the charity is merchant of record, the tip is a platform fee, a licensed processor holds funds in between. No custodial wallet, no crypto.",
+    evidence: "TIPS.txt §2–3; tips.js NO_CUSTODY, RAILS (the giver's own wallets through Stripe/Paystack/Razorpay/Xendit). Nothing in the repo can hold a balance." },
+  { id: "M2",  area: "money", gate: "50",  status: "open",    check: "human",
+    text: "An entity exists to receive tips, and the accountant + charity-lawyer conversations (L4) have decided whether it takes tips or donations, before the first tip.",
+    evidence: "No entity. Today a tip would be the founder's personal income." },
+  { id: "M3",  area: "money", gate: "50",  status: "open",    check: "code",
+    text: "The ledger holds numbers and codes only — no name, email, card, address, IP, request or guide — is written only by the webhook worker, and is never edited (corrections are new entries).",
+    evidence: "tips.js NEVER_IN_LEDGER / validateLedgerEntry; rules and worker not yet written." },
+  { id: "M4",  area: "money", gate: "50",  status: "open",    check: "ops",
+    text: "The ledger is reconciled against the processor daily, and any difference is a finding on the daily check.",
+    evidence: "Design only (TIPS.txt §5)." },
+  { id: "M5",  area: "money", gate: "50",  status: "open",    check: "code",
+    text: "A country's payment rail goes live only when that country is green on the Regions panel; a cross-border gift a charity cannot receive (India without FCRA) is refused with a plain sentence.",
+    evidence: "tips.js RAILS.live all false; crossBorderRefusal(). No rail live." },
+  { id: "M6",  area: "money", gate: "50",  status: "open",    check: "ops",
+    text: "What tips paid for is printed monthly as a number (identity checks funded, hosting, moderation), from the ledger, in the same words on the giving page and the yearly report.",
+    evidence: "tips.js whatTipsPaidFor(); no ledger yet." },
+
   { id: "B8",  area: "product", gate: "now", status: "open",    check: "ops",
     text: "At least one starter country in each region is green before the Circle is promoted there.",
     evidence: "0 of 37 countries green on 2026-09-13; every one is missing a verified line." },

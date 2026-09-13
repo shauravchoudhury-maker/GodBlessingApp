@@ -1,0 +1,228 @@
+EverVerse — the TIP framework, the giving engine, and the "wallet" question
+===========================================================================
+Design and thinking, 13 September 2026. The model itself is in giving.js and
+is unchanged: EverVerse takes NOTHING from a gift; a tip to EverVerse is a
+separate, optional, never-preselected choice. This document is about how
+that becomes an engine that moves real money in nine countries without
+breaking any promise we have made — and what "a secure digital wallet"
+should and should not mean for us.
+
+
+0. THE ONE-PARAGRAPH VERSION
+----------------------------
+EverVerse must never hold anyone's money. Not the giver's, not the
+charity's, not a "balance". The charity is the merchant of record for the
+gift; the tip is a separate line that reaches EverVerse as a platform fee;
+a licensed processor holds the funds in between. "Wallet" means the
+giver's own wallet — Apple Pay, Google Pay, PIX, UPI, M-Pesa, GCash, GoPay —
+which is how people in the nine countries actually pay, and which we accept
+through the processor. It does not mean an EverVerse wallet, because an
+EverVerse wallet would make us a money transmitter in every country we
+serve, and a target in all of them.
+
+
+1. WHAT A TIP IS, PRECISELY
+---------------------------
+A tip is money a giver chooses to add FOR EVERVERSE, at the moment of a
+gift to a charity, after the gift amount is chosen, with 0 as the default.
+It is never a share of the gift (PLATFORM_SHARE = 0). It never depends on
+whether anyone answered them, who answered, or what was said (G6, guard
+rail 1 in giving.js). It is never asked for on the wounded side — not on
+the ask page, not in a reply, not in a thread (mayAskToGive). It pays for a
+listed set of things (PLATFORM_SHARE_PAYS_FOR) and the list is printed.
+
+What a tip is NOT, and must not drift into:
+  · a payment for a blessing ("thank your guide" — refused by NEVER_IN_GIVING)
+  · a subscription, a premium tier, or credit that buys anything
+  · a donation to a charity (that is the gift; the tip is separate in law
+    and in the sentence the giver reads)
+  · a stipend for guides — shelved until the December 2026 reassessment
+    (guide-support.js REASSESS_ON). If it comes back, tips can fund it,
+    flat and monthly, never per reply.
+
+
+2. THE WALLET QUESTION — THREE READINGS, ONE ANSWER
+---------------------------------------------------
+"A secure digital wallet" can mean three different things. Two of them we
+should refuse.
+
+  A. AN EVERVERSE WALLET (custodial). Givers top up a balance; charities
+     accumulate a balance we pay out. REFUSE. Holding funds for others is
+     money transmission: FinCEN MSB registration plus state-by-state money
+     transmitter licences in the US; FCA e-money authorisation in the UK;
+     RBI PPI licence in India; BCB in Brazil; CBN in Nigeria. Each is
+     months and six figures, and each makes us the thing attackers want.
+     It also breaks guard rail 2: money sitting in a balance is money not
+     yet accounted for.
+
+  B. A CRYPTO WALLET. REFUSE for now. Anonymity is attractive on paper,
+     but a charity cannot receipt it, the giver cannot deduct it, regulators
+     treat it as A with extra steps, and "send crypto to a prayer app" is
+     the sentence that ends trust. Revisit only if a partner charity asks.
+
+  C. THE GIVER'S OWN WALLET, ACCEPTED THROUGH A LICENSED PROCESSOR. This
+     is the answer. The processor is the wallet's counterparty and the
+     licensed money transmitter. We hold nothing, see no card or account
+     number, and receive only the tip, settled to our own bank account like
+     any business. The nine countries each have a dominant wallet rail, and
+     "give in the way you already pay" is the whole localisation story.
+
+So the engine's first rule, above everything else:
+
+     NO CUSTODY. EverVerse never holds a gift, a balance, or a payout.
+
+
+3. HOW THE MONEY MOVES (ONE GIFT, ONE TIP)
+------------------------------------------
+Charity is merchant of record. EverVerse is the platform. Concretely, on
+Stripe Connect (the reference design; other processors map to it):
+
+  1. The charity onboards once as a connected account (Express). They pass
+     KYC with the processor, not with us. They receive payouts from the
+     processor to their own bank. We never touch the gift.
+  2. The giver opens the giving page (calm surface only) → chooses faith →
+     sees the partner charity by name (never before an agreement is
+     signed) → chooses an amount → sees the disclosure sentence (giving.js
+     disclosure()) with every cent named → chooses a tip (default 0) →
+     chooses whether to cover the card fee (default yes).
+  3. Hosted checkout (Stripe Checkout), never our own form. A DIRECT CHARGE
+     on the charity's connected account for (gift [+ fee if covered]), with
+     application_fee_amount = the tip. The processor takes its fee from the
+     charge; the charity receives the gift; the tip lands in EverVerse's
+     platform balance and settles to our bank.
+  4. The receipt comes from the processor / the charity, not from us. We do
+     not store the giver's email. Tax-deductibility is the charity's
+     statement to make, never ours (NEVER_IN_GIVING already refuses it).
+  5. A webhook (signature verified) writes ONE ledger entry: numbers and
+     codes, no identity. See §5.
+  6. Monthly, the transparency numbers are computed from the ledger and
+     shown: gifts to charities, processor fees, tips received, what the
+     tips paid for. Health shows them daily; the yearly report (L7) is
+     built from the same rows.
+
+Why direct charge + application fee rather than "we collect and forward":
+  · it is the structure that keeps us out of "commercial co-venturer" and
+    "commercial participator" law (giving.js guard rail 2) — the charity
+    takes the donation; we charge a platform fee that the giver chose;
+  · gift funds never sit in our balance, even for a day;
+  · one refund path (the charity's), one dispute path (the processor's).
+
+What a tip pays for, printed in the same words everywhere
+(PLATFORM_SHARE_PAYS_FOR): identity checks for guides, the people who read
+reports, hosting and crisis-line partnerships, translating the safety
+checks. tips.js turns the month's tips into "N identity checks funded" so
+the sentence can be a number, not a mood.
+
+
+4. THE NINE COUNTRIES — RAILS, NOT WALLETS WE BUILD
+---------------------------------------------------
+Each starter country has a dominant way people actually pay. The engine
+accepts it through a licensed processor; we never integrate a wallet
+directly. Processors: Stripe (US/BR/MX + cards everywhere it operates),
+Paystack (Stripe-owned; NG/KE/ZA/GH), Razorpay (IN — Stripe India is
+invite-only and domestic-focused), Xendit (ID/PH). See tips.js RAILS for
+the table. Three things the table hides:
+
+  · INDIA — FCRA. A foreign gift to an Indian charity requires the charity
+    to hold FCRA registration and use its SBI New Delhi FCRA account.
+    Indian givers → Indian charities is domestic and fine (UPI via
+    Razorpay). Diaspora givers → Indian charities is FCRA territory. The
+    engine must route by the GIVER'S country as well as faith, and must
+    refuse (with a plain sentence) a cross-border gift to a charity that
+    cannot receive it.
+  · CURRENCY. Gifts are taken in the giver's currency; the charity receives
+    its own. The disclosure sentence prints both when they differ, and the
+    processor's FX fee is named as part of "the card processor's fee".
+    Never quote a conversion we did not get from the processor.
+  · TIPS ACROSS BORDERS. The tip is a platform fee; it settles to
+    EverVerse's home-country account in the processor's currency. Fine
+    everywhere Stripe/Paystack operate. In India the fee has GST
+    implications — the accountant conversation (L4) before the first
+    Indian tip.
+
+
+5. THE LEDGER — NUMBERS ONLY, APPEND-ONLY
+-----------------------------------------
+Firestore: blessing/circle/giving/ledger/{processorPaymentId}
+  { at, kind: "gift"|"refund"|"dispute", gift, tip, feeProcessor,
+    coversFees, currency, charityId, faith, giverCountry, rail, processor,
+    status }
+Amounts are integers in minor units. No name, no email, no card, no
+address, no IP — the processor holds all of that under its own regulation.
+Written ONLY by the webhook worker's service account (rules: create if
+false to everyone; update/delete if false to everyone including admins —
+corrections are new entries of kind "refund"/"adjust", never edits).
+Read by admins only; the roll-up (tips30d, giftsToCharity30d, feeTotal,
+byFaith, byCountry) is written into stats/latest so Health and the daily
+check see it without a person signing in.
+
+Reconciliation: once a day the worker asks the processor for the day's
+balance transactions and compares to the ledger. Any difference is a
+finding on the daily check, not a silent fix.
+
+
+6. SECURITY — WHAT "SECURE" MEANS HERE
+--------------------------------------
+  · No card or account data ever reaches eververse.org (hosted checkout).
+    PCI scope: SAQ A, the smallest there is.
+  · Webhook signatures verified; events idempotent by processor id; replay
+    of an old event writes nothing.
+  · Amount bounds enforced server-side: MIN_GIFT, MAX_GIFT, tip ≤ 15 % of
+    gift (TIP_OPTIONS). A tip larger than the gift is refused as a mistake.
+  · Card-testing defence: processor's fraud tools (Radar) on; App Check on
+    the page (A5); the rate-limit worker (A6) in front of checkout session
+    creation; one session per browser per minute.
+  · Secrets: processor keys live only in the worker; the page holds a
+    publishable key and nothing else (S1–S5 pattern).
+  · The worker's service account can write ledger + stats and nothing
+    else (S5 — the split we already owe).
+  · Kill switch: GIVING_ENABLED in the worker; flipping it makes the giving
+    page say "paused" within one page load. Same shape as guide suspension:
+    no deploy needed.
+  · Disputes: the charity's, because it is the merchant of record. We show
+    the processor's dispute rate on Health; over 0.5 % is a finding.
+
+
+7. WHAT MUST BE TRUE BEFORE THE FIRST TIP
+-----------------------------------------
+In order. None of these is code.
+  1. An entity. Today a tip would be personal income to the founder. L4
+     (accountant + charity lawyer) is the gate, and it decides whether
+     EverVerse is a company that takes tips or a nonprofit that takes
+     donations — the sentence on the giving page differs.
+  2. One signed partner charity (B2), onboarded as a connected account.
+     PARTNERS in giving.js stays empty until the agreement exists.
+  3. PROCESSING set to the real, signed rate, because the disclosure
+     sentence prints it (LAUNCH.txt).
+  4. A processor account with Connect enabled, in the entity's name.
+  5. The ledger rules and the webhook worker deployed and reconciled for
+     one week on test mode.
+Then: US only, cards + Apple/Google Pay, one charity, one faith. Then
+the next faith. Rails per country come after the first month reconciles.
+
+
+8. WHAT THIS IS NOT (SO IT STAYS SMALL)
+---------------------------------------
+Not a fundraising platform: charities do not run campaigns here; givers do
+not pick projects; there are no goals, thermometers or leaderboards. Not a
+subscription: recurring gifts may come later, as the processor's feature,
+never as an EverVerse balance. Not a way to pay guides — that decision is
+December's. Not visible to a person who has just written about their
+mother.
+
+
+9. ROADMAP
+----------
+  Phase 0 (now → first charity signed): L4 conversations; entity; processor
+     account; tips.js model in the repo (this PR); ledger rules written.
+  Phase 1 (first charity): giving page live, US, cards/wallets, Checkout,
+     webhook worker, ledger, reconciliation, transparency numbers on Health.
+  Phase 2 (three charities, two faiths): FX + giver-country routing; PIX
+     (BR), SPEI/OXXO (MX); FCRA gate for India.
+  Phase 3 (Africa/Asia starters green): Paystack (NG/KE/ZA), Razorpay (IN),
+     Xendit (ID/PH). Each rail goes live only in a country that is green on
+     the Regions panel — we do not take money where we cannot yet answer.
+  Phase 4 (December 2026): the guide-payback reassessment, funded from
+     tips if at all, flat and monthly, per the shelved guide-support design.
+
+Requirements added: M1–M6 in requirements.js (area "money").
