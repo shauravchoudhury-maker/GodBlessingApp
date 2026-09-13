@@ -527,7 +527,9 @@ if ($("lang") && typeof UI_LANGS !== "undefined") {
 $("note").addEventListener("input", () => {
   const t = $("note").value;
   $("count").textContent = t.length;
-  $("crisis").classList.toggle("on", risky(t));
+  // The same multilingual check the send step uses, so a person typing
+  // "死にたい" sees the helpline while they type, not only when they press send.
+  $("crisis").classList.toggle("on", riskyMulti(t, chosenLang, risky));
 });
 
 let pickedGuide = null;
