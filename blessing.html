@@ -1643,17 +1643,12 @@ function renderProfile(existing){
     if (!trads.size) { $("p-msg").textContent = "Choose at least one tradition."; return; }
     $("p-save").disabled = true; $("p-msg").textContent = "Saving…";
     try {
-      const payload = {
+      await setDoc(doc(db, "blessing", "circle", "guides", me.uid), {
         name: (nm || "a guide").slice(0, 60),
         tradition: [...trads], languages: [...langs], experience: [...chosen],
         about: about.slice(0, 400), capacity: +$("p-cap").value || 3,
         active: $("p-active").checked, updatedAt: new Date().toISOString(),
-      };
-      // The stipend choice is written only when it changed, so a profile
-      // save keeps working even where the rules do not yet allow the key.
-      const sc = $("p-support") ? $("p-support").value : null;
-      if (sc && sc !== (g.supportChoice || SUPPORT_DEFAULT)) payload.supportChoice = sc;
-      await setDoc(doc(db, "blessing", "circle", "guides", me.uid), payload, { merge: true });
+      }, { merge: true });
       $("p-msg").textContent = "Saved ✓";
     } catch (e) {
       $("p-msg").textContent = "Could not save: " + (e.code === "permission-denied"
@@ -1663,10 +1658,10 @@ function renderProfile(existing){
 }
 
 /* ---- Your service -------------------------------------------------
-   What a guide gets for staying, said in one place: the four layers from
-   guide-support.js, their own record (facts, never a rank), the letter
-   they can print, and their choice about the stipend. Counts come from
-   the guide's own requests — the same list the queue reads. */
+   What a guide gets for staying, said in one place: the three layers from
+   guide-support.js, their own record (facts, never a rank), and the letter
+   they can print. Counts come from the guide's own requests — the same
+   list the queue reads. */
 async function renderService(g){
   const host = $("p-service");
   if (!host) return;
@@ -1694,11 +1689,9 @@ async function renderService(g){
   } catch (e) { counted = false; }
 
   const rec = serviceRecord(g, counts, today, tierOf, TIERS);
-  const choice = g.supportChoice || SUPPORT_DEFAULT;
-  const elig = stipendEligible(g, { replies: counts.replies30d, upheldReports: 0 }, tierOf);
 
   let html = '<h3 style="margin:26px 0 6px">Your service</h3>' +
-    '<p class="hint">What you get for staying. None of it is per reply, and none of it comes from the person who asked.</p>' +
+    '<p class="hint">What you get for staying. Guides are unpaid; nothing here is a rating or a rank.</p>' +
     '<div class="req" style="padding:6px 14px">' +
     SUPPORT_LAYERS.map((l) => '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><b>' + esc(l.title) + '</b>' +
       '<div class="muted" style="font-size:13.5px">' + esc(l.text) + '</div></div>').join("") + '</div>';
@@ -1712,22 +1705,6 @@ async function renderService(g){
 
   html += '<div class="rowx" style="margin-top:10px"><button class="btnb ghost sm" id="p-letter">Print a letter of service</button>' +
     '<span class="muted" style="font-size:13px">Facts only — months, blessings, standing. No rating, no rank.</span></div>';
-
-  // The fund: open or not, said plainly, and the guide's own choice.
-  const fundLine = fundOpen()
-    ? 'The Guide Fund is open, sponsored by ' + esc(FUND.sponsors.map((s) => s.name).join(" and ")) +
-      '. Every present guide receives the same flat amount each month — up to $' + STIPEND.monthly + '.'
-    : 'The Guide Fund is not open yet: no sponsor is signed. When it is, every present guide receives the same flat amount each month — up to $' +
-      STIPEND.monthly + ' — funded by ' + esc(FUND.sources.join("; ")) + '.';
-  const presentLine = elig.ok
-    ? 'This month you would count as present.'
-    : 'This month you would not count as present yet: ' + esc(elig.why.join("; ")) +
-      '. Present means at least ' + STIPEND.minReplies + ' blessings in the month, as a listener or above, with no report upheld.';
-  html += '<div class="standing" style="margin-top:14px"><b>The Guide Fund</b><p>' + fundLine + '</p>' +
-    '<p class="muted">' + presentLine + '</p>' +
-    '<label class="bf" style="margin-top:8px"><span>If a stipend is paid, I would like to</span><select id="p-support">' +
-    SUPPORT_CHOICES.map((c) => '<option value="' + c.key + '"' + (c.key === choice ? ' selected' : '') + '>' + esc(c.label) + '</option>').join("") +
-    '</select></label><p class="muted" style="font-size:12.5px;margin-top:4px">Saved with your profile. You can change it any month.</p></div>';
 
   host.innerHTML = html;
   $("p-letter").onclick = () => {
