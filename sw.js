@@ -22,7 +22,7 @@ const NET_TIMEOUT_MS = 3000;
 const SHELL = [
   "./", "./index.html", "./app.html",
   "./styles.css", "./site.css",
-  "./firebase-config.js", "./reactions.js", "./tts-config.js",
+  "./firebase-config.js", "./analytics.js", "./reactions.js", "./tts-config.js",
   "./verses.js", "./meanings.js", "./sermons.js", "./content.js", "./campaign.js", "./world.js", "./identity.js", "./safety-lang.js", "./thread.js", "./translations.js",
   "./backgrounds.js", "./render.js", "./voice.js", "./site.js",
   "./zip.js", "./video.js", "./audiobooks.js", "./explainer.js", "./ecards.js", "./mockups.js", "./collection.js", "./occasions.js", "./giving.js", "./requirements.js", "./regions.js", "./guide-support.js", "./guides.html", "./partners.html", "./library.html", "./trust.html", "./letgo.html", "./series.js", "./updater.js", "./hub.js", "./app.js",
