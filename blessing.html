@@ -483,6 +483,9 @@ function helpBlock(opts){
     out += '<p><b>' + esc(h.name) + '</b>' + (h.note ? " — " + esc(h.note) : "") +
            '<span class="num">' + esc(h.line) + '</span>' +
            (h.chat ? '<a href="' + esc(h.chat) + '" target="_blank" rel="noopener">Or chat with them online →</a>' : '') +
+           // The provider's own page, so the person can check the number
+           // themselves — and so a stale entry has a way to be found out.
+           (h.site ? ' <a href="' + esc(h.site) + '" target="_blank" rel="noopener">Their website →</a>' : '') +
            '</p>';
     out += '<p>If that number does not connect, or you are somewhere else, ' +
            '<a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">' +
@@ -501,7 +504,8 @@ if ($("young-help"))  $("young-help").innerHTML  = helpBlock();
 if ($("foot-help"))   $("foot-help").innerHTML   =
   (typeof crisisHelp === "function" && crisisHelp(HERE).line
     ? "Wherever you are, free and confidential help exists. " +
-      esc(crisisHelp(HERE).name) + ": " + esc(crisisHelp(HERE).line) + ". "
+      esc(crisisHelp(HERE).name) + ": " + esc(crisisHelp(HERE).line) + ". " +
+      (crisisHelp(HERE).site ? '<a href="' + esc(crisisHelp(HERE).site) + '" target="_blank" rel="noopener">Their website →</a> ' : "")
     : "Wherever you are, free and confidential help exists. ") +
   '<a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">Find a line in your country →</a>';
 

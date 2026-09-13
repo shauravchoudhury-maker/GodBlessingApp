@@ -51,7 +51,7 @@ var REQUIREMENTS = [
     evidence: "BLOCK / WARN / TITLE_RE in blessing.html; tship suite." },
   { id: "P7",  area: "people", gate: "now", status: "partial", check: "human",
     text: "Every helpline number shown is verified by a person in that country within the last 12 months.",
-    evidence: "world.js: all 40 entries checked:null (7 added 2026-09-13 for the starters). Do not promote in a country until its line is verified — regions.js shows which." },
+    evidence: "world.js: 8 of 40 entries checked (how: website, 2026-09-13 — the starters, with the provider's site now shown next to the number; MX corrected to 55 5259 8121). A phone check from in-country upgrades how: to phone. NG has no line. Regions panel shows which." },
   { id: "P8",  area: "people", gate: "now", status: "partial", check: "human",
     text: "Every crisis and under-18 pattern is reviewed by a native speaker of that language.",
     evidence: "safety-lang.js: all checked:null. Do not promote in a language until reviewed." },
