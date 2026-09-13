@@ -1,0 +1,363 @@
+EverVerse — Guide recruitment through faith organisations
+=========================================================
+Nine starter countries (regions.js): US · BR · MX · IN · PH · ID · NG · KE · ZA
+Written 13 September 2026. The one-pager the email links to is partners.html.
+
+WHY ORGANISATIONS AND NOT ADS
+-----------------------------
+A guide has to be a person we can check. An organisation gives us three
+things an ad never will: people who already do this work unpaid, a phone
+number we can ring to confirm an affiliation (which is what puts
+"confirmed with St Mary's" on a guide's card), and — the part that unblocks
+each country — one person who can verify the crisis line and one native
+speaker who can read the crisis patterns. Every email below asks for all
+three. That is the whole campaign: ten guides, one hour, one name.
+
+THE RULES BEFORE ANY EMAIL GOES OUT
+-----------------------------------
+1. Send from team@eververse.org, signed "EverVerse Team". Never a personal
+   name (safeguarding.html, 13 Sep 2026).
+2. Every sentence passes checkCampaignCopy() in campaign.js and
+   checkGivingCopy() in giving.js. Run the final text through both before
+   the first send: no clinical words, no numbers we cannot show, no
+   urgency, no promises about outcomes, no "AI-powered" anything.
+3. Do not promise that the Circle is open in their country. It is not.
+   Say what it needs (regions.js says exactly what, per country) and ask
+   for it.
+4. Never list an organisation on the site as a partner until there is a
+   written agreement (giving.js PARTNERS rule). An email reply is not one.
+5. Contact addresses: NOT in this file, on purpose. Every organisation
+   below has an official website with a contact page or a named office;
+   find it there the day you send, because addresses go stale and a
+   guessed one bounces or, worse, lands with the wrong person. Do not
+   scrape or buy lists.
+6. One organisation, one email, one follow-up after 10 days, then stop.
+   Log every send in the table at the bottom. Reply to every reply within
+   two working days, as a person.
+7. If an organisation asks "is it paid?" the answer is on guides.html and
+   it is No. If they ask for money, the answer is also no — we take
+   nothing from gifts and pay nobody. If they offer help with helpline
+   verification or a native-speaker review, say yes before anything else.
+
+ORDER OF WORK
+-------------
+Week 1: US, IN, PH (English reaches furthest; three faiths).
+Week 2: BR, MX (Portuguese and Spanish drafts below — have a native
+        speaker read them first; do not send a machine translation).
+Week 3: NG, KE, ZA (English).
+Week 4: ID (Indonesian draft below, same rule), plus follow-ups.
+Every week: open Health, read the Regions panel, and put the guide count
+per country in the log. The campaign is working when applications7d is
+above 1 and stays there.
+
+
+THE ORGANISATIONS
+-----------------
+Chosen for: a volunteer culture, a national office that can forward to
+congregations, and where possible a chaplaincy, seminary or helpline
+connection (chaplaincy students need service hours; helpline charities can
+verify our numbers). "Fit" says which of our three asks they are best for:
+G = guides, L = helpline verification, N = native-speaker review, C = can
+confirm affiliations. Names are as I know them; confirm on the official
+site before writing.
+
+UNITED STATES (en, es)
+  Stephen Ministries                      Christian · G, C · lay caring ministry — the single closest thing to a guide that already exists; 600k trained
+  Catholic Charities USA / diocesan offices  Christian · G, C
+  National Council of Churches USA        Christian · G · forwards to 37 denominations
+  Association of Professional Chaplains   All · G, N · chaplains want service records
+  ACPE (clinical pastoral education)      All · G · CPE students need hours; the letter of service is the pitch
+  Islamic Society of North America (ISNA) Islam · G, C
+  Hindu American Foundation               Hindu · G
+  BAPS Swaminarayan Sanstha (US temples)  Hindu · G, C · strong volunteer culture, Gujarati
+  Sikh Coalition / United Sikhs           Sikh · G, C · Punjabi
+  Jewish Federations of North America / Jewish Family Service  Jewish · G, C
+  Buddhist Churches of America            Buddhist · G
+  988 Lifeline (Vibrant Emotional Health) All · L · verify our US entry
+  Spanish-speaking: Hispanic Ministry offices of the USCCB; Hermanas/Assemblies of God Hispanic districts  Christian · G, N (es)
+
+BRAZIL (pt)
+  CNBB — Conferência Nacional dos Bispos do Brasil   Christian · G, C
+  Cáritas Brasileira                       Christian · G, C
+  Pastoral da Saúde / Pastoral da Escuta   Christian · G · already do "listening" ministry in hospitals
+  Convenção Geral das Assembleias de Deus (CGADB)  Christian · G, C
+  Igreja Presbiteriana do Brasil           Christian · G, C
+  CVV — Centro de Valorização da Vida      All · L, G · runs the 188 line; volunteer listeners; verify our entry
+  FAMBRAS — Federação das Associações Muçulmanas do Brasil  Islam · G, C
+  CONIB — Confederação Israelita do Brasil Jewish · G, C
+  Faculdades de teologia (PUC-Rio, EST São Leopoldo)  Christian · G (students), N (pt)
+
+MEXICO (es)
+  CEM — Conferencia del Episcopado Mexicano  Christian · G, C
+  Cáritas Mexicana                         Christian · G, C
+  CONFRATERNICE — Confraternidad Nacional de Iglesias Cristianas Evangélicas  Christian · G, C
+  Consejo Interreligioso de México         All · G, C · one door to several faiths
+  Comité Central de la Comunidad Judía de México  Jewish · G, C
+  Centro Cultural Islámico de México       Islam · G
+  SAPTEL                                   All · L · runs the line we show; verify our entry
+  Universidad Pontificia de México / seminarios diocesanos  Christian · G (students), N (es)
+
+INDIA (hi, en, bn, te, mr, ta, gu, ur, ml, pa)
+  CBCI — Catholic Bishops' Conference of India  Christian · G, C
+  Caritas India                            Christian · G, C
+  National Council of Churches in India    Christian · G, C
+  Ramakrishna Mission                      Hindu · G, C · service ethic, many languages
+  Chinmaya Mission                         Hindu · G, C
+  ISKCON (India temples)                   Hindu · G, C
+  The Art of Living                        Hindu · G · very large volunteer base
+  Ismaili Council for India / AKDN         Islam · G, C · strong volunteer tradition
+  Muslim Educational Society (Kerala)      Islam · G, C · Malayalam
+  SGPC (Amritsar) / DSGMC (Delhi)          Sikh · G, C · Punjabi
+  Khalsa Aid                               Sikh · G
+  Maha Bodhi Society of India              Buddhist · G
+  Tele-MANAS (Ministry of Health)          All · L · the 14416 line we show; verify our entry
+  AASRA / Sneha (Chennai) / Vandrevala Foundation  All · L, N · helpline charities; Tamil, Hindi, Marathi speakers
+  Seminaries: UTC Bangalore, Gurukul Chennai  Christian · G (students), N (ta, kn)
+
+PHILIPPINES (tl, en)
+  CBCP — Catholic Bishops' Conference of the Philippines  Christian · G, C
+  Caritas Philippines                      Christian · G, C
+  Couples for Christ                       Christian · G, C · huge lay volunteer base
+  PCEC — Philippine Council of Evangelical Churches  Christian · G, C
+  Jesuit campus ministries (Ateneo), UST Center for Campus Ministry  Christian · G (students), N (tl)
+  NCMF — National Commission on Muslim Filipinos  Islam · G, C
+  In Touch Community Services              All · L, G · volunteer crisis line
+  NCMH Crisis Hotline (1553)               All · L · verify our entry
+
+INDONESIA (id)
+  Nahdlatul Ulama (NU)                     Islam · G, C · largest; ask for LAZISNU / youth wing
+  Muhammadiyah                             Islam · G, C · hospitals and universities; volunteer culture
+  Dompet Dhuafa                            Islam · G · volunteers; welfare
+  PGI — Persekutuan Gereja-gereja di Indonesia  Christian · G, C
+  KWI — Konferensi Waligereja Indonesia    Christian · G, C
+  WALUBI                                   Buddhist · G, C
+  Into The Light Indonesia                 All · L, N · suicide-prevention community; verify SEJIWA 119 ext 8
+  Islamic universities (UIN Jakarta / UIN Yogyakarta) counselling faculties  Islam · G (students), N (id)
+
+NIGERIA (en, ha, yo)  — no crisis line yet in world.js: asks L first
+  CAN — Christian Association of Nigeria   Christian · G, C
+  Catholic Bishops' Conference of Nigeria  Christian · G, C
+  RCCG — Redeemed Christian Church of God  Christian · G, C · thousands of parishes; Yoruba
+  Living Faith Church (Winners' Chapel)    Christian · G, C
+  Nigerian Baptist Convention              Christian · G, C
+  NSCIA — Nigerian Supreme Council for Islamic Affairs  Islam · G, C
+  JNI — Jama'atu Nasril Islam              Islam · G, C · Hausa
+  NASFAT                                   Islam · G, C · large, Yoruba-speaking, welfare arm
+  FOMWAN — Federation of Muslim Women's Associations  Islam · G, C, N (ha)
+  MANI — Mentally Aware Nigeria Initiative All · L, N · the people to ask which line to show
+  NSPI — Nigeria Suicide Prevention Initiative  All · L
+  NIFES — Nigerian Fellowship of Evangelical Students  Christian · G (students)
+
+KENYA (sw, en)
+  IRCK — Inter-Religious Council of Kenya  All · G, C · one door to every faith
+  NCCK — National Council of Churches of Kenya  Christian · G, C
+  KCCB — Kenya Conference of Catholic Bishops  Christian · G, C
+  Anglican Church of Kenya                 Christian · G, C
+  Evangelical Alliance of Kenya            Christian · G, C
+  SUPKEM — Supreme Council of Kenya Muslims  Islam · G, C
+  CIPK — Council of Imams and Preachers    Islam · G, C · Swahili
+  Befrienders Kenya                        All · L, G · volunteer listeners
+  Kenya Red Cross (1199)                   All · L · verify our entry
+  St Paul's University (Limuru) theology   Christian · G (students), N (sw)
+
+SOUTH AFRICA (en, zu)
+  SACC — South African Council of Churches Christian · G, C
+  SACBC — Southern African Catholic Bishops' Conference  Christian · G, C
+  Methodist Church of Southern Africa      Christian · G, C · Zulu
+  Dutch Reformed Church (NG Kerk)          Christian · G, C
+  MJC — Muslim Judicial Council            Islam · G, C
+  Jamiatul Ulama South Africa              Islam · G, C
+  South African Hindu Maha Sabha           Hindu · G, C
+  Ramakrishna Centre of South Africa       Hindu · G, C
+  SA Jewish Board of Deputies              Jewish · G, C
+  SADAG (0800 567 567)                     All · L, N · runs the line we show; verify our entry
+  LifeLine South Africa                    All · L, G · volunteer counsellors — natural guides
+  National Religious Leaders Council       All · C
+
+
+THE EMAIL (English)
+-------------------
+From:    EverVerse Team <team@eververse.org>
+Subject: One of your people, one blessing — a volunteer ask from EverVerse
+
+Dear [office / name of the ministry or council],
+
+Someone in your tradition is going to write, tonight, about the worst
+thing in their life — a death, an illness, a marriage ending, a faith gone
+quiet — and hope that a real person writes back.
+
+We run the Blessing Circle at eververse.org: a free service where an adult
+writes anonymously, and a checked volunteer from their own faith writes
+back once, with a verse from their own scripture and a few honest words of
+their own. No account, nothing to buy, and no AI writes a single word — we
+say that on our front door.
+
+We are opening it in [country] and we would rather do it with you than
+around you. Three asks, in order of size:
+
+  1. Ten people in your community who have carried something and could
+     each write one blessing. Not clergy necessarily. Ten minutes to
+     apply, and a person reads every application: eververse.org/guides.html
+
+  2. One hour from one person who lives in [country]: to check that the
+     crisis helpline we show — [line as in world.js] — is the right one,
+     and to read the phrases we use to recognise crisis in [language].
+     We will not promote the Circle in [country] until both are done.
+
+  3. If a volunteer says they serve with you, may we ring you to confirm
+     it? Their card then says "confirmed with [organisation]" to the
+     stranger they write to.
+
+What we promise is on one page, written for exactly this conversation:
+eververse.org/partners.html. Every guide confirms their identity before
+their first reply (we pay for the check); a new guide sees only
+celebrations until a person has read their first three replies; a reply
+cannot contain a phone number, a link or a request for money; and anyone
+can report anything in one tap, to a person. Guides are not paid and the
+person asking never pays. Each guide can print a signed letter of service.
+
+If any of the three is possible, reply to this address and a person will
+answer. If none is, thank you for reading this far.
+
+EverVerse Team
+team@eververse.org · eververse.org/partners.html
+
+
+FOLLOW-UP (day 10, once)
+------------------------
+Subject: Re: One of your people, one blessing
+
+Dear [name],
+
+A short follow-up in case the note below reached a busy inbox. The
+smallest of the three asks is the one hour on the helpline and the
+language — it is the thing that lets us open [country] safely. If there
+is someone we could speak to for that alone, we would be grateful.
+
+EverVerse Team
+
+
+EMAIL — Spanish draft (MX). HAVE A NATIVE SPEAKER READ IT BEFORE SENDING.
+-------------------------------------------------------------------------
+Asunto: Una persona de su comunidad, una bendición — una petición de voluntariado de EverVerse
+
+Estimados [oficina / nombre]:
+
+Esta noche alguien de su tradición va a escribir sobre lo peor que le está
+pasando — una muerte, una enfermedad, un matrimonio que se rompe, una fe
+que se ha quedado en silencio — con la esperanza de que una persona real
+le responda.
+
+En eververse.org tenemos el Círculo de Bendiciones: un servicio gratuito
+donde un adulto escribe de forma anónima y un voluntario verificado de su
+misma fe le responde una sola vez, con un versículo de su propia escritura
+y unas palabras honestas suyas. Sin cuenta, sin nada que comprar, y sin
+que ninguna inteligencia artificial escriba una sola palabra.
+
+Queremos abrirlo en México con ustedes. Tres peticiones, de mayor a menor:
+
+  1. Diez personas de su comunidad que hayan pasado por algo difícil y
+     puedan escribir una bendición cada una. No hace falta ser clérigo.
+     Diez minutos para aplicar; una persona lee cada solicitud:
+     eververse.org/guides.html
+  2. Una hora de una persona que viva en México: para confirmar que la
+     línea de crisis que mostramos — SAPTEL, 800 911 2000 — es la correcta,
+     y para leer las frases con las que reconocemos una crisis en español.
+     No promoveremos el Círculo en México hasta que ambas cosas estén hechas.
+  3. Si un voluntario dice que sirve con ustedes, ¿podemos llamarles para
+     confirmarlo?
+
+Lo que prometemos está en una página: eververse.org/partners.html. Los
+guías no reciben pago y quien escribe nunca paga.
+
+Si alguna de las tres es posible, respondan a esta dirección y una persona
+les contestará.
+
+Equipo de EverVerse · team@eververse.org
+
+
+EMAIL — Portuguese draft (BR). HAVE A NATIVE SPEAKER READ IT BEFORE SENDING.
+----------------------------------------------------------------------------
+Assunto: Uma pessoa da sua comunidade, uma bênção — um pedido de voluntariado da EverVerse
+
+Prezados [secretaria / nome]:
+
+Hoje à noite alguém da sua tradição vai escrever sobre a pior coisa da sua
+vida — uma morte, uma doença, um casamento que acaba, uma fé que
+silenciou — na esperança de que uma pessoa de verdade responda.
+
+Em eververse.org mantemos o Círculo de Bênçãos: um serviço gratuito em que
+um adulto escreve de forma anônima e um voluntário verificado da sua
+própria fé responde uma única vez, com um versículo da própria escritura e
+algumas palavras honestas suas. Sem cadastro, sem nada para comprar, e sem
+que nenhuma inteligência artificial escreva uma palavra sequer.
+
+Queremos abri-lo no Brasil com vocês. Três pedidos, do maior ao menor:
+
+  1. Dez pessoas da sua comunidade que já carregaram algo difícil e possam
+     escrever uma bênção cada. Não precisa ser clero. Dez minutos para se
+     candidatar; uma pessoa lê cada candidatura: eververse.org/guides.html
+  2. Uma hora de uma pessoa que more no Brasil: para confirmar que a linha
+     de crise que mostramos — CVV, 188 — é a correta, e para ler as frases
+     com que reconhecemos uma crise em português. Não divulgaremos o
+     Círculo no Brasil até que as duas coisas estejam feitas.
+  3. Se um voluntário disser que serve com vocês, podemos ligar para
+     confirmar?
+
+O que prometemos está em uma página: eververse.org/partners.html. Os guias
+não são pagos e quem escreve nunca paga.
+
+Se qualquer um dos três for possível, respondam a este endereço e uma
+pessoa vai responder.
+
+Equipe EverVerse · team@eververse.org
+
+
+EMAIL — Indonesian draft (ID). HAVE A NATIVE SPEAKER READ IT BEFORE SENDING.
+----------------------------------------------------------------------------
+Subjek: Satu orang dari komunitas Anda, satu berkat — permohonan relawan dari EverVerse
+
+Yth. [kantor / nama],
+
+Malam ini seseorang dari tradisi Anda akan menulis tentang hal terberat
+dalam hidupnya — kematian, sakit, pernikahan yang berakhir, iman yang
+menjadi sunyi — dengan harapan ada orang sungguhan yang membalas.
+
+Di eververse.org kami menjalankan Lingkaran Berkat: layanan gratis di mana
+seorang dewasa menulis tanpa nama, dan seorang relawan terverifikasi dari
+agamanya sendiri membalas satu kali, dengan satu ayat dari kitab sucinya
+dan beberapa kata jujur dari dirinya. Tanpa akun, tanpa biaya, dan tidak
+ada kecerdasan buatan yang menulis satu kata pun.
+
+Kami ingin membukanya di Indonesia bersama Anda. Tiga permohonan, dari yang
+terbesar:
+
+  1. Sepuluh orang dari komunitas Anda yang pernah memikul sesuatu yang
+     berat dan bisa menulis satu berkat masing-masing. Tidak harus ulama
+     atau pendeta. Sepuluh menit untuk mendaftar; setiap pendaftaran dibaca
+     oleh manusia: eververse.org/guides.html
+  2. Satu jam dari satu orang yang tinggal di Indonesia: untuk memastikan
+     layanan krisis yang kami tampilkan — SEJIWA 119 ext. 8 — sudah benar,
+     dan membaca frasa yang kami gunakan untuk mengenali krisis dalam
+     bahasa Indonesia. Kami tidak akan mempromosikan Lingkaran di Indonesia
+     sebelum keduanya selesai.
+  3. Jika seorang relawan menyebut melayani bersama Anda, bolehkah kami
+     menelepon untuk memastikannya?
+
+Apa yang kami janjikan ada di satu halaman: eververse.org/partners.html.
+Pemandu tidak dibayar, dan orang yang menulis tidak pernah membayar.
+
+Jika salah satu dari ketiganya memungkinkan, balas ke alamat ini dan
+seseorang akan menjawab.
+
+Tim EverVerse · team@eververse.org
+
+
+THE LOG
+-------
+Keep it here, one line per organisation, so the next person can see what
+was sent and when. Never paste a reply's contents; a date and a word.
+
+  date sent  | cc | organisation                     | ask (G/L/N/C) | follow-up | reply | outcome
+  -----------|----|----------------------------------|---------------|-----------|-------|--------
+             |    |                                  |               |           |       |
