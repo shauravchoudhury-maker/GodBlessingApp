@@ -99,6 +99,15 @@ var REQUIREMENTS = [
   { id: "G10", area: "guides", gate: "50",  status: "open",    check: "code",
     text: "Every admin action — graduate, suspend, verify, vouch — is written to an audit log nobody can delete.",
     evidence: "Not built." },
+  { id: "G11", area: "guides", gate: "now", status: "met",     check: "code",
+    text: "A guide is never paid per reply or by the person who asked; any stipend is flat, monthly, the same for every present guide, from a fund separate from gifts — and the guides page and trust page say so.",
+    evidence: "guide-support.js STIPEND / monthlyPayout / NEVER_IN_SUPPORT; guides.html 'Is it paid?'; trust.html money line." },
+  { id: "G12", area: "guides", gate: "50",  status: "open",    check: "human",
+    text: "The Guide Fund has at least one signed sponsor before any stipend is described as open.",
+    evidence: "FUND.sponsors is empty; fundOpen() false; guides page says 'not open yet'." },
+  { id: "G13", area: "guides", gate: "now", status: "met",     check: "code",
+    text: "Every guide can print a letter of service from facts — months, blessings, standing — with no rating or ranking in it.",
+    evidence: "serviceRecord / serviceLetter in guide-support.js; 'Your service' on the profile screen." },
 
   /* ---- The promise: written by people, never AI ---------------------- */
   { id: "T1",  area: "thesis", gate: "now", status: "met",     check: "code",
@@ -288,6 +297,9 @@ var USAGE_TARGETS = [
   { key: "guidesActive",    label: "Guides active",                           op: ">=", value: 3,  req: "B3" },
   { key: "faithsCovered",   label: "Faiths with at least one active guide",   op: ">=", value: 2,  req: "B3" },
   { key: "applicationsWaiting", label: "Applications waiting",                op: "<=", value: 5,  req: "G8" },
+  // Recruiting pulse. Ten guides in ninety days needs about one application
+  // a week; this is the number the December decision is made on.
+  { key: "applications7d",  label: "Guide applications this week",            op: ">=", value: 1,  req: "B3" },
 ];
 
 function cmp(op, a, b){ return op === "<=" ? a <= b : op === ">=" ? a >= b : a === b; }

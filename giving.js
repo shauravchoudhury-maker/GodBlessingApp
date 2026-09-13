@@ -158,6 +158,7 @@ function mayAskToGive(surface) {
    that hides a lot; this is the list a giver is entitled to. */
 const PLATFORM_SHARE_PAYS_FOR = [
   "identity checks for guides — we pay, never the volunteer",
+  "the Guide Fund — half of every tip, paid out as one flat monthly stipend to each guide who was present that month",
   "the people who read reports and sit in on conversations",
   "hosting, and the crisis-line partnerships in each country",
   "translating the safety checks into every language we offer",

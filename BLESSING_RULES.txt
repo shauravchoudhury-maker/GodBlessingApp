@@ -250,10 +250,14 @@ file, or reactions, Twin Track and Second Chance all stop working.
       // outright to every app user: the document has to already exist.
       allow create: if false;
       allow update: if
-        // a guide edits their own profile — and cannot touch `suspended`
+        // a guide edits their own profile — and cannot touch `suspended`.
+        // `supportChoice` is what they want done with a stipend (receive /
+        // to charity / decline); it never changes whether they are paid
+        // more, only whether, so it is safe in their own hands.
         (request.auth != null && request.auth.uid == uid
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['name','tradition','languages','experience','about','capacity','active','updatedAt'])
+               .hasOnly(['name','tradition','languages','experience','about','capacity','active','updatedAt','supportChoice'])
+          && request.resource.data.get('supportChoice', 'stipend') in ['stipend','charity','decline']
           && request.resource.data.about is string
           && request.resource.data.about.size() <= 400
           && request.resource.data.name.size() <= 60)
