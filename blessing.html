@@ -289,6 +289,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.6}
 <script src="safety-lang.js"></script>
 <script src="thread.js"></script>
 <script src="requirements.js"></script>
+<script src="regions.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -356,7 +357,9 @@ const RELIGION = Object.fromEntries(RELIGIONS.map((r) => [r.key, r]));
 const LANGS = [["en","English"],["es","Spanish"],["hi","Hindi"],["pa","Punjabi"],["gu","Gujarati"],
   ["ta","Tamil"],["te","Telugu"],["bn","Bengali"],["ur","Urdu"],["ar","Arabic"],["fa","Persian"],
   ["fr","French"],["pt","Portuguese"],["zh-CN","Chinese"],["tl","Filipino"],["vi","Vietnamese"],
-  ["ko","Korean"],["sw","Swahili"],["ru","Russian"],["pl","Polish"]];
+  ["ko","Korean"],["sw","Swahili"],["ru","Russian"],["pl","Polish"],["id","Indonesian"],
+  ["ja","Japanese"],["th","Thai"],["ms","Malay"],["ne","Nepali"],["si","Sinhala"],["mr","Marathi"],
+  ["ml","Malayalam"],["am","Amharic"],["ha","Hausa"],["yo","Yoruba"],["zu","Zulu"]];
 
 /* One multi-select, used by the application form and the profile, so a
    guide meets the same control twice and learns it once. */
@@ -2222,6 +2225,10 @@ async function computeStats(){
   const probation = active.filter((g) => g.probation === true);
   const faiths = new Set(); active.forEach((g) => (g.tradition || []).forEach((t) => faiths.add(t)));
   const langs = new Set(); active.forEach((g) => (g.languages || []).forEach((l) => langs.add(l)));
+  // Per language and per faith, so regions.js can say which countries are
+  // answerable. Counts only, keyed by code.
+  const guidesByLanguage = {}; active.forEach((g) => (g.languages || []).forEach((l) => { guidesByLanguage[l] = (guidesByLanguage[l] || 0) + 1; }));
+  const guidesByFaith = {}; active.forEach((g) => (g.tradition || []).forEach((t) => { guidesByFaith[t] = (guidesByFaith[t] || 0) + 1; }));
   const probationOldestD = probation.length
     ? Math.max(...probation.map((g) => hoursBetween(g.approvedAt || now, now) / 24)) : 0;
 
@@ -2244,6 +2251,8 @@ async function computeStats(){
     guidesTotal: guides.length, guidesActive: active.length, guidesProbation: probation.length,
     probationOldestD: round1(probationOldestD),
     faithsCovered: faiths.size, languagesCovered: langs.size,
+    guidesByLanguage, guidesByFaith,
+    countriesPromotable: regionSummary({ guidesByLanguage }).promotable,
     reportsOpen: reports.length, reportsOldestH: round1(reportsOldestH),
     applicationsWaiting,
   };
@@ -2282,6 +2291,24 @@ async function renderHealth(){
      ["languages asked in", stats.languagesAsked], ["guides total", stats.guidesTotal], ["on probation", stats.guidesProbation],
      ["languages covered", stats.languagesCovered], ["replies timed", stats.repliesMeasured]]
       .map(([k, v]) => '<span class="fact">' + esc(k) + ': <b>' + esc(String(v)) + '</b></span>').join("") + '</div>';
+
+  // Regions: what each country still needs before it is promoted there.
+  // Starters first, then every region, folded.
+  const rs = regionSummary(stats);
+  const dot = (c) => '<span class="chipb" style="background:' + (c === 'green' ? '#eef7ee;color:#2f6b3a' : c === 'amber' ? '#fff4e0;color:#8a5a00' : '#fdecec;color:#9b2c2c') + '">' + c + '</span>';
+  const row = (x) => '<div class="rowx" style="align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)">' + dot(x.colour) +
+    '<span style="flex:1"><b>' + esc(x.name) + '</b> <span class="muted" style="font-size:12.5px">' + esc(x.cc) + ' · ' + x.guides + ' guide' + (x.guides === 1 ? '' : 's') +
+    ' in ' + esc(x.langs.map((l) => l.code + (l.patterns === 'reviewed' ? '' : '*')).join(', ')) + ' · line ' + esc(x.helpline) + '</span>' +
+    (x.missing.length ? '<div class="muted" style="font-size:12.5px;margin-top:2px">next: ' + esc(x.next) + (x.missing.length > 1 ? ' (+' + (x.missing.length - 1) + ' more)' : '') + '</div>' : '') + '</span></div>';
+  html += '<h3 style="margin:22px 0 4px">Regions — ' + rs.promotable + ' of ' + rs.total + ' countries promotable</h3>' +
+    '<p class="muted" style="font-size:13px">Green needs a verified crisis line, patterns read by a native speaker, and ' + READY_GUIDES + ' guides in one of its languages. * = patterns unreviewed. Starters first.</p>' +
+    '<div class="req" style="padding:4px 14px">' + STARTERS.map((cc) => readiness(cc, stats)).filter(Boolean).map(row).join("") + '</div>';
+  REGIONS.forEach((r) => {
+    const t = rs.byRegion[r.key];
+    html += '<details style="margin-top:8px"><summary style="cursor:pointer"><b>' + esc(r.label) + '</b> <span class="muted" style="font-size:13px">' +
+      t.green + ' green · ' + t.amber + ' amber · ' + t.red + ' red</span></summary>' +
+      r.countries.map((cc) => readiness(cc, stats)).filter(Boolean).map(row).join("") + '</details>';
+  });
 
   const blocking = blockingNow();
   html += '<h3 style="margin:22px 0 4px">Requirements — ' + sum.met + ' met · ' + sum.partial + ' partial · ' + sum.open + ' open</h3>' +

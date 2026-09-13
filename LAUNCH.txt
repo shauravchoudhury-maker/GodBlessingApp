@@ -7,7 +7,7 @@ and to bring guides to it.
 WHAT "GLOBAL IN OCTOBER" HONESTLY MEANS
 ---------------------------------------
 The door is open to the world from the day PR #40 merges: anyone, anywhere,
-in any of the 24 languages, can ask. That part is global on day one.
+in any of the 35 languages, can ask. That part is global on day one.
 
 PROMOTION is not. A language is promoted only once a native speaker has
 read its crisis and under-18 patterns (safety-lang.js, every `checked` is

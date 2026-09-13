@@ -39,7 +39,7 @@ var REQUIREMENTS = [
     evidence: "Response doc id = guide uid (one per guide); thread turn parity in rules." },
   { id: "P3",  area: "people", gate: "now", status: "met",     check: "code",
     text: "Crisis language is detected in every offered language and the person is shown a helpline before sending.",
-    evidence: "safety-lang.js, 24 languages, tlang suite; crisis panel on the ask form." },
+    evidence: "safety-lang.js, 35 languages (all unreviewed), tlang suite; crisis panel on the ask form." },
   { id: "P4",  area: "people", gate: "now", status: "met",     check: "code",
     text: "Under-18 signals route the person to a helpline and an adult; the Circle is adults only.",
     evidence: "hitsMinor in safety-lang.js; 18+ attestation on send." },
@@ -51,7 +51,7 @@ var REQUIREMENTS = [
     evidence: "BLOCK / WARN / TITLE_RE in blessing.html; tship suite." },
   { id: "P7",  area: "people", gate: "now", status: "partial", check: "human",
     text: "Every helpline number shown is verified by a person in that country within the last 12 months.",
-    evidence: "world.js: all 33 entries checked:null. Do not promote in a country until its line is verified." },
+    evidence: "world.js: all 40 entries checked:null (7 added 2026-09-13 for the starters). Do not promote in a country until its line is verified — regions.js shows which." },
   { id: "P8",  area: "people", gate: "now", status: "partial", check: "human",
     text: "Every crisis and under-18 pattern is reviewed by a native speaker of that language.",
     evidence: "safety-lang.js: all checked:null. Do not promote in a language until reviewed." },
@@ -274,6 +274,12 @@ var REQUIREMENTS = [
   { id: "B6",  area: "product", gate: "50",  status: "open",    check: "ops",
     text: "Time-to-first-reply has a public promise and the median is under 24 hours.",
     evidence: "Measured on the Health screen; no promise published." },
+  { id: "B7",  area: "product", gate: "now", status: "met",     check: "code",
+    text: "Three primary markets — the Americas, Asia, Africa — and a country is promoted only when it is green: verified crisis line, patterns read by a native speaker, three guides in one of its languages.",
+    evidence: "regions.js readiness()/regionSummary(); Regions panel on Health; countriesPromotable in the snapshot. Nine starters: US BR MX · IN PH ID · NG KE ZA." },
+  { id: "B8",  area: "product", gate: "now", status: "open",    check: "ops",
+    text: "At least one starter country in each region is green before the Circle is promoted there.",
+    evidence: "0 of 37 countries green on 2026-09-13; every one is missing a verified line." },
 ];
 
 /* Usage targets. The Health screen and the daily check compare the latest
@@ -288,6 +294,7 @@ var USAGE_TARGETS = [
   { key: "guidesActive",    label: "Guides active",                           op: ">=", value: 3,  req: "B3" },
   { key: "faithsCovered",   label: "Faiths with at least one active guide",   op: ">=", value: 2,  req: "B3" },
   { key: "applicationsWaiting", label: "Applications waiting",                op: "<=", value: 5,  req: "G8" },
+  { key: "countriesPromotable", label: "Countries promotable (green)",         op: ">=", value: 1,  req: "B8" },
 ];
 
 function cmp(op, a, b){ return op === "<=" ? a <= b : op === ">=" ? a >= b : a === b; }

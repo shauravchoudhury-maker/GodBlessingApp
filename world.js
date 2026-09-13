@@ -79,17 +79,33 @@ const CRISIS = {
   ID: { line: "119", name: "Kemenkes SEJIWA", note: "extension 8", emergency: "112", checked: null },
   IL: { line: "1201", name: "ERAN", note: "24 hours", emergency: "101", checked: null },
   BD: { line: "09612119911", name: "Kaan Pete Roi", emergency: "999", checked: null },
+  // Added 2026-09-13 for the Asia / Africa / Americas starters. Same rule as
+  // every row above: compiled from training data, NOT verified, and only
+  // the ones I was confident of. Countries where I was not sure (NG, GH,
+  // ET, VN, CO) stay in EMERGENCY_ONLY rather than carry a guess.
+  TH: { line: "1323", name: "สายด่วนสุขภาพจิต (Mental Health Hotline)", note: "free, 24 hours",
+        emergency: "191", checked: null },
+  LK: { line: "1333", name: "CCCline", note: "free, 24 hours", emergency: "119", checked: null },
+  NP: { line: "1166", name: "Mental Health Helpline (TPO Nepal)", note: "free, 24 hours",
+        emergency: "100", checked: null },
+  PK: { line: "0311 7786264", name: "Umang", note: "call or WhatsApp", emergency: "1122", checked: null },
+  KE: { line: "1199", name: "Kenya Red Cross mental health line", note: "free, 24 hours",
+        emergency: "999", checked: null },
+  PE: { line: "113", name: "Línea 113 Salud — opción 5", note: "free, 24 hours",
+        emergency: "116", checked: null },
+  CL: { line: "*4141", name: "Hospital Digital — No estás solo, no estás sola", note: "free, 24 hours",
+        emergency: "131", checked: null },
 };
 
 // Countries where we have no number we would stand behind. The directory is
 // shown on its own rather than guessing — an emergency number we are sure of
 // is still useful, so it is kept where known.
 const EMERGENCY_ONLY = {
-  AE: "999", PK: "1122", NG: "112", KE: "999", GH: "112", TZ: "112", UG: "999",
-  LK: "119", NP: "100", VN: "115", TH: "191", TR: "112", SA: "997", EG: "123",
+  AE: "999", NG: "112", GH: "112", TZ: "112", UG: "999",
+  VN: "115", TR: "112", SA: "997", EG: "123",
   QA: "999", KW: "112", MA: "150", DZ: "14", CN: "120", HK: "999", TW: "119",
   RU: "112", UA: "112", RO: "112", GR: "112", CZ: "112", HU: "112", CO: "123",
-  CL: "131", PE: "116", VE: "171", EC: "911", ET: "907", ZW: "999",
+  VE: "171", EC: "911", ET: "907", ZW: "999",
 };
 
 /* ---------------------------------------------------------------- */
@@ -168,6 +184,11 @@ const UI_LANGS = [
   ["fa","فارسی"],["he","עברית"],["fr","Français"],["pt","Português"],["zh-CN","中文"],
   ["tl","Filipino"],["vi","Tiếng Việt"],["ko","한국어"],["id","Bahasa Indonesia"],
   ["sw","Kiswahili"],["ru","Русский"],["pl","Polski"],["de","Deutsch"],["it","Italiano"],
+  // Asia / Africa starters, 2026-09-13. Each has crisis patterns in
+  // safety-lang.js (basic, unreviewed) — regions.js says what each country
+  // still needs before it is promoted.
+  ["ja","日本語"],["th","ไทย"],["ms","Bahasa Melayu"],["ne","नेपाली"],["si","සිංහල"],
+  ["mr","मराठी"],["ml","മലയാളം"],["am","አማርኛ"],["ha","Hausa"],["yo","Yorùbá"],["zu","isiZulu"],
 ];
 
 const RTL_LANGS = ["ar","ur","fa","he","ps","sd","ug","yi"];
