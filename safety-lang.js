@@ -3,7 +3,7 @@
 //
 // THE HOLE THIS CLOSES.
 //
-// world.js opened the Circle to 24 languages. The two classifiers that keep
+// world.js opened the Circle to 24 languages (35 since 2026-09-13). The two classifiers that keep
 // people alive and keep children out — risky() and looksLikeMinor() — were
 // English only. So a Spanish speaker writing "quiero morir" got no crisis
 // panel, no local helpline and no routing to a vetted guide, and a child
@@ -266,13 +266,86 @@ const LANG_SAFETY = {
   sw: { level: "basic", checked: null,
     crisis: ["kujiua","nataka kufa","sitaki kuishi","kujidhuru"],
     minor: [/\bnina\s+miaka\s+(?:[89]|1[0-7])\b/] },
+
+  /* ---- Asia / Africa starters, added 2026-09-13 ---------------------
+     Eleven more languages so that the starter countries (regions.js) are
+     not unscreened. All "basic", all unreviewed — the same rule as above,
+     and the same P8 gate: no promotion in a language until a native
+     speaker has read these. Thai and Japanese have no word spaces, so
+     their patterns are substrings and regexes without W0. */
+  ja: { level: "basic", checked: null,
+    crisis: ["自殺","死にたい","死にたく","消えたい","生きたくない","生きていたくない","自傷","リストカット"],
+    minor: [/(?:私|僕|俺|わたし|ぼく)は?\s*(?:[89]|1[0-7])\s*(?:歳|才)/] },
+
+  th: { level: "basic", checked: null,
+    crisis: ["ฆ่าตัวตาย","อยากตาย","ไม่อยากมีชีวิต","ไม่อยากอยู่แล้ว","ทำร้ายตัวเอง","จบชีวิต"],
+    minor: [/(?:ฉัน|ผม|หนู|ดิฉัน)\s*อายุ\s*(?:[89]|1[0-7])\s*(?:ปี|ขวบ)/] },
+
+  ms: { level: "basic", checked: null,
+    crisis: ["bunuh diri","membunuh diri","nak mati","mahu mati","ingin mati","tak nak hidup",
+             "tidak mahu hidup","cederakan diri","mencederakan diri"],
+    minor: [/\b(?:saya|aku)\s+(?:berumur|berusia)?\s*(?:[89]|1[0-7])\s+tahun\b/,
+            /\b(?:saya|aku)\s+(?:masih\s+)?(?:budak|pelajar)\s+sekolah\b/],
+    // "anak saya 16 tahun" is a parent; it contains "saya 16 tahun" whole.
+    notMinor: [/\b(?:anak|adik|abang|kakak)\s+(?:saya|aku)\b/] },
+
+  ne: { level: "basic", checked: null,
+    crisis: ["आत्महत्या","मर्न चाहन्छु","मर्न मन छ","मर्न मन लाग्छ","बाँच्न मन छैन","बाँच्न चाहन्न",
+             "आफैलाई हानि","आफैलाई चोट",
+             "atmahatya","marna chahanchu","marna man cha","bachna man chaina"],
+    minor: [new RegExp(W0 + "म\\s+(?:[89]|1[0-7])\\s+(?:वर्ष|बर्ष)"),
+            /\bma\s+(?:[89]|1[0-7])\s+(?:barsa|barsha|years?)\s+ko\b/] },
+
+  si: { level: "basic", checked: null,
+    crisis: ["සියදිවි","සිය දිවි","මැරෙන්න ඕන","මැරෙන්න ඕනේ","මැරෙන්න ඕනෑ","ජීවත් වෙන්න ඕන නෑ",
+             "ජීවත් වෙන්න බෑ","මට ජීවත් වෙන්න බැහැ"],
+    minor: [new RegExp(W0 + "මගේ\\s+වයස\\s+(?:[89]|1[0-7])"),
+            new RegExp(W0 + "මම\\s+(?:[89]|1[0-7])\\s+යි")] },
+
+  mr: { level: "basic", checked: null,
+    crisis: ["आत्महत्या","मरायचं आहे","मरायचे आहे","मरायचंय","जगायचं नाही","जगायचे नाही","जगायचं नाहीये",
+             "स्वतःला इजा","स्वतःला संपव"],
+    minor: [new RegExp(W0 + "मी\\s+(?:[89]|1[0-7])\\s+वर्ष")] },
+
+  ml: { level: "basic", checked: null,
+    crisis: ["ആത്മഹത്യ","മരിക്കണം","മരിക്കാൻ തോന്നുന്നു","ജീവിക്കാൻ താല്പര്യമില്ല","ജീവിക്കണ്ട",
+             "സ്വയം ഉപദ്രവി","athmahathya"],
+    minor: [new RegExp(W0 + "എനിക്ക്\\s+(?:[89]|1[0-7])\\s+വയസ്")] },
+
+  am: { level: "basic", checked: null,
+    crisis: ["ራሴን ማጥፋት","ራሴን ልግደል","ራሴን መግደል","መሞት እፈልጋለሁ","መኖር አልፈልግም","ራሴን መጉዳት","ራሴን ልጎዳ"],
+    minor: [new RegExp(W0 + "(?:እድሜዬ|ዕድሜዬ)\\s+(?:[89]|1[0-7])")] },
+
+  ha: { level: "basic", checked: null,
+    crisis: ["kashe kaina","kashe kai","ina son in mutu","ina so in mutu","ba na son rayuwa",
+             "ban son rayuwa","cutar da kaina","in cutar da kaina"],
+    minor: [/\bina\s+da\s+shekar[au]\s+(?:[89]|1[0-7])\b/,
+            /\bshekaruna\s+(?:[89]|1[0-7])\b/] },
+
+  // Yoruba is written with tone marks and under-dots; foldText() strips
+  // both, so every pattern here is in its stripped form.
+  yo: { level: "basic", checked: null,
+    crisis: ["pa ara mi","mo fe ku","fe ku","mi o fe wa laaye","mi o fe gbe mo","se ara mi lese",
+             "pa ara mi"],
+    minor: [/\bomo\s+odun\s+(?:[89]|1[0-7])\s+ni\s+mi\b/,
+            /\bmo\s+je\s+omo\s+odun\s+(?:[89]|1[0-7])\b/] },
+
+  zu: { level: "basic", checked: null,
+    crisis: ["ukuzibulala","ngizibulale","ngizozibulala","ngifuna ukufa","angifuni ukuphila",
+             "angisafuni ukuphila","ukuzilimaza","ngizilimaze"],
+    minor: [/\bngineminyaka\s+(?:engu-?|eyi-?|ewu-?|eli-?)?\s*(?:[89]|1[0-7])\b/] },
 };
 
 /* Script gives a free, collision-proof second opinion: if the text is in
    Devanagari we check Hindi whatever the picker says, because people choose
    English and then write in their own language all the time. */
 const SCRIPT_HINTS = [
-  { re: /[ऀ-ॿ]/, langs: ["hi"] },          // Devanagari
+  { re: /[ऀ-ॿ]/, langs: ["hi", "mr", "ne"] },   // Devanagari: Hindi, Marathi, Nepali
+  { re: /[぀-ヿ]/, langs: ["ja"] },                // Hiragana / Katakana
+  { re: /[฀-๿]/, langs: ["th"] },
+  { re: /[඀-෿]/, langs: ["si"] },
+  { re: /[ഀ-ൿ]/, langs: ["ml"] },
+  { re: /[ሀ-፿]/, langs: ["am"] },                // Ethiopic
   { re: /[؀-ۿݐ-ݿ]/, langs: ["ar", "ur", "fa"] },
   { re: /[ঀ-৿]/, langs: ["bn"] },
   { re: /[਀-੿]/, langs: ["pa"] },
@@ -305,10 +378,14 @@ function hitsMinor(text, lang) {
   const L = LANG_SAFETY[lang];
   if (!L || !L.minor) return false;
   const t = " " + foldText(text) + " ";
+  // Sinhala (and a few other scripts) have vowel signs that NFD splits in
+  // two, so the folded text no longer matches a pattern typed in composed
+  // form. Test the lightly-folded text as well, so neither form is missed.
+  const u = " " + foldApostrophes(text).toLowerCase().replace(/\s+/g, " ") + " ";
   // Exclusions run first: some languages phrase "my child is 15" in a way
   // that contains "I am 15" word for word.
-  if (L.notMinor && L.notMinor.some((re) => re.test(t))) return false;
-  return L.minor.some((re) => re.test(t));
+  if (L.notMinor && L.notMinor.some((re) => re.test(t) || re.test(u))) return false;
+  return L.minor.some((re) => re.test(t) || re.test(u));
 }
 
 /* The two questions the app actually asks. `enRisky` / `enMinor` are the
