@@ -2,6 +2,8 @@ EverVerse — Guide recruitment through faith organisations
 =========================================================
 Nine starter countries (regions.js): US · BR · MX · IN · PH · ID · NG · KE · ZA
 Written 13 September 2026. The one-pager the email links to is partners.html.
+THE WORKING LIST IS RECRUIT.xlsx (Organisations / Countries / Dashboard /
+Templates / Log). This file is the reasoning and the source it was built from.
 
 WHY ORGANISATIONS AND NOT ADS
 -----------------------------
