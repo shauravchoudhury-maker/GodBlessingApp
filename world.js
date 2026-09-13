@@ -22,8 +22,12 @@
 //  is maintained by people whose job that is. If our number is stale, the
 //  person still has a working route in the same breath.
 //
-//  `checked` is the date a human confirmed the entry. It is null on every
-//  row right now, on purpose, and the UI says so until it is not.
+//  `checked` is the date a human confirmed the entry, and `how` says how:
+//  "website" = the number was read off the provider's own site (done for
+//  the nine starter countries on 2026-09-13); "phone" = someone in that
+//  country rang it and it connected — which is what P7 actually asks for.
+//  `site` is the provider's own page, shown next to the number so a person
+//  can check us in one tap.
 // ─────────────────────────────────────────────────────────────────────────
 
 const HELP_DIRECTORY = {
@@ -33,7 +37,7 @@ const HELP_DIRECTORY = {
 
 const CRISIS = {
   US: { line: "988", name: "Suicide & Crisis Lifeline", note: "call or text, free, 24 hours",
-        chat: "https://988lifeline.org/chat/", emergency: "911", checked: null },
+        chat: "https://988lifeline.org/chat/", site: "https://988lifeline.org/", emergency: "911", checked: "2026-09-13", how: "website" },
   CA: { line: "988", name: "Suicide Crisis Helpline", note: "call or text, free, 24 hours",
         emergency: "911", checked: null },
   GB: { line: "116 123", name: "Samaritans", note: "free, 24 hours, from any phone",
@@ -45,7 +49,7 @@ const CRISIS = {
   NZ: { line: "1737", name: "Need to Talk?", note: "call or text, free, 24 hours",
         emergency: "111", checked: null },
   IN: { line: "14416", name: "Tele-MANAS", note: "government helpline, free, 24 hours, many languages",
-        emergency: "112", checked: null },
+        site: "https://telemanas.mohfw.gov.in/", emergency: "112", checked: "2026-09-13", how: "website" },
   DE: { line: "0800 111 0 111", name: "Telefonseelsorge", note: "free, 24 hours",
         emergency: "112", checked: null },
   FR: { line: "3114", name: "Numéro national de prévention du suicide", note: "free, 24 hours",
@@ -67,16 +71,17 @@ const CRISIS = {
   AT: { line: "142", name: "Telefonseelsorge", note: "free, 24 hours", emergency: "112", checked: null },
   CH: { line: "143", name: "Die Dargebotene Hand", note: "24 hours", emergency: "112", checked: null },
   BR: { line: "188", name: "CVV — Centro de Valorização da Vida", note: "free, 24 hours",
-        emergency: "192", checked: null },
-  MX: { line: "800 911 2000", name: "SAPTEL", note: "free, 24 hours", emergency: "911", checked: null },
+        site: "https://cvv.org.br/", emergency: "192", checked: "2026-09-13", how: "website" },
+  // Number corrected 2026-09-13 from SAPTEL's own site (was 800 911 2000).
+  MX: { line: "55 5259 8121", name: "SAPTEL", note: "24 hours", site: "https://www.saptel.org.mx/", emergency: "911", checked: "2026-09-13", how: "website" },
   AR: { line: "135", name: "Centro de Asistencia al Suicida", emergency: "911", checked: null },
-  ZA: { line: "0800 567 567", name: "SADAG", emergency: "10111", checked: null },
+  ZA: { line: "0800 567 567", name: "SADAG", site: "https://www.sadag.org/", emergency: "10111", checked: "2026-09-13", how: "website" },
   JP: { line: "0570-064-556", name: "いのちの電話 (Inochi no Denwa)", emergency: "119", checked: null },
   KR: { line: "109", name: "자살예방상담전화", note: "24 hours", emergency: "119", checked: null },
   SG: { line: "1767", name: "Samaritans of Singapore", note: "24 hours", emergency: "995", checked: null },
   MY: { line: "03-76272929", name: "Befrienders KL", emergency: "999", checked: null },
-  PH: { line: "1553", name: "NCMH Crisis Hotline", note: "free, 24 hours", emergency: "911", checked: null },
-  ID: { line: "119", name: "Kemenkes SEJIWA", note: "extension 8", emergency: "112", checked: null },
+  PH: { line: "1553", name: "NCMH Crisis Hotline", note: "free, 24 hours", site: "https://www.facebook.com/ncmhcrisishotline", emergency: "911", checked: "2026-09-13", how: "website" },
+  ID: { line: "119", name: "Kemenkes SEJIWA", note: "extension 8", site: "https://kemkes.go.id/", emergency: "112", checked: "2026-09-13", how: "website" },
   IL: { line: "1201", name: "ERAN", note: "24 hours", emergency: "101", checked: null },
   BD: { line: "09612119911", name: "Kaan Pete Roi", emergency: "999", checked: null },
   // Added 2026-09-13 for the Asia / Africa / Americas starters. Same rule as
@@ -90,7 +95,7 @@ const CRISIS = {
         emergency: "100", checked: null },
   PK: { line: "0311 7786264", name: "Umang", note: "call or WhatsApp", emergency: "1122", checked: null },
   KE: { line: "1199", name: "Kenya Red Cross mental health line", note: "free, 24 hours",
-        emergency: "999", checked: null },
+        site: "https://redcross.or.ke/", emergency: "999", checked: "2026-09-13", how: "website" },
   PE: { line: "113", name: "Línea 113 Salud — opción 5", note: "free, 24 hours",
         emergency: "116", checked: null },
   CL: { line: "*4141", name: "Hospital Digital — No estás solo, no estás sola", note: "free, 24 hours",
@@ -165,8 +170,10 @@ function crisisHelp(country) {
     name: c ? c.name : null,
     note: c ? (c.note || "") : "",
     chat: c ? (c.chat || null) : null,
+    site: c ? (c.site || null) : null,
     emergency: c ? c.emergency : (EMERGENCY_ONLY[country] || null),
     verified: !!(c && c.checked),
+    verifiedHow: c ? (c.how || null) : null,
     directory: HELP_DIRECTORY,
   };
 }

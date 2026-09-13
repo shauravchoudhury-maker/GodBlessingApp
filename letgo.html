@@ -192,7 +192,8 @@
         const h = crisisHelp(typeof countryOf === "function" ? countryOf() : null);
         let html = "";
         if (h.line) html += '<p><b>' + esc(h.name) + '</b>' + (h.note ? " — " + esc(h.note) : "") + '<span class="num">' + esc(h.line) + '</span>' +
-          (h.chat ? '<a href="' + esc(h.chat) + '" target="_blank" rel="noopener">Or chat with them online →</a>' : '') + '</p>';
+          (h.chat ? '<a href="' + esc(h.chat) + '" target="_blank" rel="noopener">Or chat with them online →</a>' : '') +
+          (h.site ? ' <a href="' + esc(h.site) + '" target="_blank" rel="noopener">Their website →</a>' : '') + '</p>';
         html += '<p><a href="' + HELP_DIRECTORY.url + '" target="_blank" rel="noopener">' + esc(HELP_DIRECTORY.label) + '</a></p>';
         if (h.emergency) html += '<p>If someone is in immediate danger, call ' + esc(h.emergency) + '.</p>';
         $("help-body").innerHTML = html;
