@@ -208,7 +208,9 @@ async function fetchTTS(text, opts) {
 
 // Split narration into caption "pages" (~14 words each, on sentence boundaries).
 function buildCaptionPages(text) {
-  const sentences = (text || "").replace(/\s+/g, " ").trim().match(/[^.!?]+[.!?]*/g) || [text];
+  // Sentence ends include the Devanagari danda (। ॥) and the Arabic full stop
+  // (۔) so a devotion line in its original script gets its own page.
+  const sentences = (text || "").replace(/\s+/g, " ").trim().match(/[^.!?।॥۔]+[.!?।॥۔]*/g) || [text];
   const pages = [];
   let cur = "";
   for (const s of sentences) {
@@ -270,7 +272,12 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   if (!videoSupported()) throw new Error("This browser can't record video.");
   const W = opts.w || 720, H = opts.h || 1280;
   const audioCtx = opts._audioCtx;
-  const dur = Math.max(1, audioBuf.duration);
+  // opts.minDurationSec holds the last caption (music still playing) after the
+  // voice ends, so a short devotion can be guaranteed to clear a platform's
+  // length bar (TikTok rewards need > 60s). Captions are scheduled over the
+  // voice only, so they never drift into the hold.
+  const voiceDur = Math.max(1, audioBuf.duration);
+  const dur = Math.max(voiceDur, opts.minDurationSec || 0);
   const pal = THEME_PALETTES[opts.paletteKey] || THEME_PALETTES.royal;
   const seed = (opts.ref || "vo").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
 
@@ -284,7 +291,7 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   // Caption schedule proportional to page length.
   const totalChars = pages.reduce((a, s) => a + s.length, 0) || 1;
   let acc = 0;
-  const sched = pages.map((s) => { const start = (acc / totalChars) * dur; acc += s.length; return { text: s, start, end: (acc / totalChars) * dur }; });
+  const sched = pages.map((s) => { const start = (acc / totalChars) * voiceDur; acc += s.length; return { text: s, start, end: (acc / totalChars) * voiceDur }; });
 
   const streamDest = audioCtx.createMediaStreamDestination();
   const src = audioCtx.createBufferSource(); src.buffer = audioBuf; src.connect(streamDest);
