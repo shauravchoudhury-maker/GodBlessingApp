@@ -222,7 +222,8 @@ function buildCaptionPages(text) {
   return pages.length ? pages : [text];
 }
 
-function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat, emph) {
+function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat, emph, page) {
+  page = page || {};
   const minDim = Math.min(W, H);
   const scale = 1.0 + 0.1 * easeInOut(p);
   const drawW = W * scale, drawH = H * scale;
@@ -233,22 +234,38 @@ function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat, emph
   ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
   drawGrainOverlay(ctx, W, H, grainPat, 0.07);
 
-  ctx.direction = opts.rtl ? "rtl" : "ltr";
+  ctx.direction = (page.rtl != null ? page.rtl : opts.rtl) ? "rtl" : "ltr";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   // The opening line (the hook) is rendered larger and heavier so it grabs the
   // eye in the first second — the moment that decides whether they keep watching.
   const weight = emph ? "700" : "600";
-  const startSize = minDim * (emph ? 0.082 : 0.066);
-  // Honor the chosen typeface (serif/sans) when EV_FONTS is available.
-  const family = (typeof EV_FONTS !== "undefined" && opts.font && EV_FONTS[opts.font]) ? EV_FONTS[opts.font] : 'Georgia, "Times New Roman", serif';
-  const fit = fitText(ctx, caption || "", W - W * 0.12 * 2, H * (emph ? 0.56 : 0.5), family, startSize, weight);
+  // Arabic and Hebrew glyphs sit lower and read smaller at the same px size.
+  const startSize = minDim * (emph ? 0.082 : 0.066) * (page.rtl ? 1.18 : 1);
+  // Honor the chosen typeface (serif/sans) when EV_FONTS is available. Scripts
+  // the serif can't draw (Devanagari, Arabic, Gurmukhi, Tibetan, CJK) fall
+  // through to the system fonts named after it.
+  const family = ((typeof EV_FONTS !== "undefined" && opts.font && EV_FONTS[opts.font]) ? EV_FONTS[opts.font] : 'Georgia, "Times New Roman", serif')
+    + ', "Nirmala UI", "Noto Serif Devanagari", "Noto Naskh Arabic", "Segoe UI", "Microsoft Himalaya", "Microsoft YaHei", sans-serif';
+  // Leave room under the main text when the page carries a second, smaller
+  // line (a transliteration under the script, or the meaning under the Arabic).
+  const sub = page.sub || "";
+  const fit = fitText(ctx, caption || "", W - W * 0.12 * 2, H * (sub ? (emph ? 0.4 : 0.34) : (emph ? 0.56 : 0.5)), family, startSize, weight);
   ctx.font = `${weight} ${fit.size}px ${family}`;
   // Emphasise the hook with size + weight only — keep the high-contrast main
   // text colour so it stays legible on light and dark backgrounds alike.
   ctx.fillStyle = pal.text;
   ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = fit.size * 0.16; ctx.shadowOffsetY = fit.size * 0.04;
-  let y = H * 0.46 - (fit.lines.length * fit.lineHeight) / 2 + fit.lineHeight / 2;
+  const block = fit.lines.length * fit.lineHeight;
+  let y = H * (sub ? 0.40 : 0.46) - block / 2 + fit.lineHeight / 2;
   for (const line of fit.lines) { ctx.fillText(line, W / 2, y); y += fit.lineHeight; }
+  if (sub) {
+    ctx.direction = page.subRtl ? "rtl" : "ltr";
+    const sf = fitText(ctx, sub, W - W * 0.14 * 2, H * 0.24, family, minDim * 0.042, "400");
+    ctx.font = `italic 400 ${sf.size}px ${family}`;
+    ctx.fillStyle = hexToRgba(pal.text, 0.86);
+    let sy = y + fit.lineHeight * 0.35 + sf.lineHeight / 2;
+    for (const line of sf.lines) { ctx.fillText(line, W / 2, sy); sy += sf.lineHeight; }
+  }
   ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
   if (opts.ref) {
@@ -288,10 +305,16 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   const grainOn = (opts.grain != null) ? opts.grain : ((typeof EV_STYLE !== "undefined" && EV_STYLE.grain != null) ? EV_STYLE.grain : true);
   const grainPat = (grainOn && typeof makeGrainTile === "function") ? ctx.createPattern(makeGrainTile(seed), "repeat") : null;
 
-  // Caption schedule proportional to page length.
-  const totalChars = pages.reduce((a, s) => a + s.length, 0) || 1;
+  // Caption schedule proportional to what the voice says for each page. A page
+  // is a string, or { text, sub, weight, rtl, big } when what is SHOWN differs
+  // from what is SPOKEN — a devotion shows the Devanagari or Arabic while the
+  // voice reads the transliteration or the meaning, so `weight` carries the
+  // spoken length and `text` the on-screen script.
+  const norm = (s) => (typeof s === "string") ? { text: s, weight: s.length } : Object.assign({ weight: (s.text || "").length }, s);
+  const pgs = pages.map(norm);
+  const totalChars = pgs.reduce((a, s) => a + (s.weight || 1), 0) || 1;
   let acc = 0;
-  const sched = pages.map((s) => { const start = (acc / totalChars) * voiceDur; acc += s.length; return { text: s, start, end: (acc / totalChars) * voiceDur }; });
+  const sched = pgs.map((s) => { const start = (acc / totalChars) * voiceDur; acc += (s.weight || 1); return Object.assign({ start, end: (acc / totalChars) * voiceDur }, s); });
 
   const streamDest = audioCtx.createMediaStreamDestination();
   const src = audioCtx.createBufferSource(); src.buffer = audioBuf; src.connect(streamDest);
@@ -320,12 +343,13 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   await new Promise((resolve) => {
     function tick() {
       const t = (performance.now() - start) / 1000, p = Math.min(1, t / dur);
-      let cap = sched.length ? sched[sched.length - 1].text : "";
-      for (const s of sched) { if (t >= s.start && t < s.end) { cap = s.text; break; } }
-      if (t < (sched[0] ? sched[0].start : 0)) cap = sched[0] ? sched[0].text : "";
-      // Emphasise the opening caption(s) — the hook lives in the first ~2.6s.
-      const emph = opts.emphasizeHook !== false && t < (sched[1] ? Math.min(sched[1].start, 2.6) : 2.6);
-      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, cap, grainPat, emph);
+      let page = sched.length ? sched[sched.length - 1] : { text: "" };
+      for (const s of sched) { if (t >= s.start && t < s.end) { page = s; break; } }
+      if (t < (sched[0] ? sched[0].start : 0)) page = sched[0] || { text: "" };
+      // Emphasise the opening caption(s) — the hook lives in the first ~2.6s —
+      // and any page flagged big (a line of the original script).
+      const emph = (opts.emphasizeHook !== false && t < (sched[1] ? Math.min(sched[1].start, 2.6) : 2.6)) || !!page.big;
+      drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, page.text, grainPat, emph, page);
       if (vtrack.requestFrame) vtrack.requestFrame();
       if (opts.onProgress) opts.onProgress(p);
       if (t >= dur + 0.2) { resolve(); return; }
@@ -346,7 +370,7 @@ async function generateVoiceOverVideo(opts) {
   const audioCtx = new AC();
   if (audioCtx.state === "suspended") { try { await audioCtx.resume(); } catch (e) {} }
   const audioBuf = await audioCtx.decodeAudioData(mp3.slice(0));
-  const pages = buildCaptionPages(opts.captionText || opts.narrationText || opts.text);
+  const pages = opts.captionPages || buildCaptionPages(opts.captionText || opts.narrationText || opts.text);
   opts._audioCtx = audioCtx;
   const blob = await renderVoiceOverVideoFromAudio(audioBuf, pages, opts);
   try { await audioCtx.close(); } catch (e) {}

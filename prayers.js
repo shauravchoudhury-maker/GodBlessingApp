@@ -82,7 +82,7 @@ const PRAYER_DB = [
       { o: "मात पिता तुम मेरे, शरण गहूँ किसकी ।", t: "Māt pitā tum mere, sharan gahūn kis kī.", m: "You are my mother and my father — whose shelter would I take, if not yours?" },
       { o: "तुम बिन और न दूजा, आस करूँ जिसकी ॥", t: "Tum bin aur na dūjā, ās karūn jis kī.", m: "There is no one else. You are the only one I hope in." },
     ],
-    reflection: "An aarti is sung with a small flame circling in front of the divine. The flame is not for God to see by — it is for us. Each evening the song says the same simple thing: I have carried this day, and I am setting it down here. That is why it is sung at dusk, not dawn.",
+    reflection: "An aarti is sung with a small flame circling in front of the divine. The flame is not for God to see by — it is for us. Each evening the song says the same simple thing: I have carried this day, and I am setting it down here. That is why it is sung at dusk, not dawn. Tonight, before any screen goes on, light one candle and say the first two lines. Ninety seconds. That is the whole practice.",
     source: "Pandit Shardha Ram Phillauri, 1870 — author died 1881, public domain. Excerpt: refrain and first three stanzas.",
   },
   {
@@ -99,7 +99,7 @@ const PRAYER_DB = [
       { o: "महाबीर बिक्रम बजरंगी । कुमति निवार सुमति के संगी ॥", t: "Mahābīr bikram Bajarangī. Kumati nivār sumati ke sangī.", m: "Great hero, mighty, with a body like a thunderbolt — you drive out bad thinking and keep company with good." },
       { o: "संकट कटै मिटै सब पीरा । जो सुमिरै हनुमत बलबीरा ॥", t: "Sankat katai mitai sab pīrā. Jo sumirai Hanumat balbīrā.", m: "Trouble is cut away and every pain fades for the one who remembers Hanuman, the strong and brave." },
     ],
-    reflection: "The Chalisa opens with an admission — I do not have enough understanding on my own. That honesty is the strength it asks for. You do not recite it because you are already brave; you recite it because you are not, and the words carry you until you are.",
+    reflection: "The Chalisa opens with an admission — I do not have enough understanding on my own. That honesty is the strength it asks for. You do not recite it because you are already brave; you recite it because you are not, and the words carry you until you are. Before the thing you are dreading today, say the first couplet out loud. It takes eleven seconds, and you will not be the first person to do it in a car park.",
     source: "Goswami Tulsidas, 16th century — public domain. Excerpt: the second opening doha, chaupais 1–3 and chaupai 36.",
   },
   {
@@ -137,7 +137,7 @@ const PRAYER_DB = [
     id: "mahamrityunjaya-mantra", tradition: "hindu", kind: "mantra",
     title: "Mahamrityunjaya Mantra", native: "महामृत्युंजय मन्त्र",
     occasion: "healing", lang: "sa", topic: "protection", theme: "forest",
-    hook: "The mantra Hindus say for someone who is ill.",
+    hook: "When someone you love is in hospital, this is the mantra Hindus send.",
     intro: "This is the Mahamrityunjaya, the great prayer over death, from the Rig Veda — said for healing and for protection.",
     lines: [
       { o: "ॐ त्र्यम्बकं यजामहे", t: "Om tryambakaṃ yajāmahe", m: "We honour the three-eyed one," },
@@ -145,7 +145,7 @@ const PRAYER_DB = [
       { o: "उर्वारुकमिव बन्धनान्", t: "urvārukam iva bandhanān", m: "As a ripe cucumber slips free of its stem," },
       { o: "मृत्योर्मुक्षीय मामृतात्", t: "mṛtyor mukṣīya mā'mṛtāt", m: "free us from death — but not from what is deathless." },
     ],
-    reflection: "The image is gentle on purpose. A ripe fruit does not fight the vine; it lets go when it is ready. The prayer is not a demand to be spared everything. It asks that when release comes, it comes ripely, and that what matters in us is never lost.",
+    reflection: "The image is gentle on purpose. A ripe fruit does not fight the vine; it lets go when it is ready. The prayer is not a demand to be spared everything. It asks that when release comes, it comes ripely, and that what matters in us is never lost. Say it three times today for the person on your mind, and say their name after the last line.",
     source: "Rig Veda 7.59.12 — Vedic scripture, public domain.",
   },
   {
@@ -179,7 +179,7 @@ const PRAYER_DB = [
       { o: "And lead us not into temptation, but deliver us from evil.", m: "Keep us out of what we cannot handle, and pull us out of what harms us." },
       { o: "For thine is the kingdom, and the power, and the glory, for ever and ever. Amen.", m: "All of it is yours. Let it be so." },
     ],
-    reflection: "It is a short prayer, and everything in it is plural. Our Father. Give us. Forgive us. It was never written for one person alone in a room; it assumes you are part of something. Say it and you are praying with everyone who has ever said it.",
+    reflection: "It is a short prayer, and everything in it is plural. Our Father. Give us. Forgive us. It was never written for one person alone in a room; it assumes you are part of something. Say it and you are praying with everyone who has ever said it. Say it once today, slowly, and at every 'us' picture one face. It changes the prayer.",
     source: "Matthew 6:9–13, traditional English wording — public domain.",
   },
   {
@@ -196,7 +196,7 @@ const PRAYER_DB = [
       { o: "Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.", m: "Even surrounded by trouble, I am cared for, honoured, and given more than enough." },
       { o: "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the Lord for ever.", m: "Goodness will follow me all my life, and I will be home with God always." },
     ],
-    reflection: "The psalm does not promise a way around the valley. It says 'through'. Comfort here is not the absence of the dark; it is company inside it. That is why it is read to the grieving — not to explain the loss, but to say you will not walk this alone.",
+    reflection: "The psalm does not promise a way around the valley. It says 'through'. Comfort here is not the absence of the dark; it is company inside it. That is why it is read to the grieving — not to explain the loss, but to say you will not walk this alone. If you are grieving, read only the fourth line today. That is enough for one day.",
     source: "Psalm 23, King James Version (1611) — public domain.",
   },
   {
@@ -214,7 +214,7 @@ const PRAYER_DB = [
       { o: "Blessed are the pure in heart: for they shall see God.", m: "Blessed are those whose hearts are undivided — they will see God." },
       { o: "Blessed are the peacemakers: for they shall be called the children of God.", m: "Blessed are those who make peace — they look like their Father." },
     ],
-    reflection: "Every line names a state the world calls losing — poor, grieving, meek, hungry — and calls it blessed. It is not saying suffering is good. It is saying God's attention goes first to the people at the bottom. If that is where you are today, you are not out of sight.",
+    reflection: "Every line names a state the world calls losing — poor, grieving, meek, hungry — and calls it blessed. It is not saying suffering is good. It is saying God's attention goes first to the people at the bottom. If that is where you are today, you are not out of sight. Find your own line in the list — the one that describes this week — and say the second half of it out loud.",
     source: "Matthew 5:3–9, King James Version (1611) — public domain.",
   },
   {
@@ -230,7 +230,7 @@ const PRAYER_DB = [
       { o: "Grant that I may not so much seek to be consoled as to console; to be understood as to understand; to be loved as to love.", m: "Let me care less about being comforted, understood and loved, and more about giving those things." },
       { o: "For it is in giving that we receive, it is in pardoning that we are pardoned, and it is in dying that we are born to eternal life.", m: "Because giving is how we receive, forgiving is how we are forgiven, and letting go is how we truly live." },
     ],
-    reflection: "Most prayers ask God to change something. This one asks God to change the person praying. Read it again and notice there is not one request for yourself — only requests to be turned into someone others can lean on. That is a bigger ask than it looks.",
+    reflection: "Most prayers ask God to change something. This one asks God to change the person praying. Read it again and notice there is not one request for yourself — only requests to be turned into someone others can lean on. That is a bigger ask than it looks. Choose one pair — hatred and love, injury and pardon, sadness and joy — and be the second word for one person before the day ends.",
     source: "Anonymous, first printed in La Clochette, Paris, 1912 — public domain. Rendered in plain English.",
   },
   {
@@ -245,7 +245,7 @@ const PRAYER_DB = [
       { o: "Praise Him above, ye heavenly host;", m: "Everything in heaven, join in too." },
       { o: "Praise Father, Son, and Holy Ghost. Amen.", m: "Praise God in all the ways he has shown himself. So be it." },
     ],
-    reflection: "It was written as the last verse of a longer hymn for the boys of a school, to sing at bedtime. The idea was simple: end the day on thanks, whatever the day was like. Three centuries later it still works for exactly that.",
+    reflection: "It was written as the last verse of a longer hymn for the boys of a school, to sing at bedtime. The idea was simple: end the day on thanks, whatever the day was like. Three centuries later it still works for exactly that. Say it tonight with the lights already off. That is what it was written for.",
     source: "Thomas Ken, 1674 — public domain.",
   },
   {
@@ -277,7 +277,7 @@ const PRAYER_DB = [
       { o: "בָּרוּךְ שֵׁם כְּבוֹד מַלְכוּתוֹ לְעוֹלָם וָעֶד", t: "Baruch shem kevod malchuto le'olam va'ed.", m: "Blessed is the name of his glorious kingdom for ever and ever." },
       { o: "וְאָהַבְתָּ אֵת ה׳ אֱלֹהֶיךָ בְּכָל־לְבָבְךָ וּבְכָל־נַפְשְׁךָ וּבְכָל־מְאֹדֶךָ", t: "V'ahavta et Adonai Elohecha b'chol levavcha, u'v'chol nafshecha, u'v'chol me'odecha.", m: "And you shall love the Lord your God with all your heart, with all your soul, and with all you have." },
     ],
-    reflection: "It begins with 'listen', not 'believe'. Before anything is asked of you, you are asked to stop and hear. And what follows the great declaration is not a rule but a love — with the heart, the soul, and everything you own. Faith, in this prayer, is a way of loving.",
+    reflection: "It begins with 'listen', not 'believe'. Before anything is asked of you, you are asked to stop and hear. And what follows the great declaration is not a rule but a love — with the heart, the soul, and everything you own. Faith, in this prayer, is a way of loving. Say the first line the traditional way: eyes covered with your right hand, so 'listen' becomes literal. Six words, then open your eyes.",
     source: "Deuteronomy 6:4–5 — Torah, public domain. The divine name is written ה׳ and spoken 'Adonai', as in a siddur.",
   },
   {
@@ -291,7 +291,7 @@ const PRAYER_DB = [
       { o: "שֶׁהֶחֱזַרְתָּ בִּי נִשְׁמָתִי בְּחֶמְלָה", t: "she'hechezarta bi nishmati b'chemlah,", m: "for giving my soul back to me, gently," },
       { o: "רַבָּה אֱמוּנָתֶךָ", t: "rabbah emunatecha.", m: "Your faithfulness is great." },
     ],
-    reflection: "It is said before washing, before coffee, before the phone. The order is the point: gratitude first, then everything else. And notice what is being thanked — not the good night's sleep, but the fact of waking at all. Most mornings that is the thing we forget to count.",
+    reflection: "It is said before washing, before coffee, before the phone. The order is the point: gratitude first, then everything else. And notice what is being thanked — not the good night's sleep, but the fact of waking at all. Most mornings that is the thing we forget to count. Tomorrow, say it before your feet touch the floor. One morning is enough to feel the difference; a week is enough to want it.",
     source: "Traditional morning prayer, from the siddur — public domain. (A woman says 'modah ani'.)",
   },
   {
@@ -312,7 +312,7 @@ const PRAYER_DB = [
     id: "psalm-121", tradition: "jewish", kind: "psalm",
     title: "Psalm 121 — I Lift My Eyes", native: "שיר למעלות",
     occasion: "protection", lang: "he", topic: "protection", theme: "forest", excerpt: true,
-    hook: "The psalm for the night before a journey.",
+    hook: "Why Jewish travellers say this one at the door, not on the road.",
     intro: "This is Psalm 121, a song of ascents — sung by pilgrims walking up to Jerusalem, and said today before travel and through the night.",
     lines: [
       { o: "שִׁיר לַמַּעֲלוֹת אֶשָּׂא עֵינַי אֶל הֶהָרִים מֵאַיִן יָבֹא עֶזְרִי", t: "Shir lama'alot. Esa einai el heharim, me'ayin yavo ezri?", m: "I lift my eyes to the mountains. Where will my help come from?" },
@@ -327,14 +327,14 @@ const PRAYER_DB = [
     id: "oseh-shalom", tradition: "jewish", kind: "prayer",
     title: "Oseh Shalom — Maker of Peace", native: "עושה שלום",
     occasion: "peace", lang: "he", topic: "peace", theme: "calm",
-    hook: "The line that closes almost every Jewish prayer — and what it is quietly asking.",
+    hook: "The last line of the mourner's prayer is not about death. Here is what it says instead.",
     intro: "This is Oseh Shalom, the closing line of the Kaddish and the Amidah, sung at the end of prayer.",
     lines: [
       { o: "עֹשֶׂה שָׁלוֹם בִּמְרוֹמָיו", t: "Oseh shalom bimromav,", m: "The one who makes peace in the heavens above," },
       { o: "הוּא יַעֲשֶׂה שָׁלוֹם עָלֵינוּ", t: "hu ya'aseh shalom aleinu,", m: "may he make peace for us," },
       { o: "וְעַל כָּל יִשְׂרָאֵל וְאִמְרוּ אָמֵן", t: "v'al kol Yisrael, v'imru amen.", m: "and for all Israel — and let us say, amen." },
     ],
-    reflection: "The logic is gentle: if peace is possible up there, among forces far bigger than us, then peace is possible down here too. It is said at the end of mourning prayers on purpose — the last word after loss is not the loss. It is peace.",
+    reflection: "The logic is gentle: if peace is possible up there, among forces far bigger than us, then peace is possible down here too. It is said at the end of mourning prayers on purpose — the last word after loss is not the loss. It is peace. Say it tonight for one specific person — put their name where the prayer says 'us'.",
     source: "Traditional liturgy (Kaddish, Amidah) — public domain.",
   },
 
@@ -354,7 +354,7 @@ const PRAYER_DB = [
       { o: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", t: "Ihdinaṣ-ṣirāṭal-mustaqīm", m: "Guide us along the straight path —" },
       { o: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", t: "Ṣirāṭal-ladhīna an'amta 'alayhim, ghayril-maghḍūbi 'alayhim wa laḍ-ḍāllīn", m: "the path of those you have blessed; not of those who earned anger, nor of those who lost their way." },
     ],
-    reflection: "Mercy is named three times before anything is asked. Only then comes the one request — and it is not for wealth or safety, but for direction. The chapter is called The Opening because it is the door the rest walks through: praise first, then a plea to be pointed the right way.",
+    reflection: "Mercy is named three times before anything is asked. Only then comes the one request — and it is not for wealth or safety, but for direction. The chapter is called The Opening because it is the door the rest walks through: praise first, then a plea to be pointed the right way. Read the last line slowly today. It asks only not to be lost — and that is a prayer anyone, in any language, can mean.",
     source: "Qur'an 1:1–7 — scripture, public domain. Meaning rendered in plain English; the Arabic is shown on screen and never voiced synthetically.",
   },
   {
@@ -371,7 +371,7 @@ const PRAYER_DB = [
       { o: "وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ وَلَا يَئُودُهُ حِفْظُهُمَا", t: "Wasi'a kursiyyuhus-samāwāti wal-arḍ, wa lā ya'ūduhū ḥifẓuhumā", m: "His throne extends over the heavens and the earth, and guarding them does not tire him." },
       { o: "وَهُوَ الْعَلِيُّ الْعَظِيمُ", t: "Wa Huwal-'Aliyyul-'Aẓīm", m: "And he is the Most High, the Tremendous." },
     ],
-    reflection: "Read it as a person about to fall asleep. You are about to stop watching; the verse says someone never does. You will lose track of what is ahead and behind; he holds both. The comfort is not that nothing will happen — it is that nothing will happen unwatched.",
+    reflection: "Read it as a person about to fall asleep. You are about to stop watching; the verse says someone never does. You will lose track of what is ahead and behind; he holds both. The comfort is not that nothing will happen — it is that nothing will happen unwatched. Let it be the last thing before sleep tonight, read or said, with the phone face down. Someone else has the watch.",
     source: "Qur'an 2:255 — scripture, public domain. Key phrases; meaning rendered in plain English. Never voiced synthetically in Arabic.",
     excerpt: true,
   },
@@ -387,7 +387,7 @@ const PRAYER_DB = [
       { o: "لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ", t: "Lā ilāha illallāhu waḥdahū lā sharīka lah", m: "There is none worthy of worship but God, alone, with no partner." },
       { o: "لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ", t: "Lahul-mulku wa lahul-ḥamdu wa Huwa 'alā kulli shay'in qadīr", m: "To him belongs everything, to him belongs all praise, and he has power over all things." },
     ],
-    reflection: "The dua does not say 'I woke up'. It says the morning arrived — for me and for everything — and none of it is mine. That is a strange way to start a day of tasks, and a very good one: the pressure to own the day is lifted before it begins.",
+    reflection: "The dua does not say 'I woke up'. It says the morning arrived — for me and for everything — and none of it is mine. That is a strange way to start a day of tasks, and a very good one: the pressure to own the day is lifted before it begins. Before the first task tomorrow, say the first line — then start. Notice how differently the task sits.",
     source: "Hadith (Sahih Muslim) — traditional adhkar, public domain. Meaning spoken; Arabic shown.",
   },
   {
@@ -402,7 +402,7 @@ const PRAYER_DB = [
       { o: "وَالْبُخْلِ وَالْجُبْنِ", t: "wal-bukhli wal-jubn", m: "from stinginess and from cowardice," },
       { o: "وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ", t: "wa ḍala'id-dayni wa ghalabatir-rijāl", m: "from the weight of debt, and from being overpowered by people." },
     ],
-    reflection: "Look at the list. Worry, sadness, feeling useless, feeling stuck, holding back, being afraid, money trouble, being pushed around. It is an honest map of a bad month. The prayer does not pretend these things are small. It just refuses to face them alone.",
+    reflection: "Look at the list. Worry, sadness, feeling useless, feeling stuck, holding back, being afraid, money trouble, being pushed around. It is an honest map of a bad month. The prayer does not pretend these things are small. It just refuses to face them alone. Find your word on the list — worry, sadness, debt, feeling pushed around — and say that one line for it, out loud, once.",
     source: "Hadith (Sahih al-Bukhari) — traditional dua, public domain. Meaning spoken; Arabic shown.",
   },
   {
@@ -430,7 +430,7 @@ const PRAYER_DB = [
       { o: "سُبْحَانَكَ", t: "subḥānaka", m: "You are beyond every fault." },
       { o: "إِنِّي كُنتُ مِنَ الظَّالِمِينَ", t: "innī kuntu minaẓ-ẓālimīn", m: "Truly, I have been one of those who did wrong." },
     ],
-    reflection: "Three parts: who you are, that you are faultless, that I am not. No excuse and no bargain. Jonah was in the dark with no way out, and this is what he found to say — and the Qur'an says he was answered. When you have made the mess yourself, this is still a prayer you are allowed.",
+    reflection: "Three parts: who you are, that you are faultless, that I am not. No excuse and no bargain. Jonah was in the dark with no way out, and this is what he found to say — and the Qur'an says he was answered. When you have made the mess yourself, this is still a prayer you are allowed. If you are in the dark you built yourself, say these three parts tonight, in this order. Then sleep.",
     source: "Qur'an 21:87 — scripture, public domain. Meaning spoken; Arabic shown.",
   },
 
@@ -449,7 +449,7 @@ const PRAYER_DB = [
       { o: "ਅਕਾਲ ਮੂਰਤਿ ਅਜੂਨੀ ਸੈਭੰ", t: "Akāl Mūrat, Ajūnī, Saibhang", m: "Beyond time, never born, existing by itself." },
       { o: "ਗੁਰ ਪ੍ਰਸਾਦਿ ॥", t: "Gur Prasād.", m: "Known by the Guru's grace." },
     ],
-    reflection: "Two of the words describe what God is not: not afraid, not hostile. Guru Nanak put them there for us. If the source of everything carries no fear and no grudge, then those two things are not the ground of reality — they are habits, and habits can be set down.",
+    reflection: "Two of the words describe what God is not: not afraid, not hostile. Guru Nanak put them there for us. If the source of everything carries no fear and no grudge, then those two things are not the ground of reality — they are habits, and habits can be set down. Say Nirbhau, Nirvair — without fear, without hatred — once today, not as a description of God but as a description of who you are trying to be by evening.",
     source: "Guru Nanak, Guru Granth Sahib ang 1 — Gurbani, public domain.",
   },
   {
@@ -462,7 +462,7 @@ const PRAYER_DB = [
       { o: "ਨਾਨਕ ਨਾਮ ਚੜ੍ਹਦੀ ਕਲਾ", t: "Nānak Nām chaṛhdī kalā,", m: "Nanak says: through the Name, may our spirits keep rising —" },
       { o: "ਤੇਰੇ ਭਾਣੇ ਸਰਬੱਤ ਦਾ ਭਲਾ", t: "tere bhāṇe sarbat dā bhalā.", m: "and by your will, may there be good for everyone." },
     ],
-    reflection: "Chardi kala is a Punjabi phrase with no clean English — it means high spirits, rising morale, the refusal to sink. And it is paired with a wish that leaves no one out. That pairing is the whole teaching: keep your own spirit up, and want good for all. Neither one works without the other.",
+    reflection: "Chardi kala is a Punjabi phrase with no clean English — it means high spirits, rising morale, the refusal to sink. And it is paired with a wish that leaves no one out. That pairing is the whole teaching: keep your own spirit up, and want good for all. Neither one works without the other. End today the Sikh way: name one person you find difficult, and wish them well, out loud, where no one can hear.",
     source: "Ardas, closing line — traditional Sikh liturgy, public domain.",
   },
   {
@@ -475,7 +475,7 @@ const PRAYER_DB = [
       { o: "ਤਾਤੀ ਵਾਉ ਨ ਲਗਈ ਪਾਰਬ੍ਰਹਮ ਸਰਣਾਈ ॥", t: "Tātī vāu na lagaī, Pārbrahm sarṇāī.", m: "The hot wind does not even touch the one who shelters in the Supreme." },
       { o: "ਚਉਗਿਰਦ ਹਮਾਰੈ ਰਾਮ ਕਾਰ ਦੁਖੁ ਲਗੈ ਨ ਭਾਈ ॥", t: "Chaugirad hamārai Rām kār, dukh lagai na bhāī.", m: "The Lord has drawn a circle all around us — pain cannot reach us, brother." },
     ],
-    reflection: "The picture is a circle drawn on the ground around a person, the way you would draw one around a child to say 'stay here, you're safe'. The hot wind is still blowing. The shabad does not say it stops. It says there is a place it cannot reach.",
+    reflection: "The picture is a circle drawn on the ground around a person, the way you would draw one around a child to say 'stay here, you're safe'. The hot wind is still blowing. The shabad does not say it stops. It says there is a place it cannot reach. Draw the circle for someone: say the second line with a hand on the shoulder of a person who is unwell or afraid.",
     source: "Guru Arjan, Guru Granth Sahib ang 819 — Gurbani, public domain. Opening lines.",
     excerpt: true,
   },
@@ -489,20 +489,20 @@ const PRAYER_DB = [
       { o: "ਕਿਵ ਸਚਿਆਰਾ ਹੋਈਐ ਕਿਵ ਕੂੜੈ ਤੁਟੈ ਪਾਲਿ ॥", t: "Kiv sachiārā hoīai, kiv kūṛai tutai pāl?", m: "How do we become truthful? How does the wall of falsehood come down?" },
       { o: "ਹੁਕਮਿ ਰਜਾਈ ਚਲਣਾ ਨਾਨਕ ਲਿਖਿਆ ਨਾਲਿ ॥੧॥", t: "Hukam rajāī chalṇā, Nānak likhiā nāl.", m: "By walking in step with the divine order, says Nanak — it is written into you already." },
     ],
-    reflection: "The wall between us and truth, Nanak says, is not ignorance — it is resistance. Hukam is the way things are and the way they are meant to go. Fighting it is exhausting; walking with it is honest. The answer to 'how do I become true' turns out to be 'stop pushing against what is'.",
+    reflection: "The wall between us and truth, Nanak says, is not ignorance — it is resistance. Hukam is the way things are and the way they are meant to go. Fighting it is exhausting; walking with it is honest. The answer to 'how do I become true' turns out to be 'stop pushing against what is'. Name one thing today you are still pushing against that is simply how things are. Set it down, and feel how much lighter your shoulders sit.",
     source: "Guru Nanak, Japji Sahib pauri 1, Guru Granth Sahib ang 1 — Gurbani, public domain.",
   },
   {
     id: "sukhmani-sahib-rahao", tradition: "sikh", kind: "prayer",
     title: "Sukhmani Sahib — The Jewel of Peace", native: "ਸੁਖਮਨੀ ਸਾਹਿਬ",
     occasion: "peace", lang: "pa", topic: "peace", theme: "royal",
-    hook: "The prayer Sikhs read when a heart needs settling.",
+    hook: "Two lines, repeated twenty-four times, until the mind finally believes them.",
     intro: "This is the refrain of Sukhmani Sahib, the Psalm of Peace, composed by Guru Arjan — read in times of grief and worry.",
     lines: [
       { o: "ਸੁਖਮਨੀ ਸੁਖ ਅੰਮ੍ਰਿਤ ਪ੍ਰਭ ਨਾਮੁ ॥", t: "Sukhmanī sukh amrit Prabh Nām.", m: "The jewel of peace is the sweet nectar of God's Name." },
       { o: "ਭਗਤ ਜਨਾ ਕੈ ਮਨਿ ਬਿਸ੍ਰਾਮ ॥", t: "Bhagat janā kai man bisrām.", m: "In the minds of those who love him, it comes to rest." },
     ],
-    reflection: "Bisram means to rest, the way a traveller sits down at the end of a long road. The refrain says peace is not something you achieve by effort; it is something that settles in a mind that keeps returning to the Name. Two lines, repeated across twenty-four sections, until the mind believes them.",
+    reflection: "Bisram means to rest, the way a traveller sits down at the end of a long road. The refrain says peace is not something you achieve by effort; it is something that settles in a mind that keeps returning to the Name. Two lines, repeated across twenty-four sections, until the mind believes them. Read the two lines five times, slowly. The fifth time will feel different from the first — that difference is the whole prayer.",
     source: "Guru Arjan, Sukhmani Sahib, Guru Granth Sahib ang 262 — Gurbani, public domain. The rahao (refrain).",
     excerpt: true,
   },
@@ -520,7 +520,7 @@ const PRAYER_DB = [
       { o: "evam pi sabbabhūtesu mānasaṃ bhāvaye aparimāṇaṃ.", t: "evam pi sabbabhūtesu mānasaṃ bhāvaye aparimāṇaṃ.", m: "so cultivate a boundless heart toward every living thing." },
       { o: "Mettañca sabbalokasmiṃ mānasaṃ bhāvaye aparimāṇaṃ.", t: "Mettañca sabbalokasmiṃ mānasaṃ bhāvaye aparimāṇaṃ.", m: "Let kindness for the whole world fill the mind without limit." },
     ],
-    reflection: "The story goes that monks were frightened in a forest, and the Buddha gave them this to chant — not a charm against the dark, but a way of turning fear into goodwill. It works on the same principle today. You cannot hold fear and wish someone well at the same moment. Choose the second.",
+    reflection: "The story goes that monks were frightened in a forest, and the Buddha gave them this to chant — not a charm against the dark, but a way of turning fear into goodwill. It works on the same principle today. You cannot hold fear and wish someone well at the same moment. Choose the second. Pick the one person you are afraid of or angry at, and say the first line with their face in mind. Once is enough to start.",
     source: "Karaniya Metta Sutta, Sutta Nipata 1.8 — Pali canon, public domain. Key lines.",
     excerpt: true,
   },
@@ -535,7 +535,7 @@ const PRAYER_DB = [
       { o: "Dhammaṃ saraṇaṃ gacchāmi.", t: "Dhammaṃ saraṇaṃ gacchāmi.", m: "I go to the Dhamma for refuge — to the way things truly are." },
       { o: "Saṅghaṃ saraṇaṃ gacchāmi.", t: "Saṅghaṃ saraṇaṃ gacchāmi.", m: "I go to the Sangha for refuge — to the people walking this road with me." },
     ],
-    reflection: "A refuge is where you go when the weather turns. The chant names three: an example that it can be done, a truth that does not shift, and company. Everyone has refuges — most of them are habits, screens, or people who cannot bear the weight. This is a deliberate choice of better ones.",
+    reflection: "A refuge is where you go when the weather turns. The chant names three: an example that it can be done, a truth that does not shift, and company. Everyone has refuges — most of them are habits, screens, or people who cannot bear the weight. This is a deliberate choice of better ones. Say the three lines tonight, and be honest about which refuge you actually ran to today. Then choose again in the morning.",
     source: "Traditional Pali formula, Khuddakapatha 1 — Pali canon, public domain.",
   },
   {
@@ -548,7 +548,7 @@ const PRAYER_DB = [
       { o: "色即是空，空即是色。", t: "Sè jí shì kōng, kōng jí shì sè.", m: "Form is emptiness; emptiness is form." },
       { o: "गते गते पारगते पारसंगते बोधि स्वाहा", t: "Gate gate pāragate pārasaṃgate bodhi svāhā.", m: "Gone, gone, gone across, gone fully across — awakening, so be it." },
     ],
-    reflection: "Emptiness here does not mean nothing. It means nothing stands alone — everything is made of everything else, and so nothing has to be gripped. The mantra at the end is the sound of letting go: gone, gone, across. It is chanted, not argued, because the point is not to understand it but to loosen your hands.",
+    reflection: "Emptiness here does not mean nothing. It means nothing stands alone — everything is made of everything else, and so nothing has to be gripped. The mantra at the end is the sound of letting go: gone, gone, across. It is chanted, not argued, because the point is not to understand it but to loosen your hands. Say the mantra once with your hands open on your knees. Nothing to hold. That is the teaching in your palms.",
     source: "Prajnaparamita Hridaya (Heart Sutra), Xuanzang's Chinese text, 7th century — public domain. Closing lines.",
     excerpt: true,
   },
@@ -569,7 +569,7 @@ const PRAYER_DB = [
     id: "four-immeasurables", tradition: "buddhist", kind: "prayer",
     title: "The Four Immeasurables", native: "ཚད་མེད་བཞི།",
     occasion: "peace", lang: "en", topic: "love", theme: "calm",
-    hook: "Four wishes. The Tibetan word for them means 'without limit'.",
+    hook: "Four wishes — and the last one is for the person you'd rather leave out.",
     intro: "This is the prayer of the Four Immeasurables — kindness, compassion, joy and equanimity — said at the start of practice in the Tibetan tradition.",
     lines: [
       { o: "May all beings have happiness and the causes of happiness.", m: "Not only the good feeling, but whatever it takes to get there." },
@@ -577,7 +577,7 @@ const PRAYER_DB = [
       { o: "May all beings never be parted from the happiness that is free of suffering.", m: "A joy that does not depend on things going well." },
       { o: "May all beings rest in equanimity, free from attachment and aversion.", m: "A steadiness that neither clings nor pushes away — toward anyone." },
     ],
-    reflection: "Each line has two halves: the thing wished for, and the cause of it. That is the practical part. It is easy to wish someone were happier; the prayer asks you to wish for whatever would actually make it so — including for people you find difficult. 'All beings' has no exceptions clause.",
+    reflection: "Each line has two halves: the thing wished for, and the cause of it. That is the practical part. It is easy to wish someone were happier; the prayer asks you to wish for whatever would actually make it so — including for people you find difficult. 'All beings' has no exceptions clause. Say it today for the one person you would rather leave out. That is exactly where it starts to work.",
     source: "Traditional Tibetan Buddhist liturgy — public domain. Rendered in plain English.",
   },
   {
@@ -607,14 +607,14 @@ const PRAYER_DB = [
       { o: "處眾人之所惡，", t: "chǔ zhòngrén zhī suǒ wù,", m: "and settles in the low places people avoid." },
       { o: "故幾於道。", t: "gù jī yú dào.", m: "That is why it is so close to the Way." },
     ],
-    reflection: "Water does not argue about which way is down. It does not need the high ground; it goes where it is needed and takes the shape of whatever holds it. Lao Tzu is describing a strength that looks like softness — and, over enough time, wears through stone.",
+    reflection: "Water does not argue about which way is down. It does not need the high ground; it goes where it is needed and takes the shape of whatever holds it. Lao Tzu is describing a strength that looks like softness — and, over enough time, wears through stone. Once today, take the low place on purpose: let someone else be right, and watch what it costs you. Almost nothing.",
     source: "Tao Te Ching, chapter 8 — c. 4th century BCE, public domain. Rendered in plain English.",
   },
   {
     id: "tao-33-know-yourself", tradition: "taoist", kind: "teaching",
     title: "Knowing Others, Knowing Yourself", native: "知人者智",
     occasion: "anytime", lang: "zh", topic: "wisdom", theme: "gold",
-    hook: "Six pairs of words that rearrange what 'strong' means.",
+    hook: "Lao Tzu ranked strength. Beating other people came second.",
     intro: "This is chapter thirty-three of the Tao Te Ching — Lao Tzu on the difference between power and strength.",
     lines: [
       { o: "知人者智，自知者明。", t: "Zhī rén zhě zhì, zì zhī zhě míng.", m: "To understand others is clever. To understand yourself is clear." },
@@ -622,7 +622,7 @@ const PRAYER_DB = [
       { o: "知足者富。", t: "Zhī zú zhě fù.", m: "To know you have enough is to be rich." },
       { o: "強行者有志。", t: "Qiáng xíng zhě yǒu zhì.", m: "To keep going is to have will." },
     ],
-    reflection: "Every line has an outward version and an inward version, and the inward one is always ranked higher. It is a quiet argument against most of what we chase. The richest person in the room, by this measure, is the one who has stopped wanting more.",
+    reflection: "Every line has an outward version and an inward version, and the inward one is always ranked higher. It is a quiet argument against most of what we chase. The richest person in the room, by this measure, is the one who has stopped wanting more. Pick one line and do the inward half of it before dinner — understand yourself, overcome yourself, or decide you have enough.",
     source: "Tao Te Ching, chapter 33 — public domain. Rendered in plain English.",
   },
   {
@@ -650,7 +650,7 @@ const PRAYER_DB = [
       { o: "草木之生也柔脆，其死也枯槁。", t: "Cǎomù zhī shēng yě róucuì, qí sǐ yě kūgǎo.", m: "Plants are tender and green when alive, dry and brittle when dead." },
       { o: "故堅強者死之徒，柔弱者生之徒。", t: "Gù jiānqiáng zhě sǐ zhī tú, róuruò zhě shēng zhī tú.", m: "So the hard and rigid belong to death; the soft and yielding belong to life." },
     ],
-    reflection: "We call stubbornness strength and flexibility weakness. Lao Tzu looks at a tree in a storm and says the opposite: the branch that bends is the one still there in the morning. Being able to change your mind is not a failure of character. It is a sign you are alive.",
+    reflection: "We call stubbornness strength and flexibility weakness. Lao Tzu looks at a tree in a storm and says the opposite: the branch that bends is the one still there in the morning. Being able to change your mind is not a failure of character. It is a sign you are alive. Change your mind about one thing today, out loud, in front of someone. It is the most alive thing you will do all day.",
     source: "Tao Te Ching, chapter 76 — public domain. Rendered in plain English.",
   },
   {
@@ -681,7 +681,7 @@ const PRAYER_DB = [
       { o: "You are a child of the universe, no less than the trees and the stars; you have a right to be here.", m: "You belong. You did not have to earn a place in the world." },
       { o: "With all its sham, drudgery and broken dreams, it is still a beautiful world.", m: "Even counting everything that is wrong with it, the world is worth loving." },
     ],
-    reflection: "It was written by a lawyer in Indiana who wanted, in his own words, to leave something 'in a style more of a spirit than a thing'. The advice is unglamorous — be gentle, be honest, do not compare — and it has outlasted almost everything else written that year.",
+    reflection: "It was written by a lawyer in Indiana who wanted, in his own words, to leave something 'in a style more of a spirit than a thing'. The advice is unglamorous — be gentle, be honest, do not compare — and it has outlasted almost everything else written that year. Read 'be gentle with yourself' as an instruction, not a sentiment, and skip one self-criticism today on purpose.",
     source: "Max Ehrmann, 1927 — public domain (US, published 1927). Excerpt.",
   },
   {
@@ -696,7 +696,7 @@ const PRAYER_DB = [
       { o: "May the sun shine warm upon your face, and the rains fall soft upon your fields.", m: "May you have warmth, and may what is hard on you come gently." },
       { o: "And until we meet again, may God hold you in the palm of his hand.", m: "And while we are apart, may you be held." },
     ],
-    reflection: "Nothing in it promises the road will be short or the weather good. It asks that the road rise — that it come toward you a little, so you do not have to do all the walking. That is what a blessing is: not a guarantee, but a wish that the world meets you halfway.",
+    reflection: "Nothing in it promises the road will be short or the weather good. It asks that the road rise — that it come toward you a little, so you do not have to do all the walking. That is what a blessing is: not a guarantee, but a wish that the world meets you halfway. Say it to someone leaving today — a child at the door, a friend at the car. Out loud. They will remember it longer than you think.",
     source: "Traditional Irish blessing — public domain.",
   },
   {
@@ -726,7 +726,7 @@ const PRAYER_DB = [
       { o: "You may strive to be like them, but seek not to make them like you. For life goes not backward nor tarries with yesterday.", m: "Learn from them. Do not shape them into a copy of yourself. Time only moves one way." },
       { o: "You are the bows from which your children as living arrows are sent forth.", m: "Your job is to give them strength and direction — and then let go." },
     ],
-    reflection: "It is the hardest thing in the book, because it is true and no parent wants it to be. The bow does not follow the arrow. But the poem is kind about it too: the archer loves the bow that is steady. Being the steady thing they leave from is not a small role. It is the whole role.",
+    reflection: "It is the hardest thing in the book, because it is true and no parent wants it to be. The bow does not follow the arrow. But the poem is kind about it too: the archer loves the bow that is steady. Being the steady thing they leave from is not a small role. It is the whole role. Today, ask your child one real question and do not correct the answer. That is the bow, staying steady.",
     source: "Kahlil Gibran, The Prophet, 1923 — public domain. Excerpt.",
   },
   {
