@@ -2671,7 +2671,7 @@ function initSeries() {
 }
 
 function initTabs() {
-  const panels = { daily: "tab-daily", shorts: "tab-shorts", series: "tab-series", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
+  const panels = { daily: "tab-daily", shorts: "tab-shorts", devotion: "tab-devotion", series: "tab-series", read: "tab-read", studio: "tab-studio", schedule: "tab-schedule", audiobooks: "tab-audiobooks", cards: "tab-cards" };
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -2706,6 +2706,7 @@ function init() {
   initShort();
   initCards();
   initSeries();
+  if (typeof initDevotion === "function") initDevotion();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);

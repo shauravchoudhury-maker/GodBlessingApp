@@ -53,6 +53,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="daily"><span class="tab-ico">🏠</span><span class="tab-lbl">Daily</span></button>
       <button class="tab" data-tab="shorts"><span class="tab-ico">⚡</span><span class="tab-lbl">Shorts</span></button>
+      <button class="tab" data-tab="devotion"><span class="tab-ico">🪔</span><span class="tab-lbl">Devotion</span></button>
       <button class="tab" data-tab="series"><span class="tab-ico">🌍</span><span class="tab-lbl">Series</span></button>
       <button class="tab" data-tab="read"><span class="tab-ico">📖</span><span class="tab-lbl">Read</span></button>
       <button class="tab" data-tab="studio"><span class="tab-ico">🌐</span><span class="tab-lbl">Translate</span></button>
@@ -341,6 +342,57 @@
       <div id="short-dl"></div>
       <p class="hint" style="margin-top:10px;">💡 Records in real time, so a 60s short takes about a minute — leave the tab open. Hindi &amp; Spanish use your curated translations for the verse line.</p>
       <p class="hint" style="margin-top:6px;">📱 <b>On a phone</b> the <b>MP4</b> can be shaky (real-time video capture is heavy on mobile) — it renders lighter there, but for a guaranteed MP4 use a <b>desktop</b>. The <b>🎧 audio export works reliably on phones</b>. Keep the screen on and don't switch apps while it records.</p>
+    </section>
+  </main>
+
+  <!-- =========================== DEVOTION =========================== -->
+  <main class="app hidden" id="tab-devotion">
+    <section class="panel wide">
+      <div class="panel-head"><span class="tab-ico" style="font-size:1.4em;">🪔</span><h2>Daily devotion — aartis, prayers, mantras &amp; chants, with meaning</h2></div>
+      <p class="hint">One prayer a day, <b>spoken line by line with its meaning</b> over a music bed. <b>Short</b> (60–90s, vertical) is the Shorts/TikTok post; <b>Long</b> (~3 min, landscape) adds a straight-through recitation and the full reflection for YouTube watch-time. Every entry is public-domain text with our own plain-English meaning and an original reflection, so no two videos are the same template.</p>
+      <div class="sched-toolbar">
+        <label>Tradition <select id="dev-tradition"></select></label>
+        <label>Prayer <select id="dev-pick" style="max-width:280px;"></select></label>
+        <button class="btn" id="dev-today">📅 Today's devotion</button>
+      </div>
+      <div class="video-grid">
+        <div class="controls">
+          <h3 id="dev-title" style="margin:0 0 2px;"></h3>
+          <div id="dev-native" style="font-size:1.25em;opacity:.9;margin-bottom:4px;"></div>
+          <div class="kit-status" id="dev-meta"></div>
+          <div class="kit-status" id="dev-respect" style="display:none;margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(124,92,255,.12);color:inherit;"></div>
+          <div id="dev-lines" style="margin:12px 0;"></div>
+          <p id="dev-reflection" class="hint" style="font-size:13px;font-style:italic;"></p>
+          <div class="kit-status" id="dev-source" style="margin-bottom:12px;"></div>
+          <div class="field"><label for="dev-length">Length</label>
+            <select id="dev-length"><option value="short" selected>Short — 60–90s (Shorts / TikTok)</option><option value="long">Long — ~3 min (YouTube)</option></select></div>
+          <div class="field"><label for="dev-format">Video format</label>
+            <select id="dev-format"><option value="portrait" selected>Vertical 9:16 (Shorts / TikTok)</option><option value="landscape">Landscape 16:9 (YouTube)</option></select></div>
+          <div class="field"><label for="dev-voice">Voice</label>
+            <select id="dev-voice"><option value="female">Warm female</option><option value="male">Warm male</option></select></div>
+          <div class="field"><label for="dev-lang">Narration</label>
+            <select id="dev-lang"><option value="en" selected>English (transliteration + meaning)</option><option value="hi">Hindi voice (Devanagari original + English meaning)</option></select></div>
+          <label class="checkbox"><input type="checkbox" id="dev-music" checked /> Subtle music bed</label>
+          <div class="field"><label for="dev-token">Voice access token</label><input id="dev-token" type="password" autocomplete="off" placeholder="your PROXY_SECRET" /></div>
+          <div class="kit-status" id="dev-est"></div>
+          <div class="btn-row">
+            <button class="btn accent" id="dev-video">🎬 Render devotion video</button>
+            <button class="btn" id="dev-audio">🎧 Narrate → MP3</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="dev-copy">📋 Copy script</button>
+            <button class="btn" id="dev-listing">📄 Listing text</button>
+          </div>
+          <div class="kit-status" id="dev-status"></div>
+          <div id="dev-actions"></div>
+          <div id="dev-dl"></div>
+        </div>
+        <div class="preview-wrap" style="align-content:start;">
+          <label for="dev-script" class="hint">Script (what the voice will say)</label>
+          <textarea id="dev-script" readonly style="width:100%;min-height:360px;font-size:13px;line-height:1.5;"></textarea>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:10px;">🤲 Islamic entries are <b>meaning-only</b> by design: the Arabic is shown on screen and in the description, never voiced by the synthetic narrator. Hindi narration is offered only where a Devanagari original exists.</p>
     </section>
   </main>
 
@@ -781,6 +833,8 @@
   <script src="collection.js"></script>
   <script src="occasions.js"></script>
   <script src="series.js"></script>
+  <script src="prayers.js"></script>
+  <script src="devotion.js"></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>
