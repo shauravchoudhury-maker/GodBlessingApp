@@ -415,6 +415,22 @@
       <div class="kit-status" id="devb-status"></div>
       <p class="hint" style="margin-top:10px;">⏱ Renders in real time — a 30-day short + long batch is roughly <b>2 hours</b>. Keep the tab visible and the machine awake. If it stops midway, the CSV already lists what finished; re-run with fewer days for the rest. Desktop only.</p>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">▶️</span><h2>Upload to YouTube — scheduled, metadata filled in</h2></div>
+      <p class="hint">Open the batch folder and each video goes up with its <b>title, description, tags and publish time</b> from <code>metadata.csv</code>; the CSV is updated with the YouTube id as it goes, so you can stop and continue tomorrow. Sign-in happens in the browser — nothing is stored. One-time setup: <b>YOUTUBE_SETUP.md</b>.</p>
+      <div class="sched-toolbar">
+        <button class="btn" id="yt-signin">🔑 Sign in to YouTube</button>
+        <button class="btn" id="yt-open">📂 Open batch folder</button>
+        <label>Upload up to <input id="yt-max" type="number" value="6" min="1" max="60" style="width:60px;" /> now</label>
+        <button class="btn accent" id="yt-upload">▶️ Upload next</button>
+        <button class="btn" id="yt-cancel" style="display:none;">■ Stop after this one</button>
+      </div>
+      <div class="kit-status" id="yt-summary"></div>
+      <div class="kit-status" id="yt-status"></div>
+      <div id="yt-table" style="margin-top:10px;overflow-x:auto;"></div>
+      <p class="hint" style="margin-top:10px;">⚠ Two YouTube rules, not ours: a new API project allows about <b>6 uploads a day</b> (quota), and until its <b>audit</b> clears every upload is locked to <b>Private</b> — the schedule and metadata still land; flip visibility in YouTube Studio. Both are lifted with one form; it's in the setup guide. TikTok: use its own scheduler with the <code>tiktok_caption</code> column.</p>
+    </section>
   </main>
 
   <!-- ============================ SERIES ============================ -->
@@ -856,6 +872,9 @@
   <script src="series.js"></script>
   <script src="prayers.js"></script>
   <script src="devotion.js"></script>
+  <script src="youtube-config.js"></script>
+  <script src="youtube.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="hub.js"></script>
   <script src="app.js"></script>
 </body>
