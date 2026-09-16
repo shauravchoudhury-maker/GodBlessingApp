@@ -394,6 +394,27 @@
       </div>
       <p class="hint" style="margin-top:10px;">🤲 Islamic entries are <b>meaning-only</b> by design: the Arabic is shown on screen and in the description, never voiced by the synthetic narrator. Hindi narration is offered only where a Devanagari original exists.</p>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><span class="step-num">📦</span><h2>Batch — a month of devotions in one sitting</h2></div>
+      <p class="hint">One devotion per day, rendered back to back and <b>saved as each one finishes</b> — pick a folder (Chrome/Edge) or let them land in Downloads. A <b>metadata.csv</b> goes with them: date, publish time, YouTube title &amp; description, TikTok caption, tags, per file. That file feeds the YouTube uploader and any bulk scheduler. Uses the voice, music and token set above.</p>
+      <div class="sched-toolbar">
+        <label>Days <select id="devb-days"><option value="7">7</option><option value="14">14</option><option value="30" selected>30</option></select></label>
+        <label>Rotation <select id="devb-scope"></select></label>
+        <label>Publish time <input id="devb-time" type="time" value="07:00" /></label>
+        <label class="checkbox"><input type="checkbox" id="devb-short" checked /> Short (vertical · Shorts/TikTok)</label>
+        <label class="checkbox"><input type="checkbox" id="devb-long" checked /> Long (landscape · YouTube)</label>
+        <label class="checkbox"><input type="checkbox" id="devb-hindi" checked /> Hindi voice for Devanagari entries</label>
+        <label>Plan chars/month <input id="devb-plan" type="number" value="500000" step="10000" style="width:110px;" /></label>
+      </div>
+      <div class="kit-status" id="devb-est"></div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn accent" id="devb-run">📦 Render the batch</button>
+        <button class="btn" id="devb-cancel" style="display:none;">■ Stop after this one</button>
+      </div>
+      <div class="kit-status" id="devb-status"></div>
+      <p class="hint" style="margin-top:10px;">⏱ Renders in real time — a 30-day short + long batch is roughly <b>2 hours</b>. Keep the tab visible and the machine awake. If it stops midway, the CSV already lists what finished; re-run with fewer days for the rest. Desktop only.</p>
+    </section>
   </main>
 
   <!-- ============================ SERIES ============================ -->
