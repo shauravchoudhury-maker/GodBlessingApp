@@ -76,70 +76,97 @@ function devotionScript(p, opts) {
   const narrLang = opts.lang || "en";
   const trad = prayerTradition(p);
 
-  const parts = [];
-  parts.push(_endStop(p.hook));
-  parts.push(_endStop(p.intro));
+  // `parts` is what the voice says; `shown` is what the screen shows for each
+  // part — the original script (Devanagari, Arabic, Hebrew, Gurmukhi…) with the
+  // transliteration or meaning beneath it, instead of romanised text alone.
+  // A part's page is null when the spoken text itself is what to show.
+  const parts = [], shown = [];
+  const say = (text, page) => { parts.push(text); shown.push(page || null); };
+  const rtlOf = (t) => /[\u0590-\u05FF\u0600-\u06FF]/.test(t || "");
+  const linePage = (l, spoken) => {
+    if (!l.t) return null;                                    // English original: show what is said
+    const meaningOnly = p.narrate === "meaning";
+    return { text: l.o, sub: meaningOnly ? l.m : (spoken === l.o ? l.t : l.t), weight: spoken.length, rtl: rtlOf(l.o), subRtl: false, big: true };
+  };
+  say(_endStop(p.hook));
+  say(_endStop(p.intro));
 
   // Line by line: the sound, then what it means.
   p.lines.forEach((l) => {
     const spoken = devotionSpokenLine(p, l, narrLang);
-    if (spoken) parts.push(_endStop(spoken));
-    if (l.m) parts.push(_endStop(l.m));
+    if (spoken) say(_endStop(spoken), linePage(l, spoken));
+    if (l.m) {
+      // Meaning-only entries already showed the meaning under the script; keep
+      // the script up while it is spoken so the Arabic stays on screen.
+      if (p.narrate === "meaning" && l.t) say(_endStop(l.m), { text: l.o, sub: l.m, weight: l.m.length, rtl: rtlOf(l.o), subRtl: false, big: true });
+      else say(_endStop(l.m));
+    }
   });
 
   // The recitation: the whole text once more, uninterrupted. Always in the
   // long cut; in the short cut only when a brief text (a two-line chant)
   // would otherwise land under the 60s mark TikTok's rewards programme needs.
   const recite = () => {
-    parts.push(p.narrate === "meaning"
+    say(p.narrate === "meaning"
       ? "Once more — the meaning of the whole prayer, straight through."
       : "Now the whole of it, once more, without interruption.");
     p.lines.forEach((l) => {
       const spoken = p.narrate === "meaning" ? l.m : devotionSpokenLine(p, l, narrLang);
-      if (spoken) parts.push(_endStop(spoken));
+      if (spoken) say(_endStop(spoken), l.t ? { text: l.o, sub: p.narrate === "meaning" ? l.m : l.t, weight: spoken.length, rtl: rtlOf(l.o), subRtl: false, big: true } : null);
     });
   };
   const soFar = () => _wordCount(parts.join(" "));
   let padded = false;
+  // In the short cut the reflection's last sentence — the thing to do today —
+  // always survives; the middle of the reflection is what gets trimmed.
+  const sents = (p.reflection.match(/[^.!?]+[.!?]+/g) || [p.reflection]).map((x) => x.trim());
+  const action = sents.length > 1 ? sents[sents.length - 1] : "";
+  const reflShort = sents.length > 2 ? sents.slice(0, 2).join(" ") + " " + action : p.reflection;
   if (long) {
     recite();
-    parts.push(_endStop(p.reflection));
+    say(_endStop(p.reflection));
   } else {
-    const refl2 = _firstSentences(p.reflection, 2);
-    if (soFar() + _wordCount(refl2) >= DEVOTION_SHORT_MIN_WORDS) {
-      parts.push(_endStop(refl2));
+    if (soFar() + _wordCount(reflShort) >= DEVOTION_SHORT_MIN_WORDS) {
+      say(_endStop(reflShort));
     } else if (soFar() + _wordCount(p.reflection) >= DEVOTION_SHORT_MIN_WORDS - 25) {
       // A little short: the full reflection gets it close enough (the render
       // holds the last frame to 63s anyway), and it beats repeating the text.
       padded = true;
-      parts.push(_endStop(p.reflection));
+      say(_endStop(p.reflection));
     } else {
       // Brief text (a two-line chant): add the recitation, then as much
       // reflection as fits.
       padded = true;
       recite();
       const fullFits = soFar() + _wordCount(p.reflection) <= DEVOTION_SHORT_MAX_WORDS;
-      parts.push(_endStop(fullFits ? p.reflection : refl2));
+      say(_endStop(fullFits ? p.reflection : reflShort));
     }
   }
-  parts.push(p.close || devotionClose(p));
+  say(p.close || devotionClose(p));
 
-  // Short version (unpadded): if it overran, trim reflection first, then middle lines.
-  let out = parts.filter(Boolean);
+  // Short version (unpadded): if it overran, trim the reflection to its first
+  // sentence plus the action, then drop lines from the middle.
+  let out = parts.slice(), outShown = shown.slice();
   if (!long && !padded) {
     const count = () => _wordCount(out.join(" "));
-    if (count() > DEVOTION_SHORT_MAX_WORDS) {
-      const idx = out.length - 2;
-      out[idx] = _endStop(_firstSentences(p.reflection, 1));
-    }
+    if (count() > DEVOTION_SHORT_MAX_WORDS) out[out.length - 2] = _endStop((sents[0] + " " + action).trim());
     while (count() > DEVOTION_SHORT_MAX_WORDS && out.length > 6) {
-      out.splice(2 + Math.floor((out.length - 4) / 2), 1);   // drop from the middle of the lines, keep hook/intro/reflection/close
+      const i = 2 + Math.floor((out.length - 4) / 2);   // from the middle of the lines; hook/intro/reflection/close stay
+      out.splice(i, 1); outShown.splice(i, 1);
     }
   }
+
+  // Caption pages: a spoken part with no special page is split the usual way
+  // (~14 words a page); a part with a page shows that page for its whole length.
+  const pages = [];
+  out.forEach((part, i) => {
+    if (outShown[i]) pages.push(outShown[i]);
+    else buildCaptionPages(part).forEach((t) => pages.push({ text: t, weight: t.length }));
+  });
 
   const script = out.join(" ").replace(/\s+/g, " ").trim();
   const words = _wordCount(script);
-  return { script, parts: out, words, seconds: Math.round((words / DEVOTION_WPM) * 60), chars: script.length };
+  return { script, parts: out, pages, words, seconds: Math.round((words / DEVOTION_WPM) * 60), chars: script.length };
 }
 
 /* ---------------------------------------------------------------- */
@@ -276,7 +303,7 @@ async function runDevotionVideo() {
     const grain = (typeof EV_STYLE !== "undefined") ? EV_STYLE.grain : undefined;
     const rtl = o.lang !== "en" && /[֐-׿؀-ۿ]/.test(r.script);
     const blob = await withTimeout(generateVoiceOverVideo({
-      narrationText: r.script, captionText: r.script, rtl,
+      narrationText: r.script, captionText: r.script, captionPages: r.pages, rtl,
       ref: `${p.title} · ${trad.label}`,
       paletteKey: p.theme, theme: p.theme,
       bgKey: bgForVerseApp({ ref: p.id }), font, grain,
@@ -449,7 +476,7 @@ async function runDevotionBatch() {
     try {
       status.textContent = `${i + 1}/${items.length} — ${p.title} (${row.kind}) — narrating…`;
       const blob = await withTimeout(generateVoiceOverVideo({
-        narrationText: r.script, captionText: r.script,
+        narrationText: r.script, captionText: r.script, captionPages: r.pages,
         ref: `${p.title} · ${trad.label}`, paletteKey: p.theme, theme: p.theme,
         bgKey: bgForVerseApp({ ref: p.id + it.length }), font, grain,
         voiceId: (typeof ttsVoiceFor === "function") ? ttsVoiceFor(lang, gender) : undefined,
