@@ -177,31 +177,45 @@ function _devTag(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g
 // Title ≤ 100 chars (YouTube's cap), description, comma tags, and a shorter
 // TikTok caption. Titles lead with the title + "with meaning" — that phrase is
 // what people actually type into search for this kind of content.
+// opts.segment: native | diaspora | seeker (default: the tradition's default
+// audience, from audiences.js); opts.festival: a festival object when the
+// video is posted inside one — its name and tag go into the copy.
+function devotionSegment(p, segment) {
+  if (segment && segment !== "auto") return segment;
+  return (typeof audienceFor === "function") ? audienceFor(p).defaultSegment : "diaspora";
+}
 function devotionListing(p, secs, opts) {
   opts = opts || {};
   const trad = prayerTradition(p);
   const kind = prayerKindLabel(p);
+  const segment = devotionSegment(p, opts.segment);
+  const fest = (opts.festival && (!opts.festival.tradition || opts.festival.tradition === p.tradition)) ? opts.festival : null;
   const topicTags = (typeof SHORT_TAGS_BY_TOPIC !== "undefined" && SHORT_TAGS_BY_TOPIC[p.topic]) ? SHORT_TAGS_BY_TOPIC[p.topic] : ["faith", "blessed"];
-  const titleTags = [...new Set([_devTag(p.title.split(/ [—–] /)[0]), _devTag(kind), trad.tags[0], "eververse"].filter(Boolean))].slice(0, 4);
+  const audTags = (typeof audienceTags === "function") ? audienceTags(p, segment) : [];
+  // Title: the phrase this audience searches for, then the festival, then a
+  // few tags — sized so the tags always survive YouTube's 100-char cap.
+  const titleTags = [...new Set([...(fest ? [fest.tag.replace(/^#/, "")] : []), ...audTags.slice(0, 2), "eververse"].filter(Boolean))].slice(0, 4);
   const tagStr = titleTags.map((t) => "#" + t).join(" ");
-  const meaning = p.narrate === "meaning" ? "with meaning" : "lyrics & meaning";
-  let head = `${p.title} | ${meaning}`;
+  let head = (typeof audienceTitle === "function") ? audienceTitle(p, segment) : `${p.title} | with meaning`;
+  if (fest) head += ` (${fest.name})`;
   const room = 100 - 2 - trad.emoji.length - 1 - tagStr.length;
-  if (head.length > room) head = head.slice(0, Math.max(20, room)).replace(/\s+\S*$/, "");
+  if (head.length > room) head = head.slice(0, Math.max(20, room)).replace(/\s+\S*$/, "").replace(/[\s—–|:,-]+(and|with|of|for|the|a)?$/i, "");
   const title = `${head} ${trad.emoji} ${tagStr}`.slice(0, 100).trim();
 
   const body = p.lines.map((l) => (l.t && l.t !== l.o) ? `${l.o}\n${l.t}\n${l.m}` : `${l.o}\n${l.m}`).join("\n\n");
-  const descTags = [...new Set([...titleTags, ...trad.tags, ...topicTags, "dailyprayer", "withmeaning", "devotional", "spirituality"])].slice(0, 15);
+  const descTags = [...new Set([...titleTags, ...audTags, ...trad.tags, ...topicTags, "dailyprayer", "withmeaning", "devotional"])].slice(0, 18);
+  const occ = (typeof OCCASION_WORDS !== "undefined" && OCCASION_WORDS[p.occasion]) ? OCCASION_WORDS[p.occasion].word : "";
   const description =
     `${p.hook}\n\n` +
-    `${p.title}${p.native ? " · " + p.native : ""} — ${kind}, ${trad.label} tradition.\n\n` +
+    `${p.title}${p.native ? " · " + p.native : ""} — ${kind}, ${trad.label} tradition.${occ ? " Said for " + occ + "." : ""}${fest ? " Posted for " + fest.name + "." : ""}\n\n` +
     `${body}\n\n` +
     `${p.reflection}\n\n` +
     `Source: ${p.source}\n\n` +
     `A new devotion every day — follow ${DEVOTION_HANDLE} and visit eververse.org\n\n` +
     descTags.map((t) => "#" + t).join(" ");
-  const tiktok = `${p.hook}\n\n${p.title} — ${kind}, ${trad.label} tradition. ${meaning}, line by line.\n\nFollow ${DEVOTION_HANDLE} for a devotion every day.\n\n${descTags.slice(0, 8).map((t) => "#" + t).join(" ")}`;
-  return { title, description, tags: descTags.join(", "), tiktok, seconds: secs };
+  const meaning = p.narrate === "meaning" ? "with meaning" : "lyrics & meaning";
+  const tiktok = `${p.hook}\n\n${p.title} — ${kind}, ${trad.label} tradition. ${meaning}, line by line.${fest ? " " + fest.tag : ""}\n\nFollow ${DEVOTION_HANDLE} for a devotion every day.\n\n${descTags.slice(0, 8).map((t) => "#" + t).join(" ")}`;
+  return { title, description, tags: descTags.join(", "), tiktok, seconds: secs, segment };
 }
 
 /* ---------------------------------------------------------------- */
@@ -258,6 +272,10 @@ function devRender() {
     respect.style.display = "";
   } else respect.style.display = "none";
 
+  const seg = devotionSegment(p, $("dev-segment") ? $("dev-segment").value : "auto");
+  const todayFest = (typeof festivalsOn === "function") ? festivalsOn(new Date()).filter((f) => f.tradition === p.tradition)[0] : null;
+  $("dev-audience").textContent = `Audience: ${(typeof AUDIENCE_SEGMENTS !== "undefined" && AUDIENCE_SEGMENTS[seg]) ? AUDIENCE_SEGMENTS[seg].label : seg}` +
+    ((typeof audienceFor === "function") ? ` · posts in ${audienceFor(p).tz.replace(/_/g, " ")} morning` : "") + (todayFest ? ` · ${todayFest.name} now` : "");
   const rows = p.lines.map((l) => {
     const rtl = /[֐-׿؀-ۿ]/.test(l.o);
     return `<div class="dev-line"><div class="dev-o"${rtl ? ' dir="rtl"' : ""}>${escapeHtml(l.o)}</div>` +
@@ -348,7 +366,8 @@ async function runDevotionAudio() {
 }
 
 function devShowListing(p, secs, mediaName) {
-  const L = devotionListing(p, secs);
+  const fest = (typeof festivalsOn === "function") ? festivalsOn(new Date()).filter((f) => f.tradition === p.tradition)[0] : null;
+  const L = devotionListing(p, secs, { segment: $("dev-segment") ? $("dev-segment").value : "auto", festival: fest });
   const text = `TITLE (YouTube)\n---------------\n${L.title}\n\nDESCRIPTION (YouTube)\n---------------------\n${L.description}\n\nTIKTOK CAPTION\n--------------\n${L.tiktok}\n\nTAGS\n----\n${L.tags}\n\nMedia: ${mediaName} · ~${secs}s\n`;
   showTextDownloadLink("dev-dl", mediaName.replace(/\.\w+$/, "") + "-listing.txt", text, "⬇ Listing text (YouTube title · description · TikTok caption · tags)");
 }
@@ -362,15 +381,15 @@ function initDevotion() {
     tradSel.add(new Option(`${t.emoji} ${t.label} (${prayersFor(k).length})`, k));
   });
   // Open on today's devotion so the daily rhythm is one click.
-  const today = prayerForDay(new Date());
+  const today = (typeof devotionForDay === "function") ? devotionForDay(new Date()).p : prayerForDay(new Date());
   tradSel.value = today.tradition;
   devFillPicker();
   $("dev-pick").value = today.id;
 
   tradSel.onchange = () => { devFillPicker(); devRender(); };
   $("dev-pick").onchange = devRender;
-  ["dev-length", "dev-lang", "dev-voice"].forEach((id) => { if ($(id)) $(id).onchange = devRender; });
-  $("dev-today").onclick = () => { const t = prayerForDay(new Date()); tradSel.value = t.tradition; devFillPicker(); $("dev-pick").value = t.id; devRender(); };
+  ["dev-length", "dev-lang", "dev-voice", "dev-segment"].forEach((id) => { if ($(id)) $(id).onchange = devRender; });
+  $("dev-today").onclick = () => { const t = (typeof devotionForDay === "function") ? devotionForDay(new Date()).p : prayerForDay(new Date()); tradSel.value = t.tradition; devFillPicker(); $("dev-pick").value = t.id; devRender(); };
   $("dev-video").onclick = runDevotionVideo;
   $("dev-audio").onclick = runDevotionAudio;
   $("dev-copy").onclick = () => { navigator.clipboard?.writeText($("dev-script").value); $("dev-status").textContent = "Script copied."; };
@@ -401,11 +420,17 @@ function devBatchPlan() {
   const start = new Date(); start.setHours(0, 0, 0, 0);
   const items = [];
   const pool = scope === "all" ? null : prayersFor(scope);
+  const segment = $("devb-segment") ? $("devb-segment").value : "auto";
+  const when = $("devb-when") ? $("devb-when").value : "fixed";
   for (let d = 0; d < days; d++) {
     const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d);
-    const p = pool ? pool[d % pool.length] : prayerForDay(date);
-    if (wantShort) items.push({ p, date, time, length: "short", landscape: false });
-    if (wantLong) items.push({ p, date, time, length: "long", landscape: true });
+    let p, festival = null;
+    if (pool) { p = pool[d % pool.length]; festival = (typeof festivalsOn === "function") ? festivalsOn(date).filter((f) => f.tradition === scope)[0] || null : null; }
+    else if (typeof devotionForDay === "function") { const r = devotionForDay(date); p = r.p; festival = r.festival; }
+    else p = prayerForDay(date);
+    const it = { p, date, time, festival, segment: devotionSegment(p, segment), when };
+    if (wantShort) items.push(Object.assign({ length: "short", landscape: false }, it));
+    if (wantLong) items.push(Object.assign({ length: "long", landscape: true }, it));
   }
   return items;
 }
@@ -420,8 +445,9 @@ function devBatchEstimate() {
   const plan = Number($("devb-plan").value) || 0;
   const pct = plan ? Math.round((chars / plan) * 100) : 0;
   const renderMin = Math.ceil((secs + items.length * 12) / 60);   // + narration fetch/encode per item
+  const fests = [...new Set(items.filter((it) => it.festival).map((it) => it.festival.name))];
   $("devb-est").textContent = items.length
-    ? `${items.length} videos · ${chars.toLocaleString()} voice characters${plan ? ` (≈${pct}% of your ${plan.toLocaleString()}-character plan)` : ""} · about ${renderMin} min to render (real time — keep this tab visible)`
+    ? `${items.length} videos · ${chars.toLocaleString()} voice characters${plan ? ` (≈${pct}% of your ${plan.toLocaleString()}-character plan)` : ""} · about ${renderMin} min to render (real time — keep this tab visible)${fests.length ? ` · festival days in this window: ${fests.join(", ")}` : ""}`
     : "Tick at least one length.";
 }
 function devPad(n) { return String(n).padStart(2, "0"); }
@@ -433,7 +459,7 @@ function devPublishIso(date, time) {
 }
 function devCsvCell(v) { return `"${String(v == null ? "" : v).replace(/"/g, '""')}"`; }
 
-const DEV_CSV_HEADER = ["date", "publish_at", "kind", "platforms", "file", "tradition", "prayer_id", "title", "description", "tiktok_caption", "tags", "length_sec", "status"];
+const DEV_CSV_HEADER = ["date", "publish_at", "publish_tz", "audience", "festival", "kind", "platforms", "file", "tradition", "prayer_id", "title", "description", "tiktok_caption", "tags", "length_sec", "status"];
 
 // Where files go: a folder handle (File System Access API) or null → downloads.
 async function devPickFolder() {
@@ -469,8 +495,12 @@ async function runDevotionBatch() {
     const r = devotionScript(p, { length: it.length, lang });
     const dims = it.landscape ? { w: 1920, h: 1080 } : { w: 1080, h: 1920 };
     const base = `${devDateStr(it.date)}_${it.landscape ? "long" : "short"}_${p.id}`;
-    const L = devotionListing(p, r.seconds);
-    const row = { date: devDateStr(it.date), publish_at: devPublishIso(it.date, it.time), kind: it.landscape ? "long" : "short",
+    const L = devotionListing(p, r.seconds, { segment: it.segment, festival: it.festival });
+    // Publish in the audience's own morning/evening (their time zone), or at the fixed local time.
+    const auto = it.when !== "fixed" && typeof audiencePublishIso === "function";
+    const publishAt = auto ? audiencePublishIso(p, devDateStr(it.date), it.when) : devPublishIso(it.date, it.time);
+    const row = { date: devDateStr(it.date), publish_at: publishAt, publish_tz: auto ? audienceFor(p).tz : Intl.DateTimeFormat().resolvedOptions().timeZone,
+      audience: it.segment, festival: it.festival ? it.festival.name : "", kind: it.landscape ? "long" : "short",
       platforms: it.landscape ? "youtube" : "youtube_shorts;tiktok", file: "", tradition: trad.label, prayer_id: p.id,
       title: L.title, description: L.description, tiktok_caption: L.tiktok, tags: L.tags, length_sec: r.seconds, status: "" };
     try {
@@ -511,7 +541,7 @@ function initDevotionBatch() {
   sc.innerHTML = "";
   sc.add(new Option("Daily rotation — all traditions", "all"));
   prayerTraditionKeys().forEach((k) => sc.add(new Option(`Only ${PRAYER_TRADITIONS[k].label}`, k)));
-  ["devb-days", "devb-scope", "devb-short", "devb-long", "devb-hindi", "devb-plan", "devb-time"].forEach((id) => { if ($(id)) $(id).onchange = devBatchEstimate; });
+  ["devb-days", "devb-scope", "devb-short", "devb-long", "devb-hindi", "devb-plan", "devb-time", "devb-segment", "devb-when"].forEach((id) => { if ($(id)) $(id).onchange = devBatchEstimate; });
   $("devb-run").onclick = runDevotionBatch;
   $("devb-cancel").onclick = () => { devBatchCancel = true; };
   devBatchEstimate();

@@ -370,6 +370,9 @@
             <select id="dev-format"><option value="portrait" selected>Vertical 9:16 (Shorts / TikTok)</option><option value="landscape">Landscape 16:9 (YouTube)</option></select></div>
           <div class="field"><label for="dev-voice">Voice</label>
             <select id="dev-voice"><option value="female">Warm female</option><option value="male">Warm male</option></select></div>
+          <div class="field"><label for="dev-segment">Audience</label>
+            <select id="dev-segment"><option value="auto" selected>Auto — the tradition's main audience</option><option value="native">Homeland — native script &amp; voice</option><option value="diaspora">Diaspora — English-first believers</option><option value="seeker">Seekers — outside the tradition</option></select></div>
+          <div class="kit-status" id="dev-audience" style="margin:-4px 0 8px;"></div>
           <div class="field"><label for="dev-lang">Narration</label>
             <select id="dev-lang"><option value="en" selected>English (transliteration + meaning)</option><option value="hi">Hindi voice (Devanagari original + English meaning)</option></select></div>
           <label class="checkbox"><input type="checkbox" id="dev-music" checked /> Subtle music bed</label>
@@ -397,11 +400,13 @@
 
     <section class="panel wide">
       <div class="panel-head"><span class="step-num">📦</span><h2>Batch — a month of devotions in one sitting</h2></div>
-      <p class="hint">One devotion per day, rendered back to back and <b>saved as each one finishes</b> — pick a folder (Chrome/Edge) or let them land in Downloads. A <b>metadata.csv</b> goes with them: date, publish time, YouTube title &amp; description, TikTok caption, tags, per file. That file feeds the YouTube uploader and any bulk scheduler. Uses the voice, music and token set above.</p>
+      <p class="hint">Tailored per audience from <b>AUDIENCE_RESEARCH.md</b>: titles use the phrase each audience actually searches, tags follow, festival days (Navratri, Ramadan, Advent, Gurpurab…) pull in that tradition's prayers, and each video is scheduled for its audience's <b>own morning</b> — 7:30 IST for Hindu entries, 5:30 Jakarta for Islamic, 6:30 Eastern for Christian. One devotion per day, rendered back to back and <b>saved as each one finishes</b> — pick a folder (Chrome/Edge) or let them land in Downloads. A <b>metadata.csv</b> goes with them: date, publish time, YouTube title &amp; description, TikTok caption, tags, per file. That file feeds the YouTube uploader and any bulk scheduler. Uses the voice, music and token set above.</p>
       <div class="sched-toolbar">
         <label>Days <select id="devb-days"><option value="7">7</option><option value="14">14</option><option value="30" selected>30</option></select></label>
         <label>Rotation <select id="devb-scope"></select></label>
-        <label>Publish time <input id="devb-time" type="time" value="07:00" /></label>
+        <label>Audience <select id="devb-segment"><option value="auto" selected>Auto per tradition</option><option value="native">Homeland</option><option value="diaspora">Diaspora</option><option value="seeker">Seekers</option></select></label>
+        <label>Publish <select id="devb-when"><option value="morning" selected>Audience's morning (their time zone)</option><option value="evening">Audience's evening</option><option value="fixed">Fixed time, my time zone</option></select></label>
+        <label>Fixed time <input id="devb-time" type="time" value="07:00" /></label>
         <label class="checkbox"><input type="checkbox" id="devb-short" checked /> Short (vertical · Shorts/TikTok)</label>
         <label class="checkbox"><input type="checkbox" id="devb-long" checked /> Long (landscape · YouTube)</label>
         <label class="checkbox"><input type="checkbox" id="devb-hindi" checked /> Hindi voice for Devanagari entries</label>
@@ -871,6 +876,7 @@
   <script src="occasions.js"></script>
   <script src="series.js"></script>
   <script src="prayers.js"></script>
+  <script src="audiences.js"></script>
   <script src="devotion.js"></script>
   <script src="youtube-config.js"></script>
   <script src="youtube.js"></script>
