@@ -350,4 +350,142 @@ function initDevotion() {
   $("dev-listing").onclick = () => { const p = devCurrent(); const r = devotionScript(p, devOpts()); devShowListing(p, r.seconds, devFilename(p, "video") + ".mp4"); $("dev-status").textContent = "Listing ready below."; };
   if ($("dev-token")) { $("dev-token").value = getTtsToken(); $("dev-token").oninput = () => setTtsToken($("dev-token").value); }
   devRender();
+  initDevotionBatch();
+}
+
+/* ---------------------------------------------------------------- */
+/*  Batch — a month of devotions in one sitting                      */
+/* ---------------------------------------------------------------- */
+// Renders one devotion per day for N days (short and/or long), saving each
+// file as it finishes — straight into a folder you pick (Chrome/Edge), or as
+// individual downloads elsewhere — plus a metadata.csv with the date, publish
+// time, title, description, TikTok caption and tags for every file. That CSV
+// is what the YouTube uploader reads, and what a bulk scheduler imports.
+//
+// Nothing is zipped: a month of 1080p video is gigabytes, far beyond what a
+// tab can hold in memory. Streaming to disk is the only design that finishes.
+let devBatchCancel = false;
+
+function devBatchPlan() {
+  const days = Number($("devb-days").value);
+  const scope = $("devb-scope").value;
+  const wantShort = $("devb-short").checked, wantLong = $("devb-long").checked;
+  const time = $("devb-time").value || "07:00";
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const items = [];
+  const pool = scope === "all" ? null : prayersFor(scope);
+  for (let d = 0; d < days; d++) {
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d);
+    const p = pool ? pool[d % pool.length] : prayerForDay(date);
+    if (wantShort) items.push({ p, date, time, length: "short", landscape: false });
+    if (wantLong) items.push({ p, date, time, length: "long", landscape: true });
+  }
+  return items;
+}
+function devBatchLang(p) {
+  return ($("devb-hindi").checked && p.lines.some((l) => hasScript(l.o, DEV_DEVANAGARI))) ? "hi" : "en";
+}
+function devBatchEstimate() {
+  if (!$("devb-est")) return;
+  const items = devBatchPlan();
+  let chars = 0, secs = 0;
+  items.forEach((it) => { const r = devotionScript(it.p, { length: it.length, lang: devBatchLang(it.p) }); chars += r.chars; secs += Math.max(r.seconds, it.landscape ? 0 : 63); });
+  const plan = Number($("devb-plan").value) || 0;
+  const pct = plan ? Math.round((chars / plan) * 100) : 0;
+  const renderMin = Math.ceil((secs + items.length * 12) / 60);   // + narration fetch/encode per item
+  $("devb-est").textContent = items.length
+    ? `${items.length} videos · ${chars.toLocaleString()} voice characters${plan ? ` (≈${pct}% of your ${plan.toLocaleString()}-character plan)` : ""} · about ${renderMin} min to render (real time — keep this tab visible)`
+    : "Tick at least one length.";
+}
+function devPad(n) { return String(n).padStart(2, "0"); }
+function devDateStr(d) { return `${d.getFullYear()}-${devPad(d.getMonth() + 1)}-${devPad(d.getDate())}`; }
+function devPublishIso(date, time) {
+  const [h, m] = time.split(":").map(Number);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h || 0, m || 0, 0);
+  return d.toISOString();
+}
+function devCsvCell(v) { return `"${String(v == null ? "" : v).replace(/"/g, '""')}"`; }
+
+const DEV_CSV_HEADER = ["date", "publish_at", "kind", "platforms", "file", "tradition", "prayer_id", "title", "description", "tiktok_caption", "tags", "length_sec", "status"];
+
+// Where files go: a folder handle (File System Access API) or null → downloads.
+async function devPickFolder() {
+  if (!window.showDirectoryPicker) return null;
+  try { return await window.showDirectoryPicker({ mode: "readwrite", startIn: "downloads" }); }
+  catch (e) { return null; }   // cancelled → fall back to downloads
+}
+async function devSaveFile(dir, name, blob) {
+  if (dir) {
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable(); await w.write(blob); await w.close();
+  } else downloadBlob(blob, name);
+}
+
+async function runDevotionBatch() {
+  if (devBusy) return;
+  const status = $("devb-status");
+  if (typeof videoSupported === "function" && !videoSupported()) { status.textContent = "⚠ This browser can't record video. Use Chrome or Edge on a desktop."; return; }
+  if (typeof TTS_READY === "undefined" || !TTS_READY) { status.textContent = "Connect your EverVerse voice (tts-config.js) first."; return; }
+  const items = devBatchPlan();
+  if (!items.length) { status.textContent = "Tick at least one length."; return; }
+  const dir = await devPickFolder();
+  devBusy = true; devBatchCancel = false;
+  $("devb-run").disabled = true; $("devb-cancel").style.display = "inline-block";
+  const rows = [], mobile = isMobileDevice(), gender = $("dev-voice").value, music = $("dev-music").checked;
+  const font = (typeof EV_STYLE !== "undefined") ? EV_STYLE.font : undefined;
+  const grain = (typeof EV_STYLE !== "undefined") ? EV_STYLE.grain : undefined;
+  const t0 = Date.now();
+  for (let i = 0; i < items.length; i++) {
+    if (devBatchCancel) break;
+    const it = items[i], p = it.p, trad = prayerTradition(p);
+    const lang = devBatchLang(p);
+    const r = devotionScript(p, { length: it.length, lang });
+    const dims = it.landscape ? { w: 1920, h: 1080 } : { w: 1080, h: 1920 };
+    const base = `${devDateStr(it.date)}_${it.landscape ? "long" : "short"}_${p.id}`;
+    const L = devotionListing(p, r.seconds);
+    const row = { date: devDateStr(it.date), publish_at: devPublishIso(it.date, it.time), kind: it.landscape ? "long" : "short",
+      platforms: it.landscape ? "youtube" : "youtube_shorts;tiktok", file: "", tradition: trad.label, prayer_id: p.id,
+      title: L.title, description: L.description, tiktok_caption: L.tiktok, tags: L.tags, length_sec: r.seconds, status: "" };
+    try {
+      status.textContent = `${i + 1}/${items.length} — ${p.title} (${row.kind}) — narrating…`;
+      const blob = await withTimeout(generateVoiceOverVideo({
+        narrationText: r.script, captionText: r.script,
+        ref: `${p.title} · ${trad.label}`, paletteKey: p.theme, theme: p.theme,
+        bgKey: bgForVerseApp({ ref: p.id + it.length }), font, grain,
+        voiceId: (typeof ttsVoiceFor === "function") ? ttsVoiceFor(lang, gender) : undefined,
+        watermark: true, withMusic: music, musicLevel: 0.18,
+        minDurationSec: it.landscape ? 0 : 63,
+        videoBitsPerSecond: mobile ? 3_000_000 : 6_000_000,
+        w: dims.w, h: dims.h,
+        onProgress: (pr) => { status.textContent = `${i + 1}/${items.length} — ${p.title} (${row.kind}) — rendering ${Math.round(pr * 100)}%`; },
+      }), (Math.max(r.seconds, 63) + 120) * 1000, "render stalled");
+      if (!blob || blob.size < 2000) throw new Error("empty video");
+      row.file = base + "." + videoFileExt(blob);
+      await devSaveFile(dir, row.file, blob);
+      row.status = "ok";
+    } catch (e) {
+      row.status = "failed: " + (e && e.message ? e.message : e);
+    }
+    rows.push(row);
+    // The CSV is rewritten after every item so a crash mid-batch loses nothing.
+    const csv = [DEV_CSV_HEADER.join(",")].concat(rows.map((x) => DEV_CSV_HEADER.map((k) => devCsvCell(x[k])).join(","))).join("\n");
+    if (dir) { try { await devSaveFile(dir, "metadata.csv", new Blob([csv], { type: "text/csv" })); } catch (e) {} }
+    else if (i === items.length - 1 || devBatchCancel) downloadBlob(new Blob([csv], { type: "text/csv" }), `devotions_${devDateStr(items[0].date)}_metadata.csv`);
+  }
+  const ok = rows.filter((x) => x.status === "ok").length, failed = rows.length - ok;
+  const mins = Math.round((Date.now() - t0) / 60000);
+  status.textContent = `${devBatchCancel ? "Stopped" : "✓ Done"} — ${ok} video${ok === 1 ? "" : "s"} saved${failed ? `, ${failed} failed (see metadata.csv)` : ""} in ${mins} min. ${dir ? "Everything is in the folder you chose." : "Check your downloads folder."}`;
+  devBusy = false; $("devb-run").disabled = false; $("devb-cancel").style.display = "none";
+}
+
+function initDevotionBatch() {
+  if (!$("devb-run")) return;
+  const sc = $("devb-scope");
+  sc.innerHTML = "";
+  sc.add(new Option("Daily rotation — all traditions", "all"));
+  prayerTraditionKeys().forEach((k) => sc.add(new Option(`Only ${PRAYER_TRADITIONS[k].label}`, k)));
+  ["devb-days", "devb-scope", "devb-short", "devb-long", "devb-hindi", "devb-plan", "devb-time"].forEach((id) => { if ($(id)) $(id).onchange = devBatchEstimate; });
+  $("devb-run").onclick = runDevotionBatch;
+  $("devb-cancel").onclick = () => { devBatchCancel = true; };
+  devBatchEstimate();
 }

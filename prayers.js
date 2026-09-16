@@ -753,14 +753,25 @@ function prayerById(id) { return PRAYER_DB.find((p) => p.id === id) || null; }
 function prayersFor(tradition) { return PRAYER_DB.filter((p) => p.tradition === tradition); }
 function prayerTraditionKeys() { return Object.keys(PRAYER_TRADITIONS).filter((k) => prayersFor(k).length); }
 
-// The devotion for a given day, cycling through the whole library so every
-// tradition keeps its turn. Order is fixed (the array order), so the same date
-// always gives the same devotion — the daily engine and the batch agree.
+// Daily rotation: traditions take turns (Hindu, Christian, Jewish, …) rather
+// than running the library in file order, so a week on the channel is never
+// five Taoist days in a row. Smaller groups simply come round again sooner.
+const PRAYER_ROTATION = (() => {
+  const keys = Object.keys(PRAYER_TRADITIONS).filter((k) => PRAYER_DB.some((p) => p.tradition === k));
+  const groups = keys.map((k) => PRAYER_DB.filter((p) => p.tradition === k));
+  const out = [];
+  const longest = Math.max(...groups.map((g) => g.length));
+  for (let round = 0; round < longest; round++) groups.forEach((g) => out.push(g[round % g.length]));
+  return out;
+})();
+
+// The devotion for a given day. Order is fixed, so the same date always gives
+// the same devotion — the studio and the batch agree.
 function prayerForDay(date) {
   const d = date || new Date();
   const start = Date.UTC(d.getFullYear(), 0, 0);
   const doy = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000);
-  return PRAYER_DB[doy % PRAYER_DB.length];
+  return PRAYER_ROTATION[doy % PRAYER_ROTATION.length];
 }
 
 // Human label for a `kind`, singular, capitalised — "Aarti", "Dua", "Psalm".
