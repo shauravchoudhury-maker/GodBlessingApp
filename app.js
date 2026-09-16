@@ -2707,6 +2707,7 @@ function init() {
   initCards();
   initSeries();
   if (typeof initDevotion === "function") initDevotion();
+  if (typeof initYouTube === "function") initYouTube();
   registerServiceWorker();
 }
 document.addEventListener("DOMContentLoaded", init);
