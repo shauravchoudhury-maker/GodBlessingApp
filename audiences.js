@@ -41,11 +41,21 @@ const AUDIENCES = {
       "gayatri-mantra": { search: "Gayatri Mantra meaning", nativeTags: ["#गायत्रीमंत्र", "#gayatrimantra"] },
       "om-jai-jagdish-hare": { search: "Om Jai Jagdish Hare aarti with lyrics and meaning", nativeTags: ["#ॐजयजगदीशहरे", "#aarti"] },
       "mahamrityunjaya-mantra": { search: "Mahamrityunjaya Mantra meaning", nativeTags: ["#महामृत्युंजय", "#shiva"] },
+      "jai-ambe-gauri": { search: "Jai Ambe Gauri aarti with lyrics and meaning", nativeTags: ["#जयअम्बेगौरी", "#दुर्गाआरती", "#navratri", "#durgaaarti"] },
+      "durga-navratri-chant": { search: "Ya Devi Sarva Bhuteshu meaning", nativeTags: ["#यादेवीसर्वभूतेषु", "#navratri", "#durga"] },
+      "saraswati-vandana": { search: "Saraswati Vandana Ya Kundendu with meaning", nativeTags: ["#सरस्वतीवंदना", "#saraswati", "#students"] },
+      "om-jai-lakshmi-mata": { search: "Om Jai Lakshmi Mata aarti with lyrics and meaning", nativeTags: ["#लक्ष्मीआरती", "#diwali", "#lakshmiaarti"] },
+      "jai-ganesh-deva": { search: "Jai Ganesh Deva aarti with lyrics and meaning", nativeTags: ["#जयगणेशदेवा", "#गणेशआरती", "#ganeshaarti"] },
+      "om-jai-shiv-omkara": { search: "Om Jai Shiv Omkara aarti with lyrics and meaning", nativeTags: ["#शिवआरती", "#mahadev", "#shivaarti"] },
+      "hanuman-chalisa-2": { search: "Hanuman Chalisa with meaning part 2", nativeTags: ["#हनुमानचालीसा", "#hanumanchalisa"] },
+      "hanuman-chalisa-3": { search: "Hanuman Chalisa with meaning part 3", nativeTags: ["#हनुमानचालीसा", "#hanumanchalisa"] },
+      "hanuman-chalisa-4": { search: "Hanuman Chalisa with meaning part 4", nativeTags: ["#हनुमानचालीसा", "#hanumanchalisa"] },
+      "hanuman-chalisa-5": { search: "Hanuman Chalisa with meaning part 5", nativeTags: ["#हनुमानचालीसा", "#hanumanchalisa"] },
     },
     festivals: [
-      { name: "Navratri", start: "2026-10-11", end: "2026-10-19", prefer: ["gayatri-mantra", "sarve-bhavantu-sukhinah", "asato-ma-sadgamaya"], tag: "#navratri" },
-      { name: "Diwali", start: "2026-11-06", end: "2026-11-10", peak: "2026-11-08", prefer: ["vakratunda-mahakaya", "om-jai-jagdish-hare", "asato-ma-sadgamaya"], tag: "#diwali" },
-      { name: "Maha Shivaratri", start: "2027-03-05", end: "2027-03-06", prefer: ["mahamrityunjaya-mantra"], tag: "#mahashivratri" },
+      { name: "Navratri", start: "2026-10-11", end: "2026-10-19", prefer: ["jai-ambe-gauri", "durga-navratri-chant", "gayatri-mantra", "asato-ma-sadgamaya", "om-jai-lakshmi-mata", "sarve-bhavantu-sukhinah", "saraswati-vandana", "hanuman-chalisa-5", "om-jai-jagdish-hare"], tag: "#navratri" },   // nine nights, nine different videos — never the same upload twice
+      { name: "Diwali", start: "2026-11-06", end: "2026-11-10", peak: "2026-11-08", prefer: ["vakratunda-mahakaya", "asato-ma-sadgamaya", "om-jai-lakshmi-mata", "jai-ganesh-deva", "om-jai-jagdish-hare"], tag: "#diwali" },   // Lakshmi aarti lands on the peak night
+      { name: "Maha Shivaratri", start: "2027-03-05", end: "2027-03-06", prefer: ["om-jai-shiv-omkara", "mahamrityunjaya-mantra"], tag: "#mahashivratri" },
     ],
   },
   christian: {
@@ -68,6 +78,9 @@ const AUDIENCES = {
       "psalm-23": { search: "Psalm 23 with meaning", nativeTags: ["#psalm23", "#thelordismyshepherd"] },
       "psalm-91": { search: "Psalm 91 prayer for protection", nativeTags: ["#psalm91", "#protection"] },
       "lords-prayer": { search: "The Lord's Prayer explained", nativeTags: ["#lordsprayer", "#ourfather"] },
+      "isaiah-41-10-prayer": { search: "Isaiah 41:10 meaning fear not", nativeTags: ["#isaiah4110", "#fearnot", "#bibleverse"] },
+      "jeremiah-29-11-prayer": { search: "Jeremiah 29:11 meaning explained", nativeTags: ["#jeremiah2911", "#bibleverse", "#hope"] },
+      "philippians-4-6-prayer": { search: "Philippians 4:6-7 prayer for anxiety", nativeTags: ["#philippians46", "#anxiety", "#bibleverse"] },
     },
     festivals: [
       { name: "Advent", start: "2026-11-29", end: "2026-12-24", prefer: ["doxology", "beatitudes", "lords-prayer"], tag: "#advent" },
@@ -122,9 +135,11 @@ const AUDIENCES = {
       "al-fatiha": { search: "Surah Al-Fatiha meaning in English", nativeTags: ["#alfatiha", "#الفاتحة"] },
       "dua-anxiety": { search: "dua for anxiety and stress", nativeTags: ["#duaforanxiety", "#stress"] },
       "dua-morning": { search: "morning dua with meaning", nativeTags: ["#morningdua", "#adhkar"] },
+      "three-quls": { search: "3 Quls before sleep with meaning", nativeTags: ["#3quls", "#المعوذات", "#sleep", "#surahikhlas"] },
+      "dua-before-sleep": { search: "dua before sleeping with meaning", nativeTags: ["#duabeforesleep", "#sleep", "#adhkar"] },
     },
     festivals: [
-      { name: "Ramadan", start: "2027-02-08", end: "2027-03-08", prefer: ["al-fatiha", "dua-morning", "ayat-al-kursi", "dua-anxiety", "hasbunallah", "dua-yunus"], tag: "#ramadan" },
+      { name: "Ramadan", start: "2027-02-08", end: "2027-03-08", prefer: ["al-fatiha", "dua-morning", "ayat-al-kursi", "three-quls", "dua-anxiety", "dua-before-sleep", "hasbunallah", "dua-yunus"], tag: "#ramadan" },
     ],
   },
   sikh: {
