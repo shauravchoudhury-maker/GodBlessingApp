@@ -2,7 +2,7 @@
 
 What each audience actually searches, watches and wakes up to, from public sources,
 and how the pipeline uses it. Re-check each section yearly; festival dates every year.
-Last reviewed: 2026-09-16.
+Last reviewed: 2026-09-18.
 
 ## How it is applied
 | Signal | Where it lands |
@@ -21,7 +21,7 @@ Last reviewed: 2026-09-16.
 - **Diaspora** (US/UK/CA/AU, second generation): reads transliteration, wants meaning in English → default segment `diaspora`; homeland gets Devanagari title + Hindi voice.
 - **Festivals 2026–27 (verified):** Navratri 11–19 Oct 2026; Diwali 8 Nov 2026 (five days 6–10 Nov); Maha Shivaratri 6 Mar 2027.
   [calendardate Navratri](https://www.calendardate.com/navratri_2026.htm) · [diwali.info](https://diwali.info/diwali-dates) · [calendarlabs Shivaratri](https://www.calendarlabs.com/holidays/india/maha-shivaratri.php)
-- **Gap to fill next:** Durga/Ambe aarti and Lakshmi aarti before Navratri/Diwali; Shiv aarti before Shivaratri; full Hanuman Chalisa in parts.
+- **Filled 2026-09-18:** Jai Ambe Gauri (Durga aarti), Ya Devi Sarva Bhuteshu (Devi Mahatmya chant), Saraswati Vandana, Om Jai Lakshmi Mata, Jai Ganesh Deva, Om Jai Shiv Omkara, Hanuman Chalisa parts 2–5 (chaupais 4–40 + closing doha). Navratri now runs nine *different* videos; Diwali puts the Lakshmi aarti on the peak night; Shivaratri opens with the Shiv aarti.
 
 ## Christian
 - **What people read most (2025):** YouVersion's verse of the year Isaiah 41:10 (top in four of six years), then Jeremiah 29:11 and Romans 12:2; Philippians 4:6 was 2024's. On Bible Gateway, **Psalms 23 and 91 take almost the entire top 23**, led by Psalm 23:4. Top searched words: *love, anxiety, peace*.
@@ -29,7 +29,7 @@ Last reviewed: 2026-09-16.
 - → Psalm 23 and 91 lead the Christian set; seeker titles use *anxiety / peace / protection* framing; default segment `seeker` because the discovery audience is largest.
 - **Festivals:** Advent 29 Nov–24 Dec 2026; Christmas; Lent 10 Feb–27 Mar 2027; Easter 28 Mar 2027.
   [Farmers' Almanac Easter](https://www.farmersalmanac.com/when-is-easter) · [timeanddate](https://www.timeanddate.com/holidays/us/easter-sunday)
-- **Gap:** Isaiah 41:10, Jeremiah 29:11, Philippians 4:6 exist as verses in `verses.js` — worth "prayer" treatments (a spoken prayer built on the verse) in the next batch.
+- **Filled 2026-09-18:** Isaiah 41:10, Jeremiah 29:11–13 and Philippians 4:6–7 as prayer treatments (KJV lines, own meaning, reflection ends in the prayer to say).
 
 ## Islamic
 - **Anxiety and sleep framing wins.** The Prophetic dua for worry ("Allahumma inni a'udhu bika minal-hammi wal-hazan") and Ayatul Kursi *before sleep* are the recurring searches; top-performing videos title themselves with *sleep*, *transliteration*, *100x*. Alafasy and Al-Muaiqly recitations are what people listen to before bed — a reason our voice never recites the Arabic.
@@ -38,7 +38,7 @@ Last reviewed: 2026-09-16.
   [Think with Google — Indonesia Ramadan](https://business.google.com/en-all/think/consumer-insights/ramadan-2024-indonesia-consumer-insights/) · [Google Ramadan trends](https://rilis.id/Lifestyle/Berita/Google-Ini-Tren-Pencarian-yang-Populer-pada-Ramadan-2025-kyhLl6L)
 - **Ramadan 2027:** ~8 Feb – 8 Mar (moon-dependent — confirm the week before).
   [IslamicFinder](https://www.islamicfinder.org/special-islamic-days/ramadan-2027/) · [HRF](https://www.hrf.org.uk/media-centre/blog/when-is-ramadan-2027/)
-- **Gap:** sleep duas + the Three Quls as one "before sleep" devotion; Indonesian-language meaning line.
+- **Filled 2026-09-18:** the Three Quls (112–114) as one before-sleep devotion, and the sleep/waking adhkar as a pair; both meaning-only, Arabic on screen. **Still open:** Indonesian-language meaning line.
 
 ## Sikh
 - **Diaspora wants meaning in English.** Community and educational sources say plainly that many diaspora Sikhs do not engage with Punjabi content; Gurdwaras run Punjabi classes so children can read Gurbani; projects exist specifically to provide Gurbani meaning in English. Largest diaspora: Canada (Surrey, Brampton), UK (Southall), US, Australia, Italy.

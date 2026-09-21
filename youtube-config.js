@@ -3,4 +3,4 @@
 // which Google Cloud project is asking, and Google checks the site's origin
 // against the list you set. No key, secret or token is ever committed.
 
-const YT_CLIENT_ID = "PASTE_YOUR_CLIENT_ID.apps.googleusercontent.com";
+const YT_CLIENT_ID = "56510956044-6kajuivabsrhakmj2f3job8jskrpendn.apps.googleusercontent.com";
