@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EverVerse — Short Style Lab</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    :root { --bg:#0e1220; --panel:#161c2e; --ink:#eef1f8; --muted:#9aa3bd; --line:#26304a; --brand:#7c5cff; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",system-ui,sans-serif; }
+    header { padding:30px 16px 6px; text-align:center; }
+    header h1 { margin:0 0 6px; font-size:24px; }
+    header p { color:var(--muted); margin:0 auto; max-width:680px; line-height:1.5; font-size:15px; }
+    .bar { display:flex; flex-wrap:wrap; gap:10px 16px; justify-content:center; align-items:center; padding:16px; font-size:14px; }
+    .bar select, .bar button { font:inherit; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
+    .bar button { cursor:pointer; }
+    .wrap { max-width:1240px; margin:0 auto; padding:0 16px 24px; }
+    .grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+    .card canvas { width:100%; aspect-ratio:9/16; display:block; background:#000; }
+    .lbl { padding:10px 12px 12px; font-size:13px; line-height:1.45; flex:1; display:flex; flex-direction:column; gap:8px; }
+    .lbl b { font-size:14.5px; } .lbl span { color:var(--muted); }
+    .lbl button { margin-top:auto; font:inherit; font-size:12.5px; background:transparent; color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 8px; cursor:pointer; }
+    .lbl button:disabled { opacity:.5; cursor:default; }
+    .tip { color:var(--muted); font-size:13px; text-align:center; max-width:700px; margin:20px auto 0; line-height:1.5; }
+    footer { text-align:center; color:var(--muted); padding:26px; font-size:13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>✦ Short Style Lab</h1>
+    <p>Every short style, playing side by side on the same verse, timed like real narration. Pick the look here, then choose it under <b>Shorts → Style</b> in the studio.</p>
+  </header>
+  <div class="bar">
+    <label>Sample verse <select id="verse"></select></label>
+    <label><input type="checkbox" id="safe" checked /> Show TikTok overlay</label>
+    <button id="restart">↺ Restart</button>
+  </div>
+  <div class="wrap">
+    <div class="grid" id="grid"></div>
+    <p class="tip">The shaded areas are where TikTok draws its own buttons, caption and tabs. Nothing important should sit under them. <b>Record sample</b> saves a silent 1080×1920 clip of that style, so you can post-test a look before using it for a real short.</p>
+  </div>
+  <footer>EverVerse · internal style reference</footer>
+
+  <script src="verses.js"></script>
+  <script src="backgrounds.js"></script>
+  <script src="render.js"></script>
+  <script src="video.js"></script>
+  <script src="shortstyles.js"></script>
+  <script>
+    // Hooks are the opening line, written to stop the scroll; the verse follows.
+    const SAMPLES = [
+      ["Psalm 46:10", "If your mind will not slow down tonight, hear this."],
+      ["Jeremiah 29:11", "Someone needs to hear this today."],
+      ["Isaiah 41:10", "Read this before you give up."],
+      ["Bhagavad Gita 2:47", "The most freeing line in the Gita."],
+      ["Matthew 11:28", "For anyone running on empty."],
+    ].map(([ref, hook]) => {
+      const v = VERSE_DB.find((x) => x.ref === ref);
+      return v ? { ref, hook, text: v.text } : null;
+    }).filter(Boolean);
+
+    const WORDS_PER_SEC = 2.6;   // a calm narrator's pace
+    const PREVIEW = { w: 360, h: 640 }, RECORD = { w: 1080, h: 1920 };
+    const sel = document.getElementById("verse");
+    sel.innerHTML = SAMPLES.map((s, i) => `<option value="${i}">${s.ref}</option>`).join("");
+
+    function build(sample) {
+      const narration = sample.hook + " " + sample.text + " " + sample.ref + ".";
+      const pages = [sample.hook].concat(buildCaptionPages(sample.text + " " + sample.ref + "."));
+      const voiceDur = narration.split(/\s+/).length / WORDS_PER_SEC;
+      return { sched: evScheduleCaptions(pages, voiceDur), dur: voiceDur + 1.2 };
+    }
+
+    // Where TikTok's interface sits on a 9:16 frame (approximate, all phones).
+    function drawSafeOverlay(ctx, W, H) {
+      ctx.save();
+      ctx.fillStyle = "rgba(255,40,80,0.22)";
+      ctx.fillRect(0, 0, W, H * 0.09);                      // Following / For You tabs
+      ctx.fillRect(W * 0.86, H * 0.36, W * 0.14, H * 0.44); // like / comment / share rail
+      ctx.fillRect(0, H * 0.78, W, H * 0.22);               // username, caption, sound
+      ctx.restore();
+    }
+
+    let cards = [], t0 = performance.now(), data = build(SAMPLES[0]);
+    function makeCards() {
+      const grid = document.getElementById("grid"); grid.innerHTML = ""; cards = [];
+      const sample = SAMPLES[+sel.value];
+      SHORT_STYLE_ORDER.forEach((key) => {
+        const st = SHORT_STYLES[key];
+        const card = document.createElement("div"); card.className = "card";
+        const cv = document.createElement("canvas"); cv.width = PREVIEW.w; cv.height = PREVIEW.h;
+        const ctx = cv.getContext("2d");
+        // Classic uses the verse's own theme, as the studio does by default.
+        const v = VERSE_DB.find((x) => x.ref === sample.ref) || {};
+        const opts = { ref: sample.ref, shortStyle: key, paletteKey: v.theme || "royal", bgKey: "aurora", font: "serif", grain: true, watermark: true };
+        const prep = evPrepareShort(opts, PREVIEW.w, PREVIEW.h, 7, ctx);
+        const lbl = document.createElement("div"); lbl.className = "lbl";
+        lbl.innerHTML = `<b>${st.name}</b><span>${st.note}</span>`;
+        const rec = document.createElement("button"); rec.textContent = "⏺ Record sample";
+        rec.onclick = () => recordSample(key, opts, rec);
+        lbl.appendChild(rec);
+        card.append(cv, lbl); grid.appendChild(card);
+        // Fresh page objects per card: word timings are cached on them.
+        cards.push({ ctx, opts, prep, sched: data.sched.map((s) => Object.assign({}, s)) });
+      });
+    }
+
+    function loop() {
+      const t = ((performance.now() - t0) / 1000) % data.dur;
+      const overlay = document.getElementById("safe").checked;
+      for (const c of cards) {
+        evShortFrame(c.ctx, PREVIEW.w, PREVIEW.h, c.prep, c.opts, c.sched, t, data.dur);
+        if (overlay) drawSafeOverlay(c.ctx, PREVIEW.w, PREVIEW.h);
+      }
+      requestAnimationFrame(loop);
+    }
+
+    async function recordSample(key, baseOpts, btn) {
+      if (!videoSupported()) { alert("This browser can't record video."); return; }
+      btn.disabled = true;
+      const { w: W, h: H } = RECORD;
+      const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+      const ctx = cv.getContext("2d");
+      const prep = evPrepareShort(baseOpts, W, H, 7, ctx);
+      const sched = data.sched.map((s) => Object.assign({}, s));
+      const stream = cv.captureStream(0), track = stream.getVideoTracks()[0];
+      const mime = pickVideoMime();
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+      const chunks = []; rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      const done = new Promise((r) => { rec.onstop = r; });
+      rec.start();
+      const start = performance.now();
+      await new Promise((resolve) => {
+        (function tick() {
+          const t = (performance.now() - start) / 1000;
+          evShortFrame(ctx, W, H, prep, baseOpts, sched, t, data.dur);
+          if (track.requestFrame) track.requestFrame();
+          btn.textContent = "Recording… " + Math.round(Math.min(1, t / data.dur) * 100) + "%";
+          if (t >= data.dur) { resolve(); return; }
+          setTimeout(tick, 1000 / 30);
+        })();
+      });
+      rec.stop(); await done; stream.getTracks().forEach((tr) => tr.stop());
+      const blob = new Blob(chunks, { type: mimeContainer(mime) });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "eververse-style-" + key + "." + videoFileExt(blob);
+      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      btn.textContent = "⏺ Record sample"; btn.disabled = false;
+    }
+
+    function restart() { data = build(SAMPLES[+sel.value]); makeCards(); t0 = performance.now(); }
+    sel.onchange = restart;
+    document.getElementById("restart").onclick = restart;
+    makeCards();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

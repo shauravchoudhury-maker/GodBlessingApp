@@ -272,12 +272,21 @@ function drawVoiceOverFrame(ctx, W, H, bg, pal, opts, p, caption, grainPat, emph
     ctx.direction = "ltr";
     ctx.font = `italic 600 ${minDim * 0.03}px Georgia, serif`;
     ctx.fillStyle = pal.accent;
-    ctx.fillText("— " + opts.ref, W / 2, H * 0.86);
+    // On a vertical short the bottom quarter sits under TikTok / Reels /
+    // Shorts' own caption and username, so the ref rides above it.
+    ctx.fillText("— " + opts.ref, W / 2, H * (H > W ? 0.74 : 0.86));
   }
   // progress bar
   ctx.fillStyle = hexToRgba(pal.accent, 0.9);
   ctx.fillRect(0, H - 8, W * p, 8);
-  if (opts.watermark) {
+  if (opts.watermark && H > W) {
+    // ...and the brand mark goes under the top tabs, where it stays visible.
+    ctx.save(); ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = `600 ${minDim * 0.024}px "Helvetica Neue", "Segoe UI", Arial, sans-serif`;
+    ctx.fillStyle = hexToRgba(pal.text, pal.light ? 0.55 : 0.68);
+    ctx.fillText("✦ EVERVERSE", W / 2, H * 0.115);
+    ctx.restore();
+  } else if (opts.watermark) {
     if (typeof drawWatermark === "function") drawWatermark(ctx, W, H, pal, "center");
     else { ctx.direction = "ltr"; ctx.textAlign = "center"; ctx.font = `600 ${minDim * 0.022}px "Segoe UI", sans-serif`; ctx.fillStyle = hexToRgba(pal.text, 0.72); ctx.textBaseline = "bottom"; ctx.fillText("✦ EVERVERSE", W / 2, H - H * 0.045); ctx.textBaseline = "middle"; }
   }
@@ -295,15 +304,22 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   // voice only, so they never drift into the hold.
   const voiceDur = Math.max(1, audioBuf.duration);
   const dur = Math.max(voiceDur, opts.minDurationSec || 0);
-  const pal = THEME_PALETTES[opts.paletteKey] || THEME_PALETTES.royal;
   const seed = (opts.ref || "vo").split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
 
   const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  const bg = document.createElement("canvas"); bg.width = Math.round(W * 1.25); bg.height = Math.round(H * 1.25);
-  drawBackground(opts.bgKey || "aurora", bg.getContext("2d"), bg.width, bg.height, pal, seed >>> 0);
-  const grainOn = (opts.grain != null) ? opts.grain : ((typeof EV_STYLE !== "undefined" && EV_STYLE.grain != null) ? EV_STYLE.grain : true);
-  const grainPat = (grainOn && typeof makeGrainTile === "function") ? ctx.createPattern(makeGrainTile(seed), "repeat") : null;
+  // Short styles (shortstyles.js) bring their own palette, background and
+  // word-by-word captions; without that file this is the classic short.
+  const styled = typeof evPrepareShort === "function";
+  let pal, bg, grainPat, prep;
+  if (styled) { prep = evPrepareShort(opts, W, H, seed, ctx); pal = prep.pal; bg = prep.bg; grainPat = prep.grainPat; }
+  else {
+    pal = THEME_PALETTES[opts.paletteKey] || THEME_PALETTES.royal;
+    bg = document.createElement("canvas"); bg.width = Math.round(W * 1.25); bg.height = Math.round(H * 1.25);
+    drawBackground(opts.bgKey || "aurora", bg.getContext("2d"), bg.width, bg.height, pal, seed >>> 0);
+    const grainOn = (opts.grain != null) ? opts.grain : ((typeof EV_STYLE !== "undefined" && EV_STYLE.grain != null) ? EV_STYLE.grain : true);
+    grainPat = (grainOn && typeof makeGrainTile === "function") ? ctx.createPattern(makeGrainTile(seed), "repeat") : null;
+  }
 
   // Caption schedule proportional to what the voice says for each page. A page
   // is a string, or { text, sub, weight, rtl, big } when what is SHOWN differs
@@ -343,6 +359,14 @@ async function renderVoiceOverVideoFromAudio(audioBuf, pages, opts) {
   await new Promise((resolve) => {
     function tick() {
       const t = (performance.now() - start) / 1000, p = Math.min(1, t / dur);
+      if (styled) {
+        evShortFrame(ctx, W, H, prep, opts, sched, t, dur);
+        if (vtrack.requestFrame) vtrack.requestFrame();
+        if (opts.onProgress) opts.onProgress(p);
+        if (t >= dur + 0.2) { resolve(); return; }
+        setTimeout(tick, interval);
+        return;
+      }
       let page = sched.length ? sched[sched.length - 1] : { text: "" };
       for (const s of sched) { if (t >= s.start && t < s.end) { page = s; break; } }
       if (t < (sched[0] ? sched[0].start : 0)) page = sched[0] || { text: "" };

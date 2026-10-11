@@ -1520,6 +1520,26 @@ async function prepShortNarration(status) {
   return { b, v, lang, narration, caption, rtl };
 }
 
+// The short's look (shortstyles.js). Remembered per device; Karaoke Gold is
+// the default because word-by-word captions hold viewers longest.
+function shortStyleChoice() {
+  const sel = $("short-style");
+  return sel && sel.value ? sel.value : "karaoke";
+}
+function initShortStylePicker() {
+  const sel = $("short-style");
+  if (!sel || typeof SHORT_STYLES === "undefined") return;
+  sel.innerHTML = SHORT_STYLE_ORDER.map((k) => `<option value="${k}">${SHORT_STYLES[k].name}</option>`).join("");
+  let saved = "karaoke";
+  try { saved = localStorage.getItem("ev_short_style") || saved; } catch (e) {}
+  sel.value = SHORT_STYLES[saved] ? saved : "karaoke";
+  sel.title = SHORT_STYLES[sel.value].note;
+  sel.addEventListener("change", () => {
+    sel.title = SHORT_STYLES[sel.value].note;
+    try { localStorage.setItem("ev_short_style", sel.value); } catch (e) {}
+  });
+}
+
 async function runDailyShort() {
   const btn = $("short-run"); btn.disabled = true;
   const status = $("short-status");
@@ -1544,6 +1564,7 @@ async function runDailyShort() {
       narrationText: narration, captionText: caption, rtl,
       ref: v.ref, paletteKey: pal, theme: pal,
       bgKey: bg, font, grain, voiceId: shortVoiceId(lang),
+      shortStyle: shortStyleChoice(),
       watermark: daily.watermark !== false, withMusic: $("short-music").checked, musicLevel: 0.2,
       videoBitsPerSecond: mobile ? 3_000_000 : 6_000_000,
       w: mobile ? 720 : 1080, h: mobile ? 1280 : 1920,
@@ -1604,6 +1625,7 @@ function initShort() {
   if (!$("short-run")) return;
   if ($("short-audio")) $("short-audio").onclick = runShortAudio;
   $("short-run").onclick = runDailyShort;
+  initShortStylePicker();
   $("short-source").onchange = updateShortEstimate;
   if ($("short-series")) $("short-series").oninput = updateShortEstimate;
   updateShortEstimate();
