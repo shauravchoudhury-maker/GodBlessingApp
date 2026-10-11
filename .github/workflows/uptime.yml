@@ -1,0 +1,97 @@
+# Uptime alarm for eververse.org and the Circle's database (requirement O5).
+#
+# Every 10 minutes GitHub checks the public site, the Circle page, the studio
+# and Firestore. If anything is down after three tries, it opens ONE issue
+# labelled "outage" — GitHub emails the repo owner about new issues — and
+# comments on that issue if it is still down later. When everything answers
+# again, the issue is closed with a note, so the open-issue list is the
+# current state of the site.
+#
+# No account, no secret, nothing to pay for: the repo is public, so Actions
+# minutes are free. The Firebase web API key below is the public one already
+# shipped in firebase-config.js.
+
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check the site and Firestore
+        id: probe
+        shell: bash
+        run: |
+          FIRESTORE="https://firestore.googleapis.com/v1/projects/eververse2117/databases/(default)/documents/reactions?pageSize=1&key=AIzaSyCD7IWtNtfyxVHo0GcEiUwAZN2RGB8u8vc"
+          # name | url | what counts as up
+          checks=(
+            "Public site|https://eververse.org/|page"
+            "Blessing Circle|https://eververse.org/blessing.html|page"
+            "Studio|https://eververse.org/app.html|page"
+            "Firestore|$FIRESTORE|api"
+          )
+          failed=""
+          for c in "${checks[@]}"; do
+            IFS='|' read -r name url kind <<< "$c"
+            ok=0
+            for attempt in 1 2 3; do
+              # Pages get a cache-buster so the CDN cannot answer for a dead origin.
+              target="$url"; [ "$kind" = "page" ] && target="$url?nc=$RANDOM"
+              code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 20 "$target" || echo 000)
+              if [ "$kind" = "page" ] && [ "$code" = "200" ] && grep -qi "eververse" /tmp/body; then ok=1; break; fi
+              # Firestore: anything below 500 means the service answered (a 403
+              # is the security rules working, not an outage).
+              if [ "$kind" = "api" ] && [ "$code" != "000" ] && [ "$code" -lt 500 ]; then ok=1; break; fi
+              sleep 20
+            done
+            echo "$name: HTTP $code $( [ $ok = 1 ] && echo up || echo DOWN )"
+            [ $ok = 1 ] || failed="$failed- **$name** — HTTP $code ($url)"$'\n'
+          done
+          {
+            echo "failed<<EOF"
+            printf "%s" "$failed"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open, update or close the outage issue
+        uses: actions/github-script@v7
+        env:
+          FAILED: ${{ steps.probe.outputs.failed }}
+        with:
+          script: |
+            const failed = (process.env.FAILED || "").trim();
+            const { owner, repo } = context.repo;
+            const open = await github.paginate(github.rest.issues.listForRepo,
+              { owner, repo, state: "open", labels: "outage", per_page: 50 });
+            const now = new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC";
+            if (failed) {
+              const body = `Checked at ${now}, three tries each:\n\n${failed}\n\n` +
+                `Run: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+              if (open.length) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: open[0].number, body: "Still down.\n\n" + body });
+              } else {
+                try { await github.rest.issues.createLabel({ owner, repo, name: "outage", color: "d73a4a" }); } catch (e) {}
+                await github.rest.issues.create({ owner, repo, labels: ["outage"],
+                  title: "EverVerse is down: " + failed.split("\n")[0].replace(/^- \*\*(.+?)\*\*.*/, "$1"),
+                  body: "The uptime check could not reach part of EverVerse.\n\n" + body +
+                        "\n\nThis issue closes itself when everything answers again." });
+              }
+              core.setFailed("Down: " + failed.replace(/\n/g, " "));
+            } else {
+              for (const i of open) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: i.number, body: `Back up — every check passed at ${now}.` });
+                await github.rest.issues.update({ owner, repo, issue_number: i.number, state: "closed" });
+              }
+            }
