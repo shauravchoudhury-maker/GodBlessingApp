@@ -760,6 +760,56 @@ function scenePrism(ctx, W, H, pal, seed) {
   ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H);
 }
 
+// Sunburst — alternating rays fanning out from just above centre, with a warm
+// core. Retro poster energy; pairs with one-word captions.
+function sceneSunburst(ctx, W, H, pal, seed) {
+  const cx = W * 0.5, cy = H * 0.42, R = Math.hypot(W, H);
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.6);
+  g.addColorStop(0, shade(pal.stops[0], 18));
+  g.addColorStop(1, shade(pal.stops[1], -10));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 911);
+  const n = 28, turn = rng() * Math.PI;
+  for (let i = 0; i < n; i += 2) {
+    const a0 = turn + (i / n) * Math.PI * 2, a1 = turn + ((i + 1) / n) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a0) * R, cy + Math.sin(a0) * R);
+    ctx.lineTo(cx + Math.cos(a1) * R, cy + Math.sin(a1) * R);
+    ctx.closePath();
+    const ray = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.7);
+    ray.addColorStop(0, rgba(pal.accent, 0.16));
+    ray.addColorStop(1, rgba(pal.accent, 0.02));
+    ctx.fillStyle = ray; ctx.fill();
+  }
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * 0.55);
+  core.addColorStop(0, rgba(pal.accent, 0.28));
+  core.addColorStop(1, rgba(pal.accent, 0));
+  ctx.fillStyle = core; ctx.fillRect(0, 0, W, H);
+}
+
+// Soft orbs — a few large, very soft colour blobs drifting over a deep base:
+// the gradient-blob look common on Reels. Built from radial gradients only, so
+// it renders the same in every browser (no canvas blur filter needed).
+function sceneOrbs(ctx, W, H, pal, seed) {
+  const base = ctx.createLinearGradient(0, 0, W * 0.3, H);
+  base.addColorStop(0, shade(pal.stops[1], -18));
+  base.addColorStop(1, shade(pal.stops[1], -40));
+  ctx.fillStyle = base; ctx.fillRect(0, 0, W, H);
+  const rng = makeRng(seed + 1213);
+  const cols = [pal.stops[0], pal.accent, pal.stops[1], pal.stops[0], pal.accent];
+  const m = Math.max(W, H);
+  ctx.globalCompositeOperation = "lighter";
+  cols.forEach((c, i) => {
+    const x = W * (0.1 + rng() * 0.8), y = H * (0.08 + rng() * 0.84), r = m * (0.28 + rng() * 0.22);
+    const o = ctx.createRadialGradient(x, y, 0, x, y, r);
+    o.addColorStop(0, rgba(c, i === 1 || i === 4 ? 0.32 : 0.5));
+    o.addColorStop(0.6, rgba(c, 0.12));
+    o.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = o; ctx.fillRect(0, 0, W, H);
+  });
+  ctx.globalCompositeOperation = "source-over";
+}
+
 // Registry — order = display order in the picker.
 const BACKGROUNDS = [
   { key: "gradient", name: "Soft Glow",  draw: sceneGradient },
@@ -795,6 +845,9 @@ const BACKGROUNDS = [
   { key: "waves",    name: "Waves",          draw: sceneWaves },
   { key: "halftone", name: "Halftone",       draw: sceneHalftone },
   { key: "prism",    name: "Prism",          draw: scenePrism },
+  // Shorts pack (Nov 2026).
+  { key: "sunburst", name: "Sunburst",       draw: sceneSunburst },
+  { key: "orbs",     name: "Soft Orbs",      draw: sceneOrbs },
 ];
 
 function drawBackground(key, ctx, W, H, pal, seed) {

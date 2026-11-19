@@ -27,8 +27,33 @@ const SHORT_STYLES = {
     note: "Soft light behind each spoken word on a deep night sky — made for evening prayers." },
   marker: { name: "Journal Marker", caption: "marker", palette: "sand", bg: "parchment", font: "slab", weight: 700, hi: "#ffd84d", grain: true,
     note: "Ink on paper with a highlighter swipe across each word — the study-notes look." },
+  // Shorts pack (Nov 2026): six more looks, each with its own caption motion,
+  // so a week of posts never repeats a look.
+  slam: { name: "Word Slam", caption: "slam", palette: "onyx", bg: "sunburst", font: "display", weight: 400, upper: true, hi: "#e8b94a", grain: true,
+    note: "One word at a time, slammed onto the screen; the long words land in gold. The fastest-paced look." },
+  boxed: { name: "Caption Boxes", caption: "boxed", palette: "cobalt", bg: "orbs", font: "sans", weight: 800, box: "#ffffff", boxInk: "#111111", hi: "#2f5bff", grain: false,
+    note: "A few words at a time on white caption slabs — the native TikTok caption look, readable on any feed." },
+  type: { name: "Notes App", caption: "type", palette: "ivory", bg: "linen", font: "sans", weight: 600, hi: "#b2452c", grain: false,
+    note: "The verse types itself into a clean note, cursor and all — the screenshot look people save and share." },
+  outline: { name: "Outline Fill", caption: "outline", palette: "plum", bg: "duotone", font: "display", weight: 400, upper: true, hi: "#ffcf5a", grain: true,
+    note: "Hollow outlined words that fill with colour as they are spoken. Bold without shouting." },
+  underline: { name: "Editorial Underline", caption: "underline", palette: "rose", bg: "grainwash", font: "serif", weight: 500, hi: "#7d3b45", grain: true,
+    note: "Quiet serif type on dusty rose, with an underline that follows the voice. Calm, premium, very saveable." },
+  lyric: { name: "Lyric Scroll", caption: "lyric", palette: "olive", bg: "aurora", font: "humanist", weight: 700, hi: "#e3d9a0", grain: true,
+    note: "Line by line like a lyrics screen — the line being read is bright, the rest drift past. Made for music-led reels." },
 };
-const SHORT_STYLE_ORDER = ["karaoke", "punch", "reveal", "cinema", "glow", "marker", "classic"];
+const SHORT_STYLE_ORDER = ["karaoke", "punch", "slam", "boxed", "type", "lyric", "outline", "underline", "reveal", "cinema", "glow", "marker", "classic"];
+
+// "Rotate" in the picker: each short takes the next look in this order, so
+// back-to-back posts never share a look. The position is kept per device.
+const SHORT_STYLE_ROTATE_KEY = "ev_short_rotate";
+function evNextRotatingStyle() {
+  const pool = SHORT_STYLE_ORDER.filter((k) => k !== "classic");
+  let n = 0;
+  try { n = Number(localStorage.getItem(SHORT_STYLE_ROTATE_KEY) || 0) || 0; } catch (e) {}
+  try { localStorage.setItem(SHORT_STYLE_ROTATE_KEY, String(n + 1)); } catch (e) {}
+  return pool[n % pool.length];
+}
 
 function evEaseOutBack(x) { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); }
 
@@ -68,11 +93,11 @@ function evWordTimes(page) {
 
 // Punch shows a few words at a time: groups of up to three, always breaking
 // after punctuation so a phrase never straddles a pause.
-function evChunks(words) {
+function evChunks(words, size) {
   const out = []; let cur = [];
   words.forEach((w, i) => {
     cur.push(i);
-    if (cur.length === 3 || /[.!?;:,—।]["”’)]?$/.test(w.w)) { out.push(cur); cur = []; }
+    if (cur.length === (size || 3) ||/[.!?;:,—।]["”’)]?$/.test(w.w)) { out.push(cur); cur = []; }
   });
   if (cur.length) out.push(cur);
   return out;
@@ -146,29 +171,78 @@ function drawStyledShortFrame(ctx, W, H, prep, opts, p, page, t, emph) {
   ctx.save();
   ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
 
-  if (st.caption === "punch") {
-    if (!page._chunks) page._chunks = evChunks(words);
-    const ch = page._chunks.find((c) => c.indexOf(Math.max(0, k)) !== -1) || page._chunks[0] || [];
+  // Chunked captions show a few words at a time: punch (3, pop up), slam (1,
+  // drops in from large), boxed (4, on caption slabs).
+  const CHUNK = { punch: 3, slam: 1, boxed: 4 };
+  if (CHUNK[st.caption]) {
+    const ck = "_chunks" + st.caption;
+    if (!page[ck]) page[ck] = evChunks(words, CHUNK[st.caption]);
+    const ch = page[ck].find((c) => c.indexOf(Math.max(0, k)) !== -1) || page[ck][0] || [];
     const cw = ch.map((i) => words[i]);
-    const lay = evLayoutWords(ctx, cw, family, st.weight, boxW, boxH * 0.75, minDim * 0.15 * hook, st.upper, st.tracking);
-    const a = clamp01((tt - (cw[0] ? cw[0].s : 0)) / 0.16);
-    const sc = 0.72 + 0.28 * evEaseOutBack(a);
+    const slam = st.caption === "slam", boxed = st.caption === "boxed";
+    const start = minDim * (slam ? 0.19 : boxed ? 0.085 : 0.15) * hook;
+    const lay = evLayoutWords(ctx, cw, family, st.weight, boxW, boxH * (boxed ? 0.6 : 0.75), start, st.upper, st.tracking);
+    const a = clamp01((tt - (cw[0] ? cw[0].s : 0)) / (slam ? 0.12 : 0.16));
+    const sc = slam ? 1 + 0.5 * (1 - easeInOut(a)) : boxed ? 0.9 + 0.1 * evEaseOutBack(a) : 0.72 + 0.28 * evEaseOutBack(a);
     ctx.translate(cx, cy); ctx.scale(sc, sc);
+    if (slam) ctx.globalAlpha = Math.min(1, 0.2 + a * 1.6);
     ctx.font = `${st.weight} ${lay.size}px ${family}`;
     ctx.lineJoin = "round"; ctx.lineWidth = lay.size * 0.13; ctx.strokeStyle = "rgba(0,0,0,0.9)";
     let y = -(lay.lines.length * lay.lh) / 2 + lay.lh / 2;
     for (const line of lay.lines) {
       let x = -line.w / 2;
+      if (boxed) {
+        const padX = lay.size * 0.3;
+        ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = lay.size * 0.3; ctx.shadowOffsetY = lay.size * 0.06;
+        ctx.fillStyle = st.box || "#ffffff";
+        evRoundRect(ctx, x - padX, y - lay.lh * 0.47, line.w + padX * 2, lay.lh * 0.94, lay.size * 0.22); ctx.fill();
+        ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      }
       for (const it of line.items) {
-        ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = lay.size * 0.25; ctx.shadowOffsetY = lay.size * 0.06;
-        ctx.strokeText(it.txt, x, y);
-        ctx.shadowColor = "transparent";
-        ctx.fillStyle = it.idx === k ? hi : "#ffffff";
+        if (!boxed) {
+          ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = lay.size * 0.25; ctx.shadowOffsetY = lay.size * 0.06;
+          ctx.strokeText(it.txt, x, y);
+          ctx.shadowColor = "transparent";
+        }
+        if (boxed) ctx.fillStyle = it.idx === k ? hi : (st.boxInk || "#111111");
+        else if (slam) ctx.fillStyle = it.txt.replace(/[^\p{L}\p{N}]/gu, "").length >= 6 ? hi : "#ffffff";
+        else ctx.fillStyle = it.idx === k ? hi : "#ffffff";
         ctx.fillText(it.txt, x, y);
         x += it.w + lay.space;
       }
       y += lay.lh;
     }
+    ctx.globalAlpha = 1;
+  } else if (st.caption === "lyric") {
+    // Lines scroll up like a lyrics screen: the line being read sits at the
+    // centre, full brightness; neighbours fade with distance.
+    const lk = "lyric" + W + "x" + H;
+    page._lay = page._lay || {};
+    const lay = page._lay[lk] || (page._lay[lk] = evLayoutWords(ctx, words, family, st.weight, boxW, 1e6, minDim * 0.082, st.upper, st.tracking));
+    let cur = 0;
+    lay.lines.forEach((line, li) => { if (line.items.some((it) => it.idx <= Math.max(0, k))) cur = li; });
+    const first = lay.lines[cur] && lay.lines[cur].items[0] ? words[lay.lines[cur].items[0].idx].s : 0;
+    const a = cur === 0 ? 1 : easeInOut(clamp01((tt - first) / 0.35));
+    const pos = cur - 1 + a;   // fractional line index now at the centre
+    ctx.font = `${st.weight} ${lay.size}px ${family}`;
+    evSetTracking(ctx, (st.tracking || 0) * lay.size);
+    lay.lines.forEach((line, li) => {
+      const d = li - pos;
+      if (Math.abs(d) > 2.6) return;
+      const y = cy + d * lay.lh * 1.15;
+      const on = li === cur;
+      const sc = on ? 1 : 0.86;
+      ctx.save(); ctx.translate(cx, y); ctx.scale(sc, sc);
+      ctx.shadowColor = pal.light ? "transparent" : "rgba(0,0,0,0.5)"; ctx.shadowBlur = lay.size * 0.2;
+      let x = -line.w / 2;
+      for (const it of line.items) {
+        ctx.fillStyle = on ? (it.idx <= k ? hi : ink) : hexToRgba(ink, Math.max(0.12, 0.42 - Math.abs(d) * 0.12));
+        ctx.fillText(it.txt, x, 0);
+        x += it.w + lay.space;
+      }
+      ctx.restore();
+    });
+    evSetTracking(ctx, 0);
   } else {
     const key = st.caption + W + "x" + H + (emph ? "h" : "");
     page._lay = page._lay || {};
@@ -180,13 +254,64 @@ function drawStyledShortFrame(ctx, W, H, prep, opts, p, page, t, emph) {
       if (on && !pal.light) { ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = lay.size * 0.18; ctx.shadowOffsetY = lay.size * 0.04; }
       else { ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; }
     };
+    // Notes App: a left-aligned block on a paper card with a small header.
+    const typed = st.caption === "type";
+    const blockW = Math.max(...lay.lines.map((l) => l.w));
+    if (typed) {
+      const pad = lay.size * 0.7, head = lay.size * 0.9;
+      const bx = cx - blockW / 2 - pad, by = top - lay.lh / 2 - pad - head;
+      const bw = blockW + pad * 2, bh = lay.lines.length * lay.lh + pad * 2 + head;
+      ctx.save();
+      ctx.shadowColor = "rgba(60,40,20,0.18)"; ctx.shadowBlur = lay.size * 0.9; ctx.shadowOffsetY = lay.size * 0.2;
+      ctx.fillStyle = "rgba(255,255,255,0.93)";
+      evRoundRect(ctx, bx, by, bw, bh, lay.size * 0.5); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      evSetTracking(ctx, 0);
+      ctx.font = `700 ${lay.size * 0.46}px ${EV_FONTS.sans}`;
+      ctx.fillStyle = hi;
+      ctx.fillText("✦ TODAY", bx + pad, by + pad * 0.55 + head * 0.35);
+      ctx.restore();
+      ctx.font = `${st.weight} ${lay.size}px ${family}`;
+      evSetTracking(ctx, (st.tracking || 0) * lay.size);
+    }
     lay.lines.forEach((line, li) => {
       const y = top + li * lay.lh;
-      let x = cx - line.w / 2;
+      let x = typed ? cx - blockW / 2 : cx - line.w / 2;
       for (const it of line.items) {
         const w = words[it.idx], spoken = it.idx < k, now = it.idx === k;
         const a = now ? clamp01((tt - w.s) / 0.2) : 1;
-        if (st.caption === "karaoke") {
+        if (typed) {
+          // Typed out letter by letter across the word's spoken time, with a
+          // blinking cursor after the last letter.
+          if (spoken || now) {
+            shadow(false); ctx.fillStyle = ink;
+            const frac = now ? clamp01((tt - w.s) / Math.max(0.06, w.e - w.s)) : 1;
+            const part = now ? it.txt.slice(0, Math.max(1, Math.ceil(it.txt.length * frac))) : it.txt;
+            ctx.fillText(part, x, y);
+            if (now && (tt * 2.2) % 1 < 0.6) {
+              ctx.fillStyle = hi;
+              ctx.fillRect(x + ctx.measureText(part).width + lay.size * 0.06, y - lay.size * 0.5, Math.max(2, lay.size * 0.07), lay.size);
+            }
+          }
+        } else if (st.caption === "outline") {
+          // Hollow letters; spoken words fill solid, the current one fills left to right.
+          shadow(false);
+          ctx.lineJoin = "round"; ctx.lineWidth = Math.max(1.5, lay.size * 0.045);
+          ctx.strokeStyle = hexToRgba(ink, spoken || now ? 1 : 0.7);
+          ctx.strokeText(it.txt, x, y);
+          if (spoken) { ctx.fillStyle = ink; ctx.fillText(it.txt, x, y); }
+          else if (now) {
+            ctx.save(); ctx.beginPath(); ctx.rect(x - 2, y - lay.size, (it.w + 4) * a, lay.size * 2); ctx.clip();
+            ctx.fillStyle = hi; ctx.fillText(it.txt, x, y); ctx.restore();
+          }
+        } else if (st.caption === "underline") {
+          shadow(false); ctx.fillStyle = hexToRgba(ink, spoken || now ? 1 : 0.45); ctx.fillText(it.txt, x, y);
+          if (now) {
+            ctx.fillStyle = hi;
+            ctx.fillRect(x, y + lay.size * 0.5, it.w * easeInOut(a), Math.max(2, lay.size * 0.07));
+          }
+        } else if (st.caption === "karaoke") {
           if (now) {
             const pad = lay.size * 0.16, pop = 1 + 0.06 * Math.sin(a * Math.PI);
             ctx.save(); ctx.translate(x + it.w / 2, y); ctx.scale(pop, pop);

@@ -124,6 +124,18 @@ const daily = {
 
 const PLAN_DAYS = 120;
 
+// Fresh verses already rendered as a short on this device (refs), so the
+// Fresh collection always offers an unused verse first.
+const FRESH_USED_KEY = "ev_fresh_used";
+function freshUsed() {
+  try { return new Set(JSON.parse(localStorage.getItem(FRESH_USED_KEY) || "[]")); } catch (e) { return new Set(); }
+}
+function markFreshUsed(v) {
+  if (!v || !v.fresh) return;
+  const s = freshUsed(); s.add(v.ref);
+  try { localStorage.setItem(FRESH_USED_KEY, JSON.stringify([...s])); } catch (e) {}
+}
+
 // Build a 90-day reading plan per source, anchored at startDate. Each source
 // cycles through its own verses so Bible and Gita are fully independent.
 function buildPlans(startDate) {
@@ -138,6 +150,16 @@ function buildPlans(startDate) {
       plans[src].push({ date, verse });
     }
   });
+  // Fresh is not rotated by day of year. Verses not yet made into a short on
+  // this device come first, in batch order; ones already used drop to the end.
+  if (typeof freshCollection === "function") {
+    const fresh = freshCollection();
+    if (fresh.length) {
+      const used = freshUsed();
+      const list = fresh.filter((v) => !used.has(v.ref)).concat(fresh.filter((v) => used.has(v.ref)));
+      plans.Fresh = list.map((verse, d) => ({ verse, date: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + d) }));
+    }
+  }
   // Curated collections that span faiths (Teens 13–20, Coaches) get their own plans.
   const curated = { Youth: youthCollection, Coach: coachCollection };
   Object.keys(curated).forEach((key) => {
@@ -895,7 +917,8 @@ function populateDaySelect() {
   sel.innerHTML = "";
   (daily.plans[daily.activeSource] || []).forEach((entry, i) => {
     const dateLabel = entry.date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    sel.add(new Option(`Day ${i + 1} · ${dateLabel} — ${entry.verse.ref}`, String(i)));
+    const used = daily.activeSource === "Fresh" && freshUsed().has(entry.verse.ref) ? " ✓ used" : "";
+    sel.add(new Option(`Day ${i + 1} · ${dateLabel} — ${entry.verse.ref}${used}`, String(i)));
   });
   sel.value = String(daily.dayIndex);
 }
@@ -927,14 +950,16 @@ function initDaily() {
   // build 120-day plans for every tradition and fill the dropdowns
   daily.plans = buildPlans(daily.startDate);
   const faiths = Object.keys(daily.plans);
-  // Show curated collections (Teens 13–20, Coaches) at the top of the picker,
-  // but keep the default active source on the first tradition.
-  const CURATED = ["Youth", "Coach"];
+  // Show curated collections (Fresh, Teens 13–20, Coaches) at the top of the
+  // picker. The default source is Fresh while it has verses, so the newest
+  // material is what opens first; otherwise the first tradition.
+  const CURATED = ["Fresh", "Youth", "Coach"];
   const curatedRank = (f) => { const i = CURATED.indexOf(f); return i === -1 ? CURATED.length : i; };
   const ordered = faiths.slice().sort((a, b) => curatedRank(a) - curatedRank(b));
+  const home = daily.plans.Fresh ? "Fresh" : faiths.find((f) => CURATED.indexOf(f) === -1);
   $("daily-tradition").innerHTML = "";
   ordered.forEach((f) => $("daily-tradition").add(new Option(faithLabel(f), f)));
-  daily.activeSource = faiths[0]; daily.dayIndex = 0;
+  daily.activeSource = home; daily.dayIndex = 0;
   $("daily-tradition").value = daily.activeSource;
   populateDaySelect();
 
@@ -952,8 +977,8 @@ function initDaily() {
   };
   $("daily-day").onchange = () => { daily.dayIndex = Number($("daily-day").value); setActiveVerse(); };
   $("today-btn").onclick = () => {
-    daily.activeSource = faiths[0]; daily.dayIndex = 0;
-    $("daily-tradition").value = faiths[0]; populateDaySelect(); setActiveVerse();
+    daily.activeSource = home; daily.dayIndex = 0;
+    $("daily-tradition").value = home; populateDaySelect(); setActiveVerse();
   };
   $("daily-lang").onchange = () => { daily.lang = $("daily-lang").value; applyDailyLanguage(); };
   $("daily-bg").onchange = () => { daily.bgKey = $("daily-bg").value; renderDailyAll(); };
@@ -1197,6 +1222,7 @@ function buildScheduleRows() {
   for (let d = 0; d < days; d++) {
     sources.forEach((s) => {
       const entry = daily.plans[s][d];
+      if (!entry) return;   // Fresh holds one batch, which can be shorter than the schedule
       rows.push({ date: entry.date, time, source: s, verse: entry.verse });
     });
   }
@@ -1520,22 +1546,26 @@ async function prepShortNarration(status) {
   return { b, v, lang, narration, caption, rtl };
 }
 
-// The short's look (shortstyles.js). Remembered per device; Karaoke Gold is
-// the default because word-by-word captions hold viewers longest.
+// The short's look (shortstyles.js). Remembered per device. "Rotate" is the
+// default: every short takes the next look, so back-to-back posts differ.
+const ROTATE_NOTE = "Each short takes the next look in turn, so back-to-back posts never share a look.";
 function shortStyleChoice() {
   const sel = $("short-style");
-  return sel && sel.value ? sel.value : "karaoke";
+  const val = sel && sel.value ? sel.value : "rotate";
+  return val === "rotate" && typeof evNextRotatingStyle === "function" ? evNextRotatingStyle() : val;
 }
 function initShortStylePicker() {
   const sel = $("short-style");
   if (!sel || typeof SHORT_STYLES === "undefined") return;
-  sel.innerHTML = SHORT_STYLE_ORDER.map((k) => `<option value="${k}">${SHORT_STYLES[k].name}</option>`).join("");
-  let saved = "karaoke";
+  sel.innerHTML = `<option value="rotate">🔀 Rotate — a new look each short</option>` +
+    SHORT_STYLE_ORDER.map((k) => `<option value="${k}">${SHORT_STYLES[k].name}</option>`).join("");
+  let saved = "rotate";
   try { saved = localStorage.getItem("ev_short_style") || saved; } catch (e) {}
-  sel.value = SHORT_STYLES[saved] ? saved : "karaoke";
-  sel.title = SHORT_STYLES[sel.value].note;
+  sel.value = (saved === "rotate" || SHORT_STYLES[saved]) ? saved : "rotate";
+  const note = () => (sel.value === "rotate" ? ROTATE_NOTE : SHORT_STYLES[sel.value].note);
+  sel.title = note();
   sel.addEventListener("change", () => {
-    sel.title = SHORT_STYLES[sel.value].note;
+    sel.title = note();
     try { localStorage.setItem("ev_short_style", sel.value); } catch (e) {}
   });
 }
@@ -1560,11 +1590,13 @@ async function runDailyShort() {
     const grain = (typeof EV_STYLE !== "undefined") ? EV_STYLE.grain : undefined;
     // Watchdog: never let the render hang forever ("zombie"). If it overruns
     // the expected length by a wide margin, fail cleanly so the UI recovers.
+    const look = shortStyleChoice();
+    const lookName = (typeof SHORT_STYLES !== "undefined" && SHORT_STYLES[look]) ? SHORT_STYLES[look].name : look;
     const blob = await withTimeout(generateVoiceOverVideo({
       narrationText: narration, captionText: caption, rtl,
       ref: v.ref, paletteKey: pal, theme: pal,
       bgKey: bg, font, grain, voiceId: shortVoiceId(lang),
-      shortStyle: shortStyleChoice(),
+      shortStyle: look,
       watermark: daily.watermark !== false, withMusic: $("short-music").checked, musicLevel: 0.2,
       videoBitsPerSecond: mobile ? 3_000_000 : 6_000_000,
       w: mobile ? 720 : 1080, h: mobile ? 1280 : 1920,
@@ -1573,14 +1605,15 @@ async function runDailyShort() {
     const ext = (typeof videoFileExt === "function") ? videoFileExt(blob) : "mp4";
     if (!blob || blob.size < 2000) throw new Error("The recorded video was empty — this browser may not support in-page video capture. Use the audio export here, and render the MP4 on a desktop.");
     const name = top8Filename("short-" + v.ref.replace(/[^\w]+/g, "_").toLowerCase().slice(0, 24)) + "." + ext;
+    markFreshUsed(v);   // next visit, the Fresh collection opens on an unused verse
     if (!mobile) downloadBlob(blob, name);   // desktop convenience; phones use the buttons
     showMediaActions("short-actions", blob, name, { title: `${v.ref} — EverVerse`, label: "video" });
     // Listing copy to paste on YouTube/TikTok.
     const L = shortListing(v, b.seconds, { series: $("short-series") ? $("short-series").value : "", youth: (daily.activeSource === "Youth") || (typeof isYouthVerse === "function" && isYouthVerse(v)), coach: (daily.activeSource === "Coach") || (typeof isCoachVerse === "function" && isCoachVerse(v)) });
     showTextDownloadLink("short-dl", name.replace(/\.\w+$/, "") + "-listing.txt", `TITLE\n-----\n${L.title}\n\nDESCRIPTION\n-----------\n${L.description}\n\nTAGS\n----\n${L.tags}\n\nLength: ~${L.seconds}s · vertical ${mobile ? "720x1280" : "1080x1920"}\n`, "⬇ Listing text (title · tags · description)");
     status.textContent = mobile
-      ? `✓ ${b.seconds}s short ready — tap 📤 Share (→ TikTok/YouTube) or ⬇ Download below.`
-      : `✓ ${b.seconds}s short downloaded — or Share/Download below. Tap for the listing copy.`;
+      ? `✓ ${b.seconds}s short ready (${lookName}) — tap 📤 Share (→ TikTok/YouTube) or ⬇ Download below.`
+      : `✓ ${b.seconds}s short downloaded (${lookName}) — or Share/Download below. Tap for the listing copy.`;
   } catch (e) {
     status.textContent = "Short error: " + (e && e.message ? e.message : e);
   } finally { btn.disabled = false; }

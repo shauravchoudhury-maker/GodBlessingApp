@@ -7,6 +7,97 @@
 // Grow toward 365 in reviewed batches — the daily engine cycles through whatever exists.
 
 const VERSE_DB = [
+  // ---------------- FRESH — newest first, served before everything else ----------------
+  // Batch 2026-11-19: 85 new entries across every tradition, chosen for 15-40 second
+  // shorts (anxiety, rest, waiting, healing, courage). The Fresh collection in the
+  // Daily picker plays these in order from Day 1; they also join each tradition's
+  // normal rotation. Add the next batch ABOVE this one with a newer fresh date.
+  { faith: "Bible", ref: "2 Corinthians 4:8-9",       theme: "onyx",   topic: "perseverance", fresh: "2026-11-19", text: "We are pressed on every side, yet not crushed; perplexed, yet not to despair; pursued, yet not forsaken; struck down, yet not destroyed." },
+  { faith: "Bible", ref: "Mark 4:39",                 theme: "cobalt", topic: "peace",        fresh: "2026-11-19", text: "He awoke, and rebuked the wind, and said to the sea, \"Peace! Be still!\" The wind ceased, and there was a great calm." },
+  { faith: "Bible", ref: "Isaiah 49:16",              theme: "rose",   topic: "love",         fresh: "2026-11-19", text: "Behold, I have engraved you on the palms of my hands." },
+  { faith: "Bible", ref: "Matthew 6:27",              theme: "ivory",  topic: "peace",        fresh: "2026-11-19", text: "Which of you, by being anxious, can add one moment to his lifespan?" },
+  { faith: "Bible", ref: "Mark 5:36",                 theme: "sunset", topic: "faith",        fresh: "2026-11-19", text: "Don't be afraid, only believe." },
+  { faith: "Bible", ref: "Isaiah 40:29",              theme: "amber",  topic: "strength",     fresh: "2026-11-19", text: "He gives power to the weak. He increases the strength of him who has no might." },
+  { faith: "Bible", ref: "Isaiah 41:13",              theme: "onyx",   topic: "courage",      fresh: "2026-11-19", text: "For I, the LORD your God, will hold your right hand, saying to you, \"Don't be afraid. I will help you.\"" },
+  { faith: "Bible", ref: "Luke 12:7",                 theme: "lilac",  topic: "comfort",      fresh: "2026-11-19", text: "But the very hairs of your head are all counted. Therefore don't be afraid." },
+  { faith: "Bible", ref: "John 14:1",                 theme: "ink",    topic: "peace",        fresh: "2026-11-19", text: "Don't let your heart be troubled. Believe in God. Believe also in me." },
+  { faith: "Bible", ref: "Psalm 3:3",                 theme: "royal",  topic: "protection",   fresh: "2026-11-19", text: "But you, LORD, are a shield around me, my glory, and the one who lifts up my head." },
+  { faith: "Bible", ref: "Psalm 18:28",               theme: "night",  topic: "hope",         fresh: "2026-11-19", text: "For you will light my lamp, LORD. My God will light up my darkness." },
+  { faith: "Bible", ref: "Psalm 37:7",                theme: "sage",   topic: "peace",        fresh: "2026-11-19", text: "Rest in the LORD, and wait patiently for him." },
+  { faith: "Bible", ref: "Psalm 68:19",               theme: "olive",  topic: "comfort",      fresh: "2026-11-19", text: "Blessed be the Lord, who daily bears our burdens." },
+  { faith: "Bible", ref: "Psalm 86:7",                theme: "slate",  topic: "faith",        fresh: "2026-11-19", text: "In the day of my trouble I will call on you, for you will answer me." },
+  { faith: "Bible", ref: "Psalm 91:11",               theme: "azure",  topic: "protection",   fresh: "2026-11-19", text: "For he will put his angels in charge of you, to guard you in all your ways." },
+  { faith: "Bible", ref: "Psalm 138:8",               theme: "gold",   topic: "purpose",      fresh: "2026-11-19", text: "The LORD will fulfill that which concerns me." },
+  { faith: "Bible", ref: "Proverbs 3:24",             theme: "dusk",   topic: "peace",        fresh: "2026-11-19", text: "When you lie down, you will not be afraid. Yes, you will lie down, and your sleep will be sweet." },
+  { faith: "Bible", ref: "Proverbs 4:18",             theme: "hope",   topic: "hope",         fresh: "2026-11-19", text: "But the path of the righteous is like the dawning light, that shines more and more until the perfect day." },
+  { faith: "Bible", ref: "Proverbs 16:24",            theme: "butter", topic: "love",         fresh: "2026-11-19", text: "Pleasant words are a honeycomb, sweet to the soul, and health to the bones." },
+  { faith: "Bible", ref: "Isaiah 60:1",               theme: "sunset", topic: "joy",          fresh: "2026-11-19", text: "Arise, shine; for your light has come." },
+  { faith: "Bible", ref: "Jeremiah 33:3",             theme: "plum",   topic: "faith",        fresh: "2026-11-19", text: "Call to me, and I will answer you, and will show you great and difficult things, which you don't know." },
+  { faith: "Bible", ref: "Lamentations 3:25",         theme: "moss",   topic: "perseverance", fresh: "2026-11-19", text: "The LORD is good to those who wait for him, to the soul who seeks him." },
+  { faith: "Bible", ref: "Zechariah 4:6",             theme: "crimson", topic: "strength",     fresh: "2026-11-19", text: "Not by might, nor by power, but by my Spirit, says the LORD of Armies." },
+  { faith: "Bible", ref: "Philippians 4:19",          theme: "harvest", topic: "faith",        fresh: "2026-11-19", text: "My God will supply every need of yours according to his riches in glory in Christ Jesus." },
+  { faith: "Bible", ref: "2 Thessalonians 3:16",      theme: "teal",   topic: "peace",        fresh: "2026-11-19", text: "Now may the Lord of peace himself give you peace at all times in all ways." },
+  { faith: "Bible", ref: "Song of Solomon 8:7",       theme: "rose",   topic: "love",         fresh: "2026-11-19", text: "Many waters can't quench love, neither can floods drown it." },
+  { faith: "Bible", ref: "Isaiah 46:4",               theme: "clay",   topic: "comfort",      fresh: "2026-11-19", text: "Even to old age I am he, and even to gray hairs I will carry you." },
+  { faith: "Torah", ref: "Genesis 16:13",             theme: "ivory",  topic: "comfort",      fresh: "2026-11-19", text: "You are a God who sees me." },
+  { faith: "Torah", ref: "Exodus 14:13",              theme: "cobalt", topic: "courage",      fresh: "2026-11-19", text: "Don't be afraid. Stand still, and see the salvation of the LORD." },
+  { faith: "Torah", ref: "Numbers 23:19",             theme: "slate",  topic: "faith",        fresh: "2026-11-19", text: "God is not a man, that he should lie. Has he said, and he won't do it?" },
+  { faith: "Torah", ref: "Deuteronomy 7:9",           theme: "gold",   topic: "faith",        fresh: "2026-11-19", text: "Know therefore that the LORD your God is God, the faithful God, who keeps covenant and loving kindness with those who love him, to a thousand generations." },
+  { faith: "Torah", ref: "Deuteronomy 20:4",          theme: "onyx",   topic: "courage",      fresh: "2026-11-19", text: "For the LORD your God is he who goes with you, to fight for you." },
+  { faith: "Torah", ref: "Deuteronomy 28:6",          theme: "peach",  topic: "gratitude",    fresh: "2026-11-19", text: "You shall be blessed when you come in, and you shall be blessed when you go out." },
+  { faith: "Torah", ref: "Leviticus 26:6",            theme: "mint",   topic: "peace",        fresh: "2026-11-19", text: "I will give peace in the land, and you will lie down, and no one will make you afraid." },
+  { faith: "Torah", ref: "Genesis 21:6",              theme: "butter", topic: "joy",          fresh: "2026-11-19", text: "God has made me laugh. Everyone who hears will laugh with me." },
+  { faith: "Quran", ref: "Qur'an 2:152",              theme: "sage",   topic: "gratitude",    fresh: "2026-11-19", text: "So remember Me, and I will remember you. Be grateful to Me, and do not deny Me." },
+  { faith: "Quran", ref: "Qur'an 20:46",              theme: "ink",    topic: "courage",      fresh: "2026-11-19", text: "Do not fear. I am with you both; I hear and I see." },
+  { faith: "Quran", ref: "Qur'an 26:80",              theme: "teal",   topic: "comfort",      fresh: "2026-11-19", text: "And when I am ill, it is He who heals me." },
+  { faith: "Quran", ref: "Qur'an 57:4",               theme: "night",  topic: "comfort",      fresh: "2026-11-19", text: "And He is with you wherever you are." },
+  { faith: "Quran", ref: "Qur'an 94:1-3",             theme: "olive",  topic: "comfort",      fresh: "2026-11-19", text: "Did We not open your heart for you, and lift from you the burden that weighed down your back?" },
+  { faith: "Quran", ref: "Qur'an 103:1-3",            theme: "amber",  topic: "wisdom",       fresh: "2026-11-19", text: "By time — surely humanity is at a loss, except those who believe, do good, and urge one another to truth and to patience." },
+  { faith: "Quran", ref: "Qur'an 55:60",              theme: "rose",   topic: "love",         fresh: "2026-11-19", text: "Is the reward for goodness anything but goodness?" },
+  { faith: "Quran", ref: "Qur'an 4:28",               theme: "lilac",  topic: "comfort",      fresh: "2026-11-19", text: "God wishes to lighten your burden, for humanity was created weak." },
+  { faith: "Quran", ref: "Qur'an 11:115",             theme: "moss",   topic: "perseverance", fresh: "2026-11-19", text: "And be patient, for God does not let the reward of those who do good be lost." },
+  { faith: "Quran", ref: "Qur'an 47:7",               theme: "crimson", topic: "courage",      fresh: "2026-11-19", text: "If you stand up for God, He will help you and make your footsteps firm." },
+  { faith: "Gita", ref: "Bhagavad Gita 6:40",        theme: "hope",   topic: "hope",         fresh: "2026-11-19", text: "One who does good, my friend, never comes to a bad end." },
+  { faith: "Gita", ref: "Bhagavad Gita 2:58",        theme: "teal",   topic: "peace",        fresh: "2026-11-19", text: "As a tortoise draws in its limbs, the wise draw their senses back from the world — and their wisdom stands steady." },
+  { faith: "Gita", ref: "Bhagavad Gita 2:71",        theme: "ivory",  topic: "peace",        fresh: "2026-11-19", text: "Whoever lets go of all cravings and lives free of longing, without 'I' and 'mine', finds peace." },
+  { faith: "Gita", ref: "Bhagavad Gita 3:5",         theme: "sunset", topic: "purpose",      fresh: "2026-11-19", text: "No one can remain without acting, even for a moment." },
+  { faith: "Gita", ref: "Bhagavad Gita 16:1",        theme: "crimson", topic: "courage",      fresh: "2026-11-19", text: "Fearlessness, purity of heart, steadiness in wisdom, generosity and self-control — these belong to a noble nature." },
+  { faith: "Gita", ref: "Bhagavad Gita 17:16",       theme: "sage",   topic: "peace",        fresh: "2026-11-19", text: "Serenity of mind, gentleness, silence, self-control and purity of heart — this is the discipline of the mind." },
+  { faith: "Gita", ref: "Bhagavad Gita 13:7",        theme: "clay",   topic: "wisdom",       fresh: "2026-11-19", text: "Humility, sincerity, non-violence, patience and honesty — this is called true knowledge." },
+  { faith: "Gita", ref: "Bhagavad Gita 2:41",        theme: "cobalt", topic: "purpose",      fresh: "2026-11-19", text: "On this path the resolute mind is single-pointed; the irresolute mind is scattered in endless branches." },
+  { faith: "Dhammapada", ref: "Dhammapada 2",              theme: "butter", topic: "joy",          fresh: "2026-11-19", text: "If one speaks or acts with a pure mind, happiness follows like a shadow that never leaves." },
+  { faith: "Dhammapada", ref: "Dhammapada 76",             theme: "slate",  topic: "wisdom",       fresh: "2026-11-19", text: "Look on the one who shows you your faults as one who points to hidden treasure." },
+  { faith: "Dhammapada", ref: "Dhammapada 82",             theme: "azure",  topic: "peace",        fresh: "2026-11-19", text: "Like a deep lake, clear and still, the wise grow calm on hearing the truth." },
+  { faith: "Dhammapada", ref: "Dhammapada 184",            theme: "olive",  topic: "perseverance", fresh: "2026-11-19", text: "Patience, long-suffering patience, is the highest discipline." },
+  { faith: "Dhammapada", ref: "Dhammapada 200",            theme: "peach",  topic: "joy",          fresh: "2026-11-19", text: "Let us live happily, owning nothing; we shall feed on joy, like the radiant gods." },
+  { faith: "Dhammapada", ref: "Dhammapada 382",            theme: "night",  topic: "purpose",      fresh: "2026-11-19", text: "Even the youngest who gives themselves to the path lights up this world, like the moon freed from a cloud." },
+  { faith: "Dhammapada", ref: "Dhammapada 54",             theme: "rose",   topic: "love",         fresh: "2026-11-19", text: "The scent of flowers does not travel against the wind; but the fragrance of good people travels in every direction." },
+  { faith: "Tao", ref: "Tao Te Ching 58",           theme: "dusk",   topic: "change",       fresh: "2026-11-19", text: "Misfortune is what good fortune leans on; good fortune is where misfortune hides." },
+  { faith: "Tao", ref: "Tao Te Ching 60",           theme: "harvest", topic: "wisdom",       fresh: "2026-11-19", text: "Govern a great country as you would cook a small fish." },
+  { faith: "Tao", ref: "Tao Te Ching 19",           theme: "ivory",  topic: "peace",        fresh: "2026-11-19", text: "Look to the simple, hold to the plain, lessen the self, and let desires grow few." },
+  { faith: "Tao", ref: "Tao Te Ching 53",           theme: "moss",   topic: "guidance",     fresh: "2026-11-19", text: "The great Way is smooth and easy, yet people love the side paths." },
+  { faith: "Sikh", ref: "Japji Sahib (Pauri 28)",    theme: "onyx",   topic: "strength",     fresh: "2026-11-19", text: "Conquer your own mind, and you conquer the world." },
+  { faith: "Sikh", ref: "Japji Sahib (Pauri 5)",     theme: "gold",   topic: "gratitude",    fresh: "2026-11-19", text: "There is one Giver of all living beings — may I never forget Him." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 611", theme: "warm",   topic: "love",         fresh: "2026-11-19", text: "There is one Father; we are all children of the One." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 470", theme: "blush",  topic: "wisdom",       fresh: "2026-11-19", text: "Sweetness and humility, O Nanak, are the essence of all virtue and goodness." },
+  { faith: "Sikh", ref: "Guru Granth Sahib, Ang 469", theme: "plum",   topic: "change",       fresh: "2026-11-19", text: "Suffering is the medicine, and comfort the disease." },
+  { faith: "Tripitaka", ref: "Anguttara Nikaya 1.49",     theme: "lilac",  topic: "peace",        fresh: "2026-11-19", text: "The mind is luminous. It is only clouded by passing stains." },
+  { faith: "Tripitaka", ref: "Samyutta Nikaya 47.19",     theme: "teal",   topic: "love",         fresh: "2026-11-19", text: "Protecting yourself, you protect others. Protecting others, you protect yourself." },
+  { faith: "Tripitaka", ref: "Majjhima Nikaya 19",        theme: "ink",    topic: "wisdom",       fresh: "2026-11-19", text: "Whatever one frequently thinks and ponders upon, that becomes the inclination of the mind." },
+  { faith: "Tripitaka", ref: "Udana 1.10",                theme: "mint",   topic: "peace",        fresh: "2026-11-19", text: "In the seen, let there be only the seen; in the heard, only the heard." },
+  { faith: "Wisdom", ref: "On 3 a.m. thoughts",        theme: "night",  topic: "peace",        fresh: "2026-11-19", text: "The thoughts that visit at 3 a.m. are not prophecies. They are tired. So are you. Sleep." },
+  { faith: "Wisdom", ref: "On a slow season",          theme: "moss",   topic: "perseverance", fresh: "2026-11-19", text: "A slow season is not a stuck season. Roots grow where no one is watching." },
+  { faith: "Wisdom", ref: "On unanswered messages",    theme: "ivory",  topic: "peace",        fresh: "2026-11-19", text: "Your worth is not measured in replies. Some people are carrying more than you can see." },
+  { faith: "Wisdom", ref: "On beginning at any age",   theme: "sunset", topic: "courage",      fresh: "2026-11-19", text: "Late is a word for trains, not for lives. Begin anyway." },
+  { faith: "Wisdom", ref: "On rest as part of the work", theme: "sage",   topic: "peace",        fresh: "2026-11-19", text: "Rest is not a reward for when everything is done. It is part of how anything gets done." },
+  { faith: "Wisdom", ref: "On someone else's chapter", theme: "cobalt", topic: "purpose",      fresh: "2026-11-19", text: "Their chapter twenty is not your chapter three. Read your own book." },
+  { faith: "Wisdom", ref: "On letting someone help",   theme: "rose",   topic: "love",         fresh: "2026-11-19", text: "Asking for help is not weakness. It is giving someone the chance to love you well." },
+  { faith: "Wisdom", ref: "On counting the little things", theme: "butter", topic: "gratitude",    fresh: "2026-11-19", text: "Made the bed. Drank the water. Sent the one message. Count it. Small wins are still wins." },
+  { faith: "Wisdom", ref: "On healing not being straight", theme: "lilac",  topic: "hope",         fresh: "2026-11-19", text: "Healing is not a straight line. A bad day is not proof you are back at the start." },
+  { faith: "Wisdom", ref: "On what you can't control", theme: "slate",  topic: "peace",        fresh: "2026-11-19", text: "Hold what you can change with both hands. Set the rest down gently." },
+  { faith: "Wisdom", ref: "On being new",              theme: "coral",  topic: "courage",      fresh: "2026-11-19", text: "Every expert you admire was once embarrassingly new. Let yourself be new." },
+  { faith: "Wisdom", ref: "On the ones who stayed",    theme: "warm",   topic: "gratitude",    fresh: "2026-11-19", text: "Notice who stayed when it was hard. Then thank them out loud." },
+
   // ---------------------------- BIBLE ----------------------------
   { faith: "Bible", ref: "Genesis 1:27", theme: "royal",  topic: "purpose",   text: "So God created mankind in his own image, in the image of God he created them." },
   { faith: "Bible", ref: "Exodus 14:14",  theme: "calm",   topic: "peace",     text: "The Lord will fight for you; you need only to be still." },
@@ -1006,8 +1097,17 @@ function coachCollection() {
 // Is this verse part of the Coaches (motivation & leadership) collection?
 function isCoachVerse(v) { return !!(v && (v.coach || COACH_COLLECTION_REFS.has(v.ref))); }
 
+// The Fresh collection: every entry with a `fresh` date, newest batch first and
+// in DB order inside a batch. It sits at the top of the Daily picker and starts
+// at Day 1 = the first fresh verse, so new material is used before repeats.
+function freshCollection() {
+  return VERSE_DB.filter((v) => v.fresh).sort((a, b) => (a.fresh < b.fresh ? 1 : a.fresh > b.fresh ? -1 : 0));
+}
+function isFreshVerse(v) { return !!(v && v.fresh); }
+
 // Display names for each source/faith (the `faith` key → human label).
 const FAITH_LABELS = {
+  Fresh: "🆕 Fresh · Newest verses first",
   Bible: "Bible",
   Gita: "Bhagavad Gita",
   Sikh: "Guru Granth Sahib",
@@ -1059,6 +1159,13 @@ const THEME_PALETTES = {
   mint:   { name: "Mint",        stops: ["#cdefd8", "#8fcfa8"], text: "#1f4a33", accent: "#3a7a55", light: true },
   lilac:  { name: "Lilac",       stops: ["#e7dcff", "#b9a4e8"], text: "#3a2a52", accent: "#6a4fb0", light: true },
   butter: { name: "Butter",      stops: ["#fdf0c4", "#f2d488"], text: "#4a3a12", accent: "#9a7a1e", light: true },
+  // Shorts pack (Nov 2026): the looks the new short styles are built on.
+  onyx:   { name: "Onyx & Gold", stops: ["#1c1a17", "#050505"], text: "#f6efe0", accent: "#e8b94a" },
+  ivory:  { name: "Ivory Note",  stops: ["#fbf8f1", "#ece4d4"], text: "#1d1a16", accent: "#b2452c", light: true },
+  cobalt: { name: "Cobalt",      stops: ["#2f5bff", "#0a1f8f"], text: "#f2f5ff", accent: "#c6ff3d" },
+  sunset: { name: "Sunset Pop",  stops: ["#ff5f6d", "#ffc371"], text: "#2a0f12", accent: "#5a1020", light: true },
+  rose:   { name: "Dusty Rose",  stops: ["#e9c9c4", "#c08f8f"], text: "#3c2224", accent: "#7d3b45", light: true },
+  olive:  { name: "Olive Grove", stops: ["#7c7a4a", "#3a3a22"], text: "#f6f3e4", accent: "#e3d9a0" },
 };
 
 // Target languages for the free MyMemory API (used in the Studio translator).
